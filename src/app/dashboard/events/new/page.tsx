@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { addEventType } from "@/lib/event-store";
 
 type Step = "template" | "basic" | "team" | "confirm";
 
@@ -112,7 +113,24 @@ export default function NewEventPage() {
   }
 
   function handleCreate() {
-    // In a real app, this would save to the database
+    const now = new Date().toISOString();
+    addEventType({
+      id: `evt-${Date.now()}`,
+      user_id: "u1",
+      title: formData.title,
+      slug: formData.slug,
+      description: formData.description || undefined,
+      duration: formData.duration,
+      buffer_before: formData.buffer_before,
+      buffer_after: formData.buffer_after,
+      location_type: formData.location_type,
+      location_detail: formData.location_detail || undefined,
+      status: "draft",
+      scheduling_mode: formData.scheduling_mode,
+      color: formData.color,
+      created_at: now,
+      updated_at: now,
+    });
     router.push("/dashboard/events");
   }
 
@@ -135,7 +153,7 @@ export default function NewEventPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            新規イベント作成
+            新規イベントタイプ作成
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
             テンプレートを選択するか、ゼロから作成します
@@ -466,7 +484,7 @@ export default function NewEventPage() {
               設定内容の確認
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              以下の内容でイベントを作成します
+              以下の内容でイベントタイプを作成します
             </p>
             <div className="mt-6 space-y-4">
               <div className="rounded-2xl bg-gray-50 p-4">
@@ -535,7 +553,7 @@ export default function NewEventPage() {
           </button>
           {step === "confirm" ? (
             <button onClick={handleCreate} className="btn-primary">
-              イベントを作成
+              イベントタイプを作成
             </button>
           ) : (
             <button

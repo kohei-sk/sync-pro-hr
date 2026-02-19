@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   LogOut,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,17 @@ export function Sidebar() {
           <Calendar className="h-4.5 w-4.5 text-white" />
         </div>
         <span className="text-base font-bold text-gray-900">SyncPro HR</span>
+      </div>
+
+      {/* Main CTA: New Event */}
+      <div className="px-3 pt-3">
+        <Link
+          href="/dashboard/new-event"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800"
+        >
+          <Plus className="h-4 w-4" />
+          新規イベント作成
+        </Link>
       </div>
 
       {/* Navigation */}

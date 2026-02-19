@@ -23,12 +23,13 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import { useSyncExternalStore } from "react";
 import {
-  mockEventTypes,
   mockBookings,
   mockActivities,
   mockDailyBookingStats,
 } from "@/lib/mock-data";
+import { getEventTypes, subscribe } from "@/lib/event-store";
 import { cn } from "@/lib/utils";
 
 ChartJS.register(
@@ -40,7 +41,12 @@ ChartJS.register(
   Filler
 );
 
+function useEventTypes() {
+  return useSyncExternalStore(subscribe, getEventTypes, getEventTypes);
+}
+
 export default function DashboardPage() {
+  const mockEventTypes = useEventTypes();
   const activeEvents = mockEventTypes.filter((e) => e.status === "active");
   const thisWeekBookings = mockBookings.filter((b) => {
     const d = new Date(b.start_time);
