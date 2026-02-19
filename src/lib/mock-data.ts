@@ -7,6 +7,7 @@ import type {
   CustomField,
   CalendarEvent,
   Booking,
+  ActivityItem,
 } from "@/types";
 
 // --- Mock Users ---
@@ -16,30 +17,40 @@ export const mockUsers: User[] = [
     email: "tanaka@example.com",
     full_name: "田中 太郎",
     avatar_url: undefined,
+    calendar_status: "connected",
+    last_synced_at: "2026-02-18T09:30:00Z",
   },
   {
     id: "u2",
     email: "suzuki@example.com",
     full_name: "鈴木 花子",
     avatar_url: undefined,
+    calendar_status: "connected",
+    last_synced_at: "2026-02-18T09:25:00Z",
   },
   {
     id: "u3",
     email: "sato@example.com",
     full_name: "佐藤 一郎",
     avatar_url: undefined,
+    calendar_status: "error",
+    last_synced_at: "2026-02-17T14:00:00Z",
   },
   {
     id: "u4",
     email: "yamada@example.com",
     full_name: "山田 美咲",
     avatar_url: undefined,
+    calendar_status: "connected",
+    last_synced_at: "2026-02-18T09:28:00Z",
   },
   {
     id: "u5",
     email: "ito@example.com",
     full_name: "伊藤 健太",
     avatar_url: undefined,
+    calendar_status: "not_connected",
+    last_synced_at: undefined,
   },
 ];
 
@@ -58,7 +69,7 @@ export const mockEventTypes: EventType[] = [
     location_detail: "Google Meet (自動生成)",
     status: "active",
     scheduling_mode: "pool",
-    color: "#3b82f6",
+    color: "#0071c1",
     created_at: "2026-01-15T00:00:00Z",
     updated_at: "2026-02-10T00:00:00Z",
   },
@@ -75,7 +86,7 @@ export const mockEventTypes: EventType[] = [
     location_detail: "本社 会議室A",
     status: "active",
     scheduling_mode: "fixed",
-    color: "#8b5cf6",
+    color: "#7c3aed",
     created_at: "2026-01-20T00:00:00Z",
     updated_at: "2026-02-10T00:00:00Z",
   },
@@ -92,7 +103,7 @@ export const mockEventTypes: EventType[] = [
     location_detail: "Zoom",
     status: "draft",
     scheduling_mode: "pool",
-    color: "#ec4899",
+    color: "#db2777",
     created_at: "2026-02-01T00:00:00Z",
     updated_at: "2026-02-15T00:00:00Z",
   },
@@ -109,7 +120,7 @@ export const mockEventTypes: EventType[] = [
     location_detail: "Google Meet",
     status: "active",
     scheduling_mode: "fixed",
-    color: "#22c55e",
+    color: "#16a34a",
     created_at: "2026-02-05T00:00:00Z",
     updated_at: "2026-02-12T00:00:00Z",
   },
@@ -117,71 +128,27 @@ export const mockEventTypes: EventType[] = [
 
 // --- Mock Roles ---
 export const mockRoles: EventRole[] = [
-  // evt1: エンジニア一次面接 (pool mode)
-  {
-    id: "r1",
-    event_id: "evt1",
-    name: "面接責任者",
-    required_count: 1,
-    priority_order: 1,
-  },
-  {
-    id: "r2",
-    event_id: "evt1",
-    name: "技術面接官",
-    required_count: 2,
-    priority_order: 2,
-  },
-  // evt2: エンジニア最終面接 (fixed mode)
-  {
-    id: "r3",
-    event_id: "evt2",
-    name: "面接官",
-    required_count: 3,
-    priority_order: 1,
-  },
-  // evt3: デザイナー面接 (pool mode)
-  {
-    id: "r4",
-    event_id: "evt3",
-    name: "デザインリード",
-    required_count: 1,
-    priority_order: 1,
-  },
-  {
-    id: "r5",
-    event_id: "evt3",
-    name: "面接官",
-    required_count: 1,
-    priority_order: 2,
-  },
-  // evt4: カジュアル面談 (fixed mode)
-  {
-    id: "r6",
-    event_id: "evt4",
-    name: "担当者",
-    required_count: 1,
-    priority_order: 1,
-  },
+  { id: "r1", event_id: "evt1", name: "面接責任者", required_count: 1, priority_order: 1 },
+  { id: "r2", event_id: "evt1", name: "技術面接官", required_count: 2, priority_order: 2 },
+  { id: "r3", event_id: "evt2", name: "面接官", required_count: 3, priority_order: 1 },
+  { id: "r4", event_id: "evt3", name: "デザインリード", required_count: 1, priority_order: 1 },
+  { id: "r5", event_id: "evt3", name: "面接官", required_count: 1, priority_order: 2 },
+  { id: "r6", event_id: "evt4", name: "担当者", required_count: 1, priority_order: 1 },
 ];
 
 // --- Mock Members ---
 export const mockMembers: EventMember[] = [
-  // evt1 roles
   { id: "m1", role_id: "r1", user_id: "u1" },
   { id: "m2", role_id: "r1", user_id: "u2" },
   { id: "m3", role_id: "r2", user_id: "u3" },
   { id: "m4", role_id: "r2", user_id: "u4" },
   { id: "m5", role_id: "r2", user_id: "u5" },
-  // evt2 roles
   { id: "m6", role_id: "r3", user_id: "u1" },
   { id: "m7", role_id: "r3", user_id: "u2" },
   { id: "m8", role_id: "r3", user_id: "u3" },
-  // evt3 roles
   { id: "m9", role_id: "r4", user_id: "u4" },
   { id: "m10", role_id: "r5", user_id: "u1" },
   { id: "m11", role_id: "r5", user_id: "u5" },
-  // evt4 roles
   { id: "m12", role_id: "r6", user_id: "u1" },
 ];
 
@@ -192,7 +159,7 @@ export const mockExclusionRules: ExclusionRule[] = [
     event_id: "evt1",
     name: "全社定例会議",
     type: "time-range",
-    day_of_week: 1, // Monday
+    day_of_week: 1,
     start_time: "09:00",
     end_time: "10:00",
     recurring: true,
@@ -212,7 +179,7 @@ export const mockExclusionRules: ExclusionRule[] = [
     event_id: "evt2",
     name: "スプリントレビュー",
     type: "time-range",
-    day_of_week: 5, // Friday
+    day_of_week: 5,
     start_time: "15:00",
     end_time: "17:00",
     recurring: true,
@@ -272,7 +239,6 @@ function generateMockCalendarEvents(): CalendarEvent[] {
 
     const dateStr = date.toISOString().split("T")[0];
 
-    // u1 has meetings 10-11 most days
     if (day % 2 === 0) {
       events.push({
         id: `cal-u1-${day}-1`,
@@ -283,7 +249,6 @@ function generateMockCalendarEvents(): CalendarEvent[] {
       });
     }
 
-    // u2 is busy 14-16 on even days
     if (day % 2 === 0) {
       events.push({
         id: `cal-u2-${day}-1`,
@@ -294,7 +259,6 @@ function generateMockCalendarEvents(): CalendarEvent[] {
       });
     }
 
-    // u3 has morning meetings MWF
     if (date.getDay() === 1 || date.getDay() === 3 || date.getDay() === 5) {
       events.push({
         id: `cal-u3-${day}-1`,
@@ -305,7 +269,6 @@ function generateMockCalendarEvents(): CalendarEvent[] {
       });
     }
 
-    // u4 has afternoon slot on TTh
     if (date.getDay() === 2 || date.getDay() === 4) {
       events.push({
         id: `cal-u4-${day}-1`,
@@ -316,7 +279,6 @@ function generateMockCalendarEvents(): CalendarEvent[] {
       });
     }
 
-    // u5 has lunch meeting on Wed
     if (date.getDay() === 3) {
       events.push({
         id: `cal-u5-${day}-1`,
@@ -331,10 +293,9 @@ function generateMockCalendarEvents(): CalendarEvent[] {
   return events;
 }
 
-export const mockCalendarEvents: CalendarEvent[] =
-  generateMockCalendarEvents();
+export const mockCalendarEvents: CalendarEvent[] = generateMockCalendarEvents();
 
-// --- Mock Bookings ---
+// --- Mock Bookings (expanded) ---
 export const mockBookings: Booking[] = [
   {
     id: "b1",
@@ -344,6 +305,12 @@ export const mockBookings: Booking[] = [
     start_time: "2026-02-20T10:00:00",
     end_time: "2026-02-20T11:00:00",
     status: "confirmed",
+    meeting_url: "https://meet.google.com/abc-defg-hij",
+    assigned_members: [
+      { user_id: "u1", role_id: "r1" },
+      { user_id: "u3", role_id: "r2" },
+      { user_id: "u4", role_id: "r2" },
+    ],
     created_at: "2026-02-15T10:00:00Z",
   },
   {
@@ -354,6 +321,12 @@ export const mockBookings: Booking[] = [
     start_time: "2026-02-21T14:00:00",
     end_time: "2026-02-21T15:00:00",
     status: "confirmed",
+    meeting_url: "https://meet.google.com/klm-nopq-rst",
+    assigned_members: [
+      { user_id: "u2", role_id: "r1" },
+      { user_id: "u3", role_id: "r2" },
+      { user_id: "u5", role_id: "r2" },
+    ],
     created_at: "2026-02-15T12:00:00Z",
   },
   {
@@ -364,24 +337,135 @@ export const mockBookings: Booking[] = [
     start_time: "2026-02-22T11:00:00",
     end_time: "2026-02-22T11:30:00",
     status: "pending",
+    assigned_members: [{ user_id: "u1", role_id: "r6" }],
     created_at: "2026-02-16T09:00:00Z",
+  },
+  {
+    id: "b4",
+    event_id: "evt2",
+    candidate_name: "松本 健一",
+    candidate_email: "matsumoto@candidate.com",
+    start_time: "2026-02-19T13:00:00",
+    end_time: "2026-02-19T14:30:00",
+    status: "confirmed",
+    assigned_members: [
+      { user_id: "u1", role_id: "r3" },
+      { user_id: "u2", role_id: "r3" },
+      { user_id: "u3", role_id: "r3" },
+    ],
+    created_at: "2026-02-14T15:00:00Z",
+  },
+  {
+    id: "b5",
+    event_id: "evt1",
+    candidate_name: "小林 さくら",
+    candidate_email: "kobayashi@candidate.com",
+    start_time: "2026-02-17T10:00:00",
+    end_time: "2026-02-17T11:00:00",
+    status: "cancelled",
+    assigned_members: [
+      { user_id: "u1", role_id: "r1" },
+      { user_id: "u4", role_id: "r2" },
+      { user_id: "u5", role_id: "r2" },
+    ],
+    created_at: "2026-02-13T08:00:00Z",
+  },
+  {
+    id: "b6",
+    event_id: "evt4",
+    candidate_name: "加藤 真理",
+    candidate_email: "kato@candidate.com",
+    start_time: "2026-02-18T14:00:00",
+    end_time: "2026-02-18T14:30:00",
+    status: "confirmed",
+    meeting_url: "https://meet.google.com/uvw-xyz-123",
+    assigned_members: [{ user_id: "u1", role_id: "r6" }],
+    created_at: "2026-02-16T11:00:00Z",
+  },
+  {
+    id: "b7",
+    event_id: "evt1",
+    candidate_name: "吉田 翔太",
+    candidate_email: "yoshida@candidate.com",
+    start_time: "2026-02-25T11:00:00",
+    end_time: "2026-02-25T12:00:00",
+    status: "confirmed",
+    meeting_url: "https://meet.google.com/456-789-abc",
+    assigned_members: [
+      { user_id: "u2", role_id: "r1" },
+      { user_id: "u3", role_id: "r2" },
+      { user_id: "u4", role_id: "r2" },
+    ],
+    created_at: "2026-02-17T16:00:00Z",
   },
 ];
 
-// --- Helper to get mock data for a specific event ---
+// --- Mock Activity Log ---
+export const mockActivities: ActivityItem[] = [
+  {
+    id: "act1",
+    type: "booking_created",
+    description: "吉田 翔太さんが「エンジニア一次面接」を予約しました",
+    timestamp: "2026-02-17T16:00:00Z",
+  },
+  {
+    id: "act2",
+    type: "booking_cancelled",
+    description: "小林 さくらさんが「エンジニア一次面接」をキャンセルしました",
+    timestamp: "2026-02-17T10:00:00Z",
+  },
+  {
+    id: "act3",
+    type: "booking_created",
+    description: "加藤 真理さんが「カジュアル面談」を予約しました",
+    timestamp: "2026-02-16T11:00:00Z",
+  },
+  {
+    id: "act4",
+    type: "booking_created",
+    description: "中村 大輔さんが「カジュアル面談」を予約しました",
+    timestamp: "2026-02-16T09:00:00Z",
+  },
+  {
+    id: "act5",
+    type: "booking_created",
+    description: "渡辺 あゆみさんが「エンジニア一次面接」を予約しました",
+    timestamp: "2026-02-15T12:00:00Z",
+  },
+  {
+    id: "act6",
+    type: "booking_created",
+    description: "高橋 直樹さんが「エンジニア一次面接」を予約しました",
+    timestamp: "2026-02-15T10:00:00Z",
+  },
+  {
+    id: "act7",
+    type: "event_created",
+    description: "田中 太郎が「カジュアル面談」を作成しました",
+    timestamp: "2026-02-05T00:00:00Z",
+  },
+];
+
+// --- Daily booking stats for chart (past 7 days) ---
+export const mockDailyBookingStats = [
+  { date: "2/12", count: 1 },
+  { date: "2/13", count: 2 },
+  { date: "2/14", count: 1 },
+  { date: "2/15", count: 3 },
+  { date: "2/16", count: 2 },
+  { date: "2/17", count: 1 },
+  { date: "2/18", count: 2 },
+];
+
+// --- Helper functions ---
 export function getEventData(eventId: string) {
   const event = mockEventTypes.find((e) => e.id === eventId);
   const roles = mockRoles.filter((r) => r.event_id === eventId);
   const roleIds = roles.map((r) => r.id);
   const members = mockMembers.filter((m) => roleIds.includes(m.role_id));
-  const exclusionRules = mockExclusionRules.filter(
-    (r) => r.event_id === eventId
-  );
-  const customFields = mockCustomFields.filter(
-    (f) => f.event_id === eventId
-  );
+  const exclusionRules = mockExclusionRules.filter((r) => r.event_id === eventId);
+  const customFields = mockCustomFields.filter((f) => f.event_id === eventId);
   const bookings = mockBookings.filter((b) => b.event_id === eventId);
-
   return { event, roles, members, exclusionRules, customFields, bookings };
 }
 

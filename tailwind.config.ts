@@ -8,19 +8,29 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          '"Noto Sans JP"',
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI"',
+          "Roboto",
+          "sans-serif",
+        ],
+      },
       colors: {
         primary: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
-          950: "#172554",
+          50: "#e8f4fd",
+          100: "#c5e2f9",
+          200: "#9dcef5",
+          300: "#6db8ef",
+          400: "#42a5e8",
+          500: "#0071c1",
+          600: "#0065ad",
+          700: "#005494",
+          800: "#00437a",
+          900: "#003260",
+          950: "#001e3d",
         },
         accent: {
           50: "#f0fdf4",
@@ -36,8 +46,18 @@ const config: Config = {
         },
       },
       borderRadius: {
-        "2xl": "1rem",
-        "3xl": "1.5rem",
+        DEFAULT: "6px",
+        sm: "4px",
+        md: "6px",
+        lg: "8px",
+        xl: "12px",
+        "2xl": "16px",
+        "3xl": "24px",
+      },
+      boxShadow: {
+        card: "0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06)",
+        "card-hover":
+          "0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05)",
       },
     },
   },

@@ -8,6 +8,8 @@ export interface User {
   email: string;
   full_name: string;
   avatar_url?: string;
+  calendar_status?: "connected" | "error" | "not_connected";
+  last_synced_at?: string;
 }
 
 // --- Event Types ---
@@ -21,11 +23,11 @@ export interface EventType {
   title: string;
   slug: string;
   description?: string;
-  duration: number; // minutes
-  buffer_before: number; // minutes
-  buffer_after: number; // minutes
+  duration: number;
+  buffer_before: number;
+  buffer_after: number;
   location_type: LocationType;
-  location_detail?: string; // URL or address
+  location_detail?: string;
   status: EventStatus;
   scheduling_mode: SchedulingMode;
   color?: string;
@@ -37,7 +39,7 @@ export interface EventType {
 export interface EventRole {
   id: string;
   event_id: string;
-  name: string; // e.g., "責任者", "面接官", "同席者"
+  name: string;
   required_count: number;
   priority_order: number;
 }
@@ -56,17 +58,17 @@ export type ExclusionType = "all-day" | "time-range";
 export interface ExclusionRule {
   id: string;
   event_id: string;
-  name: string; // e.g., "定例会議"
+  name: string;
   type: ExclusionType;
-  day_of_week?: number; // 0=Sun, 1=Mon, ..., 6=Sat
-  specific_date?: string; // ISO date string
-  start_time?: string; // HH:mm
-  end_time?: string; // HH:mm
+  day_of_week?: number;
+  specific_date?: string;
+  start_time?: string;
+  end_time?: string;
   recurring: boolean;
 }
 
 // --- Custom Form Fields ---
-export type FieldType = "text" | "email" | "tel" | "multiline" | "url";
+export type FieldType = "text" | "email" | "tel" | "multiline" | "url" | "file";
 
 export interface CustomField {
   id: string;
@@ -86,11 +88,12 @@ export interface Booking {
   event_id: string;
   candidate_name: string;
   candidate_email: string;
-  start_time: string; // ISO datetime
-  end_time: string; // ISO datetime
+  start_time: string;
+  end_time: string;
   status: BookingStatus;
   assigned_members?: AssignedMember[];
   custom_field_values?: Record<string, string>;
+  meeting_url?: string;
   created_at: string;
 }
 
@@ -105,13 +108,13 @@ export interface CalendarEvent {
   id: string;
   user_id: string;
   title: string;
-  start: string; // ISO datetime
-  end: string; // ISO datetime
+  start: string;
+  end: string;
 }
 
 export interface TimeSlot {
-  start: string; // ISO datetime
-  end: string; // ISO datetime
+  start: string;
+  end: string;
   available_members?: AvailableMembersByRole[];
 }
 
@@ -121,24 +124,17 @@ export interface AvailableMembersByRole {
   available_user_ids: string[];
 }
 
-// --- Scheduler Input ---
+// --- Scheduler ---
 export interface SchedulerInput {
   event: EventType;
   roles: EventRole[];
   members: EventMember[];
   exclusion_rules: ExclusionRule[];
   calendar_events: CalendarEvent[];
-  date_range: {
-    start: string; // ISO date
-    end: string; // ISO date
-  };
-  working_hours: {
-    start: string; // HH:mm
-    end: string; // HH:mm
-  };
+  date_range: { start: string; end: string };
+  working_hours: { start: string; end: string };
 }
 
-// --- Scheduler Output ---
 export interface SchedulerOutput {
   available_slots: TimeSlot[];
 }
@@ -149,4 +145,13 @@ export interface BookingFormData {
   candidate_email: string;
   selected_slot: TimeSlot;
   custom_fields: Record<string, string>;
+}
+
+// --- Activity Log ---
+export interface ActivityItem {
+  id: string;
+  type: "booking_created" | "booking_cancelled" | "event_created" | "member_added";
+  description: string;
+  timestamp: string;
+  metadata?: Record<string, string>;
 }
