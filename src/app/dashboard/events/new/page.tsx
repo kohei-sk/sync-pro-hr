@@ -5,63 +5,21 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  Clock,
   Users,
   Video,
   MapPin,
   Phone,
-  Zap,
   Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
 
-type Step = "template" | "basic" | "team" | "confirm";
+type Step = "basic" | "team" | "confirm";
 
-const templates = [
-  {
-    id: "technical",
-    name: "技術面接",
-    description: "エンジニア向けの技術面接テンプレート",
-    duration: 60,
-    mode: "pool" as const,
-    icon: Zap,
-    color: "#3b82f6",
-  },
-  {
-    id: "final",
-    name: "最終面接",
-    description: "経営陣・責任者との最終面接",
-    duration: 90,
-    mode: "fixed" as const,
-    icon: Lock,
-    color: "#8b5cf6",
-  },
-  {
-    id: "casual",
-    name: "カジュアル面談",
-    description: "気軽なカジュアル面談",
-    duration: 30,
-    mode: "fixed" as const,
-    icon: Users,
-    color: "#22c55e",
-  },
-  {
-    id: "custom",
-    name: "カスタム",
-    description: "ゼロから設定を作成",
-    duration: 60,
-    mode: "pool" as const,
-    icon: Clock,
-    color: "#6b7280",
-  },
-];
-
-export default function NewEventPage() {
+export default function NewEventTypePage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("template");
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("basic");
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -76,27 +34,12 @@ export default function NewEventPage() {
   });
 
   const steps: { id: Step; label: string }[] = [
-    { id: "template", label: "テンプレート" },
     { id: "basic", label: "基本設定" },
     { id: "team", label: "チーム設定" },
     { id: "confirm", label: "確認" },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === step);
-
-  function handleTemplateSelect(templateId: string) {
-    const template = templates.find((t) => t.id === templateId);
-    if (template) {
-      setSelectedTemplate(templateId);
-      setFormData((prev) => ({
-        ...prev,
-        title: template.id === "custom" ? "" : template.name,
-        duration: template.duration,
-        scheduling_mode: template.mode,
-        color: template.color,
-      }));
-    }
-  }
 
   function handleNext() {
     const nextIndex = currentStepIndex + 1;
@@ -141,6 +84,17 @@ export default function NewEventPage() {
       .replace(/^-|-$/g, "");
   }
 
+  const colors = [
+    "#3b82f6",
+    "#8b5cf6",
+    "#22c55e",
+    "#f59e0b",
+    "#ef4444",
+    "#ec4899",
+    "#06b6d4",
+    "#6b7280",
+  ];
+
   return (
     <div>
       {/* Header */}
@@ -156,7 +110,7 @@ export default function NewEventPage() {
             新規イベントタイプ作成
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
-            テンプレートを選択するか、ゼロから作成します
+            イベントタイプの基本情報を入力して作成します
           </p>
         </div>
       </div>
@@ -201,66 +155,16 @@ export default function NewEventPage() {
 
       {/* Step content */}
       <div className="card max-w-3xl">
-        {/* Step 1: Template Selection */}
-        {step === "template" && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              テンプレートを選択
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              用途に合ったテンプレートを選んで素早く作成できます
-            </p>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {templates.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => handleTemplateSelect(template.id)}
-                  className={cn(
-                    "flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all",
-                    selectedTemplate === template.id
-                      ? "border-primary-600 bg-primary-50"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                  )}
-                >
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: template.color + "20" }}
-                  >
-                    <template.icon
-                      className="h-5 w-5"
-                      style={{ color: template.color }}
-                    />
-                  </div>
-                  <h3 className="mt-3 font-semibold text-gray-900">
-                    {template.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {template.description}
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                      {template.duration}分
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                      {template.mode === "pool" ? "プール" : "固定"}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Basic Settings */}
+        {/* Step 1: Basic Settings */}
         {step === "basic" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">基本設定</h2>
             <p className="mt-1 text-sm text-gray-500">
-              イベントの基本情報を入力してください
+              イベントタイプの基本情報を入力してください
             </p>
             <div className="mt-6 space-y-5">
               <div>
-                <label className="label">イベント名</label>
+                <label className="label">イベントタイプ名</label>
                 <input
                   type="text"
                   className="input mt-1"
@@ -278,9 +182,7 @@ export default function NewEventPage() {
               <div>
                 <label className="label">URL スラグ</label>
                 <div className="mt-1 flex items-center rounded-2xl bg-gray-50 ring-1 ring-gray-300">
-                  <span className="pl-4 text-sm text-gray-500">
-                    /j/
-                  </span>
+                  <span className="pl-4 text-sm text-gray-500">/j/</span>
                   <input
                     type="text"
                     className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0"
@@ -301,8 +203,26 @@ export default function NewEventPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  placeholder="このイベントの説明を入力してください"
+                  placeholder="このイベントタイプの説明を入力してください"
                 />
+              </div>
+              <div>
+                <label className="label">カラー</label>
+                <div className="mt-2 flex gap-2">
+                  {colors.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setFormData({ ...formData, color: c })}
+                      className={cn(
+                        "h-8 w-8 rounded-full transition-all",
+                        formData.color === c
+                          ? "ring-2 ring-offset-2 ring-gray-400"
+                          : "hover:scale-110"
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -358,8 +278,16 @@ export default function NewEventPage() {
                 <label className="label">場所</label>
                 <div className="mt-2 flex gap-3">
                   {[
-                    { type: "online" as const, icon: Video, label: "オンライン" },
-                    { type: "in-person" as const, icon: MapPin, label: "対面" },
+                    {
+                      type: "online" as const,
+                      icon: Video,
+                      label: "オンライン",
+                    },
+                    {
+                      type: "in-person" as const,
+                      icon: MapPin,
+                      label: "対面",
+                    },
                     { type: "phone" as const, icon: Phone, label: "電話" },
                   ].map((loc) => (
                     <button
@@ -407,7 +335,7 @@ export default function NewEventPage() {
           </div>
         )}
 
-        {/* Step 3: Team Settings */}
+        {/* Step 2: Team Settings */}
         {step === "team" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
@@ -470,14 +398,14 @@ export default function NewEventPage() {
               <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center">
                 <Users className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-500">
-                  メンバーの追加は、イベント作成後の詳細設定画面で行えます
+                  メンバーの追加は、イベントタイプ作成後の詳細設定画面で行えます
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 4: Confirmation */}
+        {/* Step 3: Confirmation */}
         {step === "confirm" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
@@ -490,15 +418,21 @@ export default function NewEventPage() {
               <div className="rounded-2xl bg-gray-50 p-4">
                 <dl className="space-y-3">
                   <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">イベント名</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dt className="text-sm text-gray-500">
+                      イベントタイプ名
+                    </dt>
+                    <dd className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: formData.color }}
+                      />
                       {formData.title || "未入力"}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">URL</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      /j/{formData.slug || "—"}
+                      /j/{formData.slug || "\u2014"}
                     </dd>
                   </div>
                   <div className="flex justify-between">
@@ -558,7 +492,7 @@ export default function NewEventPage() {
           ) : (
             <button
               onClick={handleNext}
-              disabled={step === "template" && !selectedTemplate}
+              disabled={step === "basic" && !formData.title.trim()}
               className="btn-primary"
             >
               次へ
