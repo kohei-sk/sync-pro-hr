@@ -10,14 +10,27 @@ import {
   MapPin,
   Phone,
   Lock,
+  Plus,
+  Trash2,
+  Globe,
+  EyeOff,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
+import { mockUsers } from "@/lib/mock-data";
 
 type Step = "basic" | "team" | "confirm";
 
-export default function NewEventTypePage() {
+type NewRole = {
+  id: string;
+  name: string;
+  required_count: number;
+  memberIds: string[];
+};
+
+export default function NewEventPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("basic");
   const [formData, setFormData] = useState({
@@ -31,7 +44,13 @@ export default function NewEventTypePage() {
     location_detail: "",
     scheduling_mode: "pool" as "pool" | "fixed",
     color: "#3b82f6",
+    isPublic: false,
   });
+
+  const [roles, setRoles] = useState<NewRole[]>([
+    { id: "role-1", name: "面接官", required_count: 1, memberIds: [] },
+  ]);
+  const [memberDropdownOpen, setMemberDropdownOpen] = useState<string | null>(null);
 
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
@@ -68,7 +87,7 @@ export default function NewEventTypePage() {
       buffer_after: formData.buffer_after,
       location_type: formData.location_type,
       location_detail: formData.location_detail || undefined,
-      status: "draft",
+      status: formData.isPublic ? "active" : "draft",
       scheduling_mode: formData.scheduling_mode,
       color: formData.color,
       created_at: now,
@@ -84,6 +103,46 @@ export default function NewEventTypePage() {
       .replace(/^-|-$/g, "");
   }
 
+  function addRole() {
+    setRoles([
+      ...roles,
+      {
+        id: `role-${Date.now()}`,
+        name: "",
+        required_count: 1,
+        memberIds: [],
+      },
+    ]);
+  }
+
+  function removeRole(roleId: string) {
+    setRoles(roles.filter((r) => r.id !== roleId));
+  }
+
+  function updateRole(roleId: string, updates: Partial<NewRole>) {
+    setRoles(roles.map((r) => (r.id === roleId ? { ...r, ...updates } : r)));
+  }
+
+  function addMemberToRole(roleId: string, userId: string) {
+    setRoles(
+      roles.map((r) => {
+        if (r.id !== roleId) return r;
+        if (r.memberIds.includes(userId)) return r;
+        return { ...r, memberIds: [...r.memberIds, userId] };
+      })
+    );
+    setMemberDropdownOpen(null);
+  }
+
+  function removeMemberFromRole(roleId: string, userId: string) {
+    setRoles(
+      roles.map((r) => {
+        if (r.id !== roleId) return r;
+        return { ...r, memberIds: r.memberIds.filter((id) => id !== userId) };
+      })
+    );
+  }
+
   const colors = [
     "#3b82f6",
     "#8b5cf6",
@@ -94,6 +153,8 @@ export default function NewEventTypePage() {
     "#06b6d4",
     "#6b7280",
   ];
+
+  const totalMembers = roles.reduce((acc, r) => acc + r.memberIds.length, 0);
 
   return (
     <div>
@@ -107,10 +168,10 @@ export default function NewEventTypePage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            新規イベントタイプ作成
+            新規イベント作成
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
-            イベントタイプの基本情報を入力して作成します
+            イベントの基本情報を入力して作成します
           </p>
         </div>
       </div>
@@ -160,11 +221,11 @@ export default function NewEventTypePage() {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">基本設定</h2>
             <p className="mt-1 text-sm text-gray-500">
-              イベントタイプの基本情報を入力してください
+              イベントの基本情報を入力してください
             </p>
             <div className="mt-6 space-y-5">
               <div>
-                <label className="label">イベントタイプ名</label>
+                <label className="label">イベント名</label>
                 <input
                   type="text"
                   className="input mt-1"
@@ -203,7 +264,7 @@ export default function NewEventTypePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  placeholder="このイベントタイプの説明を入力してください"
+                  placeholder="このイベントの説明を入力してください"
                 />
               </div>
               <div>
@@ -331,6 +392,43 @@ export default function NewEventTypePage() {
                   />
                 </div>
               )}
+
+              {/* Visibility */}
+              <div>
+                <label className="label">公開設定</label>
+                <div className="mt-2 grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setFormData({ ...formData, isPublic: true })}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+                      formData.isPublic
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <Globe className={cn("h-5 w-5", formData.isPublic ? "text-green-600" : "text-gray-400")} />
+                    <div>
+                      <p className={cn("font-semibold text-sm", formData.isPublic ? "text-green-800" : "text-gray-700")}>公開</p>
+                      <p className="text-xs text-gray-500">候補者が予約できます</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setFormData({ ...formData, isPublic: false })}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+                      !formData.isPublic
+                        ? "border-gray-500 bg-gray-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <EyeOff className={cn("h-5 w-5", !formData.isPublic ? "text-gray-600" : "text-gray-400")} />
+                    <div>
+                      <p className={cn("font-semibold text-sm", !formData.isPublic ? "text-gray-800" : "text-gray-700")}>非公開</p>
+                      <p className="text-xs text-gray-500">下書き状態で保存します</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -345,6 +443,7 @@ export default function NewEventTypePage() {
               面接に参加するメンバーの役割と配分を設定します
             </p>
             <div className="mt-6 space-y-5">
+              {/* Scheduling mode */}
               <div>
                 <label className="label">スケジューリングモード</label>
                 <div className="mt-2 grid grid-cols-2 gap-3">
@@ -387,19 +486,151 @@ export default function NewEventTypePage() {
                     </p>
                   </button>
                 </div>
+                <div className="mt-3 rounded-2xl bg-gray-50 p-4">
+                  <p className="text-sm text-gray-600">
+                    {formData.scheduling_mode === "fixed"
+                      ? "固定モードでは、全メンバーの空き時間が一致する枠のみが候補者に表示されます。少人数の面接に適しています。"
+                      : "プールモードでは、役割ごとに必要人数を設定し、条件を満たす枠が自動で選出されます。大人数の面接パネルに適しています。"}
+                  </p>
+                </div>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-600">
-                  {formData.scheduling_mode === "fixed"
-                    ? "固定モードでは、全メンバーの空き時間が一致する枠のみが候補者に表示されます。少人数の面接に適しています。"
-                    : "プールモードでは、役割ごとに必要人数を設定し、条件を満たす枠が自動で選出されます。大人数の面接パネルに適しています。"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center">
-                <Users className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-500">
-                  メンバーの追加は、イベントタイプ作成後の詳細設定画面で行えます
-                </p>
+
+              {/* Roles and members */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="label">役割とメンバー</label>
+                  <button
+                    onClick={addRole}
+                    className="btn-secondary text-sm"
+                  >
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    役割を追加
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {roles.map((role) => (
+                    <div
+                      key={role.id}
+                      className="rounded-2xl border border-gray-200 p-4"
+                    >
+                      {/* Role header */}
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          className="input flex-1"
+                          value={role.name}
+                          onChange={(e) =>
+                            updateRole(role.id, { name: e.target.value })
+                          }
+                          placeholder="役割名（例: 面接官）"
+                        />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                          <input
+                            type="number"
+                            className="input w-16 text-center"
+                            value={role.required_count}
+                            onChange={(e) =>
+                              updateRole(role.id, {
+                                required_count: parseInt(e.target.value) || 1,
+                              })
+                            }
+                            min={1}
+                          />
+                        </div>
+                        {roles.length > 1 && (
+                          <button
+                            onClick={() => removeRole(role.id)}
+                            className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Members */}
+                      <div className="mt-3">
+                        <div className="flex flex-wrap gap-2">
+                          {role.memberIds.map((userId) => {
+                            const user = mockUsers.find((u) => u.id === userId);
+                            return (
+                              <div
+                                key={userId}
+                                className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                              >
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                                  {user?.full_name.charAt(0) || "?"}
+                                </div>
+                                <span className="text-sm text-gray-700">
+                                  {user?.full_name || userId}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    removeMemberFromRole(role.id, userId)
+                                  }
+                                  className="text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+
+                          {/* Add member dropdown */}
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setMemberDropdownOpen(
+                                  memberDropdownOpen === role.id
+                                    ? null
+                                    : role.id
+                                )
+                              }
+                              className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <Plus className="h-3 w-3" />
+                              メンバー追加
+                              <ChevronDown className="h-3 w-3" />
+                            </button>
+
+                            {memberDropdownOpen === role.id && (
+                              <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                {mockUsers
+                                  .filter(
+                                    (u) => !role.memberIds.includes(u.id)
+                                  )
+                                  .map((user) => (
+                                    <button
+                                      key={user.id}
+                                      onClick={() =>
+                                        addMemberToRole(role.id, user.id)
+                                      }
+                                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                        {user.full_name.charAt(0)}
+                                      </div>
+                                      <div className="text-left min-w-0">
+                                        <p className="font-medium truncate">{user.full_name}</p>
+                                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                {mockUsers.filter(
+                                  (u) => !role.memberIds.includes(u.id)
+                                ).length === 0 && (
+                                  <p className="px-3 py-2 text-sm text-gray-400">
+                                    追加できるメンバーがいません
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -412,15 +643,13 @@ export default function NewEventTypePage() {
               設定内容の確認
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              以下の内容でイベントタイプを作成します
+              以下の内容でイベントを作成します
             </p>
             <div className="mt-6 space-y-4">
               <div className="rounded-2xl bg-gray-50 p-4">
                 <dl className="space-y-3">
                   <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">
-                      イベントタイプ名
-                    </dt>
+                    <dt className="text-sm text-gray-500">イベント名</dt>
                     <dd className="flex items-center gap-2 text-sm font-medium text-gray-900">
                       <div
                         className="h-3 w-3 rounded-full"
@@ -467,8 +696,78 @@ export default function NewEventTypePage() {
                         : "プールモード"}
                     </dd>
                   </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">公開設定</dt>
+                    <dd className="flex items-center gap-1.5 text-sm font-medium">
+                      {formData.isPublic ? (
+                        <>
+                          <Globe className="h-3.5 w-3.5 text-green-600" />
+                          <span className="text-green-700">公開</span>
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="h-3.5 w-3.5 text-gray-500" />
+                          <span className="text-gray-600">非公開（下書き）</span>
+                        </>
+                      )}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">チームメンバー</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {totalMembers}人（{roles.length}役割）
+                    </dd>
+                  </div>
                 </dl>
               </div>
+
+              {/* Team summary */}
+              {roles.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                    チーム構成
+                  </p>
+                  {roles.map((role) => (
+                    <div
+                      key={role.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
+                    >
+                      <div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {role.name || "（未入力）"}
+                        </span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          必要人数: {role.required_count}人
+                        </span>
+                      </div>
+                      <div className="flex -space-x-1">
+                        {role.memberIds.slice(0, 4).map((userId) => {
+                          const user = mockUsers.find((u) => u.id === userId);
+                          return (
+                            <div
+                              key={userId}
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 ring-2 ring-white"
+                              title={user?.full_name}
+                            >
+                              {user?.full_name.charAt(0) || "?"}
+                            </div>
+                          );
+                        })}
+                        {role.memberIds.length > 4 && (
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 ring-2 ring-white">
+                            +{role.memberIds.length - 4}
+                          </div>
+                        )}
+                        {role.memberIds.length === 0 && (
+                          <span className="text-xs text-gray-400">
+                            メンバーなし
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -487,7 +786,7 @@ export default function NewEventTypePage() {
           </button>
           {step === "confirm" ? (
             <button onClick={handleCreate} className="btn-primary">
-              イベントタイプを作成
+              イベントを作成
             </button>
           ) : (
             <button

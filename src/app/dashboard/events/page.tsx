@@ -9,10 +9,9 @@ import {
   Clock,
   MapPin,
   Users,
-  Trash2,
 } from "lucide-react";
 import { mockRoles, mockMembers } from "@/lib/mock-data";
-import { getEventTypes, deleteEventType, subscribe } from "@/lib/event-store";
+import { getEventTypes, subscribe } from "@/lib/event-store";
 import { cn } from "@/lib/utils";
 
 function useEventTypes() {
@@ -22,24 +21,18 @@ function useEventTypes() {
 export default function EventsPage() {
   const eventTypes = useEventTypes();
 
-  function handleDelete(id: string, title: string) {
-    if (window.confirm(`「${title}」を削除してもよろしいですか？`)) {
-      deleteEventType(id);
-    }
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">イベントタイプ</h1>
+          <h1 className="text-xl font-bold text-gray-900">イベント</h1>
           <p className="mt-0.5 text-sm text-gray-500">
-            面接や面談のイベントタイプを管理します
+            面接や面談のイベントを管理します
           </p>
         </div>
         <Link href="/dashboard/events/new" className="btn-primary">
           <Plus className="mr-1.5 h-4 w-4" />
-          新規イベントタイプ作成
+          新規イベント作成
         </Link>
       </div>
 
@@ -49,14 +42,14 @@ export default function EventsPage() {
             <Plus className="h-6 w-6 text-gray-400" />
           </div>
           <h3 className="mt-4 text-sm font-semibold text-gray-900">
-            イベントタイプがありません
+            イベントがありません
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            新しいイベントタイプを作成して面接日程の調整を始めましょう
+            新しいイベントを作成して面接日程の調整を始めましょう
           </p>
           <Link href="/dashboard/events/new" className="btn-primary mt-4">
             <Plus className="mr-1.5 h-4 w-4" />
-            新規イベントタイプ作成
+            新規イベント作成
           </Link>
         </div>
       ) : (
@@ -110,13 +103,6 @@ export default function EventsPage() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDelete(event.id, event.title)}
-                    className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                    title="削除"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
 
                 {event.description && (
@@ -160,6 +146,12 @@ export default function EventsPage() {
                   >
                     <ExternalLink className="h-3 w-3" />
                     プレビュー
+                  </Link>
+                  <Link
+                    href={`/dashboard/events/${event.id}`}
+                    className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50"
+                  >
+                    編集
                   </Link>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -15,6 +15,9 @@ import {
   Plus,
   Trash2,
   GripVertical,
+  Lock,
+  Globe,
+  EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +28,7 @@ import {
   mockCustomFields,
   mockUsers,
 } from "@/lib/mock-data";
+import { deleteEventType } from "@/lib/event-store";
 import type {
   EventRole,
   EventMember,
@@ -43,6 +47,7 @@ const tabs: { id: TabId; label: string; icon: typeof Settings }[] = [
 
 export default function EventDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const eventId = params.eventId as string;
   const [activeTab, setActiveTab] = useState<TabId>("basic");
 
@@ -56,6 +61,13 @@ export default function EventDetailPage() {
   const customFields = mockCustomFields.filter(
     (f) => f.event_id === eventId
   );
+
+  function handleDelete() {
+    if (window.confirm(`「${event!.title}」を削除してもよろしいですか？`)) {
+      deleteEventType(eventId);
+      router.push("/dashboard/events");
+    }
+  }
 
   if (!event) {
     return (
@@ -109,6 +121,13 @@ export default function EventDetailPage() {
             <ExternalLink className="mr-1.5 h-4 w-4" />
             プレビュー
           </Link>
+          <button
+            onClick={handleDelete}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 ring-1 ring-inset ring-red-200 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+            削除
+          </button>
         </div>
 
         {/* Tabs */}
@@ -221,6 +240,8 @@ export default function EventDetailPage() {
 // --- Tab Components ---
 
 function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
+  const [isPublic, setIsPublic] = useState(event.status === "active");
+
   return (
     <div className="space-y-5">
       <div>
@@ -278,6 +299,44 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           />
         </div>
       </div>
+
+      {/* Visibility */}
+      <div>
+        <label className="label">公開設定</label>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setIsPublic(true)}
+            className={cn(
+              "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+              isPublic
+                ? "border-green-500 bg-green-50"
+                : "border-gray-200 hover:border-gray-300"
+            )}
+          >
+            <Globe className={cn("h-5 w-5", isPublic ? "text-green-600" : "text-gray-400")} />
+            <div>
+              <p className={cn("font-semibold text-sm", isPublic ? "text-green-800" : "text-gray-700")}>公開</p>
+              <p className="text-xs text-gray-500">候補者が予約できます</p>
+            </div>
+          </button>
+          <button
+            onClick={() => setIsPublic(false)}
+            className={cn(
+              "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+              !isPublic
+                ? "border-gray-500 bg-gray-50"
+                : "border-gray-200 hover:border-gray-300"
+            )}
+          >
+            <EyeOff className={cn("h-5 w-5", !isPublic ? "text-gray-600" : "text-gray-400")} />
+            <div>
+              <p className={cn("font-semibold text-sm", !isPublic ? "text-gray-800" : "text-gray-700")}>非公開</p>
+              <p className="text-xs text-gray-500">下書き状態で保存します</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <div className="flex justify-end pt-4">
         <button className="btn-primary">変更を保存</button>
       </div>
@@ -288,24 +347,58 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
 function TeamTab({
   roles,
   members,
-  mode,
+  mode: initialMode,
 }: {
   roles: EventRole[];
   members: EventMember[];
   mode: string;
 }) {
+  const [mode, setMode] = useState(initialMode);
+
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-900">チームメンバー</h3>
-          <p className="text-sm text-gray-500">
-            モード:{" "}
-            <span className="font-medium">
-              {mode === "fixed" ? "固定モード" : "プールモード（自動アサイン）"}
-            </span>
-          </p>
+      {/* Mode selector */}
+      <div className="mb-6">
+        <h3 className="font-semibold text-gray-900 mb-1">チームメンバー</h3>
+        <p className="text-sm text-gray-500 mb-4">スケジューリングモードとメンバーを管理します</p>
+        <label className="label">スケジューリングモード</label>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setMode("fixed")}
+            className={cn(
+              "rounded-2xl border-2 p-4 text-left transition-all",
+              mode === "fixed"
+                ? "border-primary-600 bg-primary-50"
+                : "border-gray-200 hover:border-gray-300"
+            )}
+          >
+            <Lock className={cn("h-5 w-5", mode === "fixed" ? "text-primary-600" : "text-gray-400")} />
+            <h4 className="mt-2 font-semibold text-gray-900">固定モード</h4>
+            <p className="mt-1 text-xs text-gray-500">
+              指定メンバー全員が空いている枠のみ表示
+            </p>
+          </button>
+          <button
+            onClick={() => setMode("pool")}
+            className={cn(
+              "rounded-2xl border-2 p-4 text-left transition-all",
+              mode === "pool"
+                ? "border-primary-600 bg-primary-50"
+                : "border-gray-200 hover:border-gray-300"
+            )}
+          >
+            <Users className={cn("h-5 w-5", mode === "pool" ? "text-primary-600" : "text-gray-400")} />
+            <h4 className="mt-2 font-semibold text-gray-900">プールモード</h4>
+            <p className="mt-1 text-xs text-gray-500">
+              役割ごとに必要人数を満たす枠を自動選出
+            </p>
+          </button>
         </div>
+      </div>
+
+      {/* Roles and members */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-medium text-gray-700">役割とメンバー</p>
         <button className="btn-secondary text-sm">
           <Plus className="mr-1.5 h-4 w-4" />
           役割を追加
@@ -363,6 +456,10 @@ function TeamTab({
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <button className="btn-primary">変更を保存</button>
       </div>
     </div>
   );
