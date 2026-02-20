@@ -4,18 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Calendar,
-  LayoutDashboard,
+  Activity,
   CalendarPlus,
   Users,
   Settings,
   LogOut,
-  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
-  { name: "イベントタイプ", href: "/dashboard/events", icon: CalendarPlus },
+  { name: "アクティビティ", href: "/dashboard/activity", icon: Activity },
+  { name: "イベント", href: "/dashboard/events", icon: CalendarPlus },
   { name: "予約一覧", href: "/dashboard/bookings", icon: Calendar },
   { name: "チームメンバー", href: "/dashboard/team", icon: Users },
   { name: "設定", href: "/dashboard/settings", icon: Settings },
@@ -34,23 +33,12 @@ export function Sidebar() {
         <span className="text-base font-bold text-gray-900">SyncPro HR</span>
       </div>
 
-      {/* Main CTA: New Event */}
-      <div className="px-3 pt-3">
-        <Link
-          href="/dashboard/new-event"
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800"
-        >
-          <Plus className="h-4 w-4" />
-          新規イベント作成
-        </Link>
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 space-y-0.5 px-3 py-3">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            pathname.startsWith(item.href + "/");
 
           return (
             <Link
