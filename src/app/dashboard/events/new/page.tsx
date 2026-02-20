@@ -15,8 +15,25 @@ import {
   Globe,
   EyeOff,
   ChevronDown,
-  ChevronUp,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { cn, generateId } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
@@ -43,6 +60,53 @@ type NewRole = {
   required_count: number;
   memberIds: string[];
 };
+
+// --- Shared Sortable Row component ---
+
+function SortableRow({
+  id,
+  children,
+}: {
+  id: string;
+  children: (handle: React.ReactNode) => React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const handle = (
+    <button
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      className="cursor-grab active:cursor-grabbing touch-none rounded p-0.5 text-gray-300 hover:text-gray-500 transition-colors shrink-0"
+      title="ドラッグして並び替え"
+    >
+      <GripVertical className="h-4 w-4" />
+    </button>
+  );
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={isDragging ? "relative z-50 opacity-50 bg-white shadow-md rounded-xl" : ""}
+    >
+      {children(handle)}
+    </div>
+  );
+}
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -203,6 +267,48 @@ export default function NewEventPage() {
 
   function removeExclusionRule(id: string) {
     setNewExclusionRules(newExclusionRules.filter((r) => r.id !== id));
+  }
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleFixedMemberDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setFixedMemberIds((ids) => {
+        const oldIndex = ids.indexOf(active.id as string);
+        const newIndex = ids.indexOf(over.id as string);
+        return arrayMove(ids, oldIndex, newIndex);
+      });
+    }
+  }
+
+  function handleRoleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setRoles((roles) => {
+        const oldIndex = roles.findIndex((r) => r.id === active.id);
+        const newIndex = roles.findIndex((r) => r.id === over.id);
+        return arrayMove(roles, oldIndex, newIndex);
+      });
+    }
+  }
+
+  function handleRoleMemberDragEnd(event: DragEndEvent, roleId: string) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setRoles((roles) =>
+        roles.map((r) => {
+          if (r.id !== roleId) return r;
+          const oldIndex = r.memberIds.indexOf(active.id as string);
+          const newIndex = r.memberIds.indexOf(over.id as string);
+          return { ...r, memberIds: arrayMove(r.memberIds, oldIndex, newIndex) };
+        })
+      );
+    }
   }
 
   const colors = [
@@ -559,63 +665,50 @@ export default function NewEventPage() {
                 </div>
               </div>
 
-              {/* Members (fixed mode) or Roles and members (pool mode) */}
+              {/* Fixed mode */}
               {formData.scheduling_mode === "fixed" ? (
                 <div>
                   <label className="label">メンバー</label>
                   <div className="mt-2 rounded-2xl border border-gray-200 p-4">
                     <div className="space-y-2">
-                      {fixedMemberIds.map((userId, index) => {
-                        const user = mockUsers.find((u) => u.id === userId);
-                        return (
-                          <div
-                            key={userId}
-                            className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5"
-                          >
-                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
-                              {index + 1}
-                            </span>
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                              {user?.full_name.charAt(0) || "?"}
-                            </div>
-                            <span className="flex-1 text-sm text-gray-700">
-                              {user?.full_name || userId}
-                            </span>
-                            <div className="flex flex-col gap-0.5 shrink-0">
-                              <button
-                                onClick={() => {
-                                  if (index === 0) return;
-                                  const updated = [...fixedMemberIds];
-                                  [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
-                                  setFixedMemberIds(updated);
-                                }}
-                                disabled={index === 0}
-                                className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              >
-                                <ChevronUp className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (index === fixedMemberIds.length - 1) return;
-                                  const updated = [...fixedMemberIds];
-                                  [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
-                                  setFixedMemberIds(updated);
-                                }}
-                                disabled={index === fixedMemberIds.length - 1}
-                                className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              >
-                                <ChevronDown className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => removeFixedMember(userId)}
-                              className="text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleFixedMemberDragEnd}
+                      >
+                        <SortableContext
+                          items={fixedMemberIds}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {fixedMemberIds.map((userId, index) => {
+                            const user = mockUsers.find((u) => u.id === userId);
+                            return (
+                              <SortableRow key={userId} id={userId}>
+                                {(handle) => (
+                                  <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+                                    {handle}
+                                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
+                                      {index + 1}
+                                    </span>
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                      {user?.full_name.charAt(0) || "?"}
+                                    </div>
+                                    <span className="flex-1 text-sm text-gray-700">
+                                      {user?.full_name || userId}
+                                    </span>
+                                    <button
+                                      onClick={() => removeFixedMember(userId)}
+                                      className="text-gray-400 hover:text-red-500 transition-colors"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
+                              </SortableRow>
+                            );
+                          })}
+                        </SortableContext>
+                      </DndContext>
 
                       {/* Add member dropdown */}
                       <div className="relative">
@@ -659,197 +752,165 @@ export default function NewEventPage() {
                   </div>
                 </div>
               ) : (
+                /* Pool mode */
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="label">役割とメンバー</label>
                   </div>
                   <div className="space-y-3">
-                    {roles.map((role, roleIndex) => (
-                      <div
-                        key={role.id}
-                        className="rounded-2xl border border-gray-200 p-4"
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleRoleDragEnd}
+                    >
+                      <SortableContext
+                        items={roles.map((r) => r.id)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        {/* Role header */}
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
-                            {roleIndex + 1}
-                          </span>
-                          <input
-                            type="text"
-                            className="input flex-1"
-                            value={role.name}
-                            onChange={(e) =>
-                              updateRole(role.id, { name: e.target.value })
-                            }
-                            placeholder="役割名（例: 面接官）"
-                          />
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              onClick={() => {
-                                const idx = roleIndex;
-                                if (idx === 0) return;
-                                const updated = [...roles];
-                                [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
-                                setRoles(updated);
-                              }}
-                              disabled={roleIndex === 0}
-                              className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <ChevronUp className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                const idx = roleIndex;
-                                if (idx === roles.length - 1) return;
-                                const updated = [...roles];
-                                [updated[idx], updated[idx + 1]] = [updated[idx + 1], updated[idx]];
-                                setRoles(updated);
-                              }}
-                              disabled={roleIndex === roles.length - 1}
-                              className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
-                            <input
-                              type="number"
-                              className="input w-16 text-center"
-                              value={role.required_count}
-                              onChange={(e) =>
-                                updateRole(role.id, {
-                                  required_count: parseInt(e.target.value) || 1,
-                                })
-                              }
-                              min={1}
-                            />
-                          </div>
-                          {roles.length > 1 && (
-                            <button
-                              onClick={() => removeRole(role.id)}
-                              className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Members */}
-                        <div className="mt-3 space-y-2">
-                          {role.memberIds.map((userId, memberIndex) => {
-                            const user = mockUsers.find((u) => u.id === userId);
-                            return (
-                              <div
-                                key={userId}
-                                className="flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-2"
-                              >
-                                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
-                                  {memberIndex + 1}
-                                </span>
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                  {user?.full_name.charAt(0) || "?"}
-                                </div>
-                                <span className="flex-1 text-sm text-gray-700">
-                                  {user?.full_name || userId}
-                                </span>
-                                <div className="flex flex-col gap-0.5 shrink-0">
-                                  <button
-                                    onClick={() => {
-                                      if (memberIndex === 0) return;
-                                      setRoles(roles.map((r) => {
-                                        if (r.id !== role.id) return r;
-                                        const ids = [...r.memberIds];
-                                        [ids[memberIndex - 1], ids[memberIndex]] = [ids[memberIndex], ids[memberIndex - 1]];
-                                        return { ...r, memberIds: ids };
-                                      }));
-                                    }}
-                                    disabled={memberIndex === 0}
-                                    className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                  >
-                                    <ChevronUp className="h-3 w-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (memberIndex === role.memberIds.length - 1) return;
-                                      setRoles(roles.map((r) => {
-                                        if (r.id !== role.id) return r;
-                                        const ids = [...r.memberIds];
-                                        [ids[memberIndex], ids[memberIndex + 1]] = [ids[memberIndex + 1], ids[memberIndex]];
-                                        return { ...r, memberIds: ids };
-                                      }));
-                                    }}
-                                    disabled={memberIndex === role.memberIds.length - 1}
-                                    className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                  >
-                                    <ChevronDown className="h-3 w-3" />
-                                  </button>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    removeMemberFromRole(role.id, userId)
-                                  }
-                                  className="text-gray-400 hover:text-red-500 transition-colors"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              </div>
-                            );
-                          })}
-
-                          {/* Add member dropdown */}
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setMemberDropdownOpen(
-                                  memberDropdownOpen === role.id
-                                    ? null
-                                    : role.id
-                                )
-                              }
-                              className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                              <Plus className="h-3 w-3" />
-                              メンバー追加
-                              <ChevronDown className="h-3 w-3" />
-                            </button>
-
-                            {memberDropdownOpen === role.id && (
-                              <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                {mockUsers
-                                  .filter(
-                                    (u) => !role.memberIds.includes(u.id)
-                                  )
-                                  .map((user) => (
-                                    <button
-                                      key={user.id}
-                                      onClick={() =>
-                                        addMemberToRole(role.id, user.id)
+                        {roles.map((role, roleIndex) => (
+                          <SortableRow key={role.id} id={role.id}>
+                            {(handle) => (
+                              <div className="rounded-2xl border border-gray-200 p-4">
+                                {/* Role header */}
+                                <div className="flex items-center gap-3">
+                                  {handle}
+                                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
+                                    {roleIndex + 1}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    className="input flex-1"
+                                    value={role.name}
+                                    onChange={(e) =>
+                                      updateRole(role.id, { name: e.target.value })
+                                    }
+                                    placeholder="役割名（例: 面接官）"
+                                  />
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                                    <input
+                                      type="number"
+                                      className="input w-16 text-center"
+                                      value={role.required_count}
+                                      onChange={(e) =>
+                                        updateRole(role.id, {
+                                          required_count: parseInt(e.target.value) || 1,
+                                        })
                                       }
-                                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                      min={1}
+                                    />
+                                  </div>
+                                  {roles.length > 1 && (
+                                    <button
+                                      onClick={() => removeRole(role.id)}
+                                      className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
                                     >
-                                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                        {user.full_name.charAt(0)}
-                                      </div>
-                                      <div className="text-left min-w-0">
-                                        <p className="font-medium truncate">{user.full_name}</p>
-                                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                                      </div>
+                                      <Trash2 className="h-4 w-4" />
                                     </button>
-                                  ))}
-                                {mockUsers.filter(
-                                  (u) => !role.memberIds.includes(u.id)
-                                ).length === 0 && (
-                                    <p className="px-3 py-2 text-sm text-gray-400">
-                                      追加できるメンバーがいません
-                                    </p>
                                   )}
+                                </div>
+
+                                {/* Members */}
+                                <div className="mt-3 space-y-2">
+                                  <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={(e) => handleRoleMemberDragEnd(e, role.id)}
+                                  >
+                                    <SortableContext
+                                      items={role.memberIds}
+                                      strategy={verticalListSortingStrategy}
+                                    >
+                                      {role.memberIds.map((userId, memberIndex) => {
+                                        const user = mockUsers.find((u) => u.id === userId);
+                                        return (
+                                          <SortableRow key={userId} id={userId}>
+                                            {(memberHandle) => (
+                                              <div className="flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-2">
+                                                {memberHandle}
+                                                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
+                                                  {memberIndex + 1}
+                                                </span>
+                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                                  {user?.full_name.charAt(0) || "?"}
+                                                </div>
+                                                <span className="flex-1 text-sm text-gray-700">
+                                                  {user?.full_name || userId}
+                                                </span>
+                                                <button
+                                                  onClick={() =>
+                                                    removeMemberFromRole(role.id, userId)
+                                                  }
+                                                  className="text-gray-400 hover:text-red-500 transition-colors"
+                                                >
+                                                  <Trash2 className="h-3 w-3" />
+                                                </button>
+                                              </div>
+                                            )}
+                                          </SortableRow>
+                                        );
+                                      })}
+                                    </SortableContext>
+                                  </DndContext>
+
+                                  {/* Add member dropdown */}
+                                  <div className="relative">
+                                    <button
+                                      onClick={() =>
+                                        setMemberDropdownOpen(
+                                          memberDropdownOpen === role.id
+                                            ? null
+                                            : role.id
+                                        )
+                                      }
+                                      className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                      メンバー追加
+                                      <ChevronDown className="h-3 w-3" />
+                                    </button>
+
+                                    {memberDropdownOpen === role.id && (
+                                      <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                        {mockUsers
+                                          .filter(
+                                            (u) => !role.memberIds.includes(u.id)
+                                          )
+                                          .map((user) => (
+                                            <button
+                                              key={user.id}
+                                              onClick={() =>
+                                                addMemberToRole(role.id, user.id)
+                                              }
+                                              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                                {user.full_name.charAt(0)}
+                                              </div>
+                                              <div className="text-left min-w-0">
+                                                <p className="font-medium truncate">{user.full_name}</p>
+                                                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                              </div>
+                                            </button>
+                                          ))}
+                                        {mockUsers.filter(
+                                          (u) => !role.memberIds.includes(u.id)
+                                        ).length === 0 && (
+                                            <p className="px-3 py-2 text-sm text-gray-400">
+                                              追加できるメンバーがいません
+                                            </p>
+                                          )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                          </SortableRow>
+                        ))}
+                      </SortableContext>
+                    </DndContext>
+
                     <button
                       onClick={addRole}
                       className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
