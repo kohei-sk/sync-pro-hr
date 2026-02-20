@@ -202,8 +202,8 @@ export default function NewEventPage() {
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
-                    ? "bg-primary-100 text-primary-700 ring-2 ring-primary-600"
-                    : "bg-gray-100 text-gray-400"
+                      ? "bg-primary-100 text-primary-700 ring-2 ring-primary-600"
+                      : "bg-gray-100 text-gray-400"
                 )}
               >
                 {i + 1}
@@ -401,8 +401,8 @@ export default function NewEventPage() {
                       formData.location_type === "online"
                         ? "Google Meet / Zoom URL"
                         : formData.location_type === "in-person"
-                        ? "会議室名や住所"
-                        : "電話番号"
+                          ? "会議室名や住所"
+                          : "電話番号"
                     }
                   />
                 </div>
@@ -586,9 +586,9 @@ export default function NewEventPage() {
                     <label className="label">役割とメンバー</label>
                     <button
                       onClick={addRole}
-                      className="btn-secondary text-sm"
+                      className="btn-tertiary"
                     >
-                      <Plus className="mr-1.5 h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                       役割を追加
                     </button>
                   </div>
@@ -704,10 +704,10 @@ export default function NewEventPage() {
                                   {mockUsers.filter(
                                     (u) => !role.memberIds.includes(u.id)
                                   ).length === 0 && (
-                                    <p className="px-3 py-2 text-sm text-gray-400">
-                                      追加できるメンバーがいません
-                                    </p>
-                                  )}
+                                      <p className="px-3 py-2 text-sm text-gray-400">
+                                        追加できるメンバーがいません
+                                      </p>
+                                    )}
                                 </div>
                               )}
                             </div>
@@ -768,8 +768,8 @@ export default function NewEventPage() {
                       {formData.location_type === "online"
                         ? "オンライン"
                         : formData.location_type === "in-person"
-                        ? "対面"
-                        : "電話"}
+                          ? "対面"
+                          : "電話"}
                       {formData.location_detail &&
                         ` (${formData.location_detail})`}
                     </dd>
@@ -900,11 +900,11 @@ export default function NewEventPage() {
           <button
             onClick={handleBack}
             className={cn(
-              "btn-secondary",
+              "btn-tertiary",
               currentStepIndex === 0 && "invisible"
             )}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             戻る
           </button>
           {step === "confirm" ? (
@@ -918,7 +918,7 @@ export default function NewEventPage() {
               className="btn-primary"
             >
               次へ
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           )}
         </div>

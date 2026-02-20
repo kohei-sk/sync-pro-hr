@@ -64,17 +64,17 @@ export default function BookingsPage() {
     confirmed: {
       label: "確定",
       icon: CheckCircle2,
-      className: "badge-success",
+      className: "badge badge-green",
     },
     pending: {
       label: "保留",
       icon: AlertCircle,
-      className: "badge-warning",
+      className: "badge badge-yellow",
     },
     cancelled: {
       label: "キャンセル",
       icon: XCircle,
-      className: "badge-danger",
+      className: "badge badge-red",
     },
   };
 
@@ -224,7 +224,7 @@ export default function BookingsPage() {
                         {booking.candidate_name}
                       </span>
                       <span className={statusInfo.className}>
-                        <StatusIcon className="mr-1 h-3 w-3" />
+                        <StatusIcon className="h-3 w-3" />
                         {statusInfo.label}
                       </span>
                     </div>
@@ -324,12 +324,12 @@ export default function BookingsPage() {
                     {/* Actions */}
                     {booking.status !== "cancelled" && (
                       <div className="mt-4 flex gap-2 border-t border-gray-200/60 pt-3">
-                        <button className="btn-ghost !py-1.5 !px-3 !text-xs">
-                          <MapPin className="mr-1 h-3 w-3" />
+                        <button className="btn-ghost btn-size-s">
+                          <MapPin className="h-3 w-3" />
                           リスケジュール
                         </button>
-                        <button className="btn-ghost !py-1.5 !px-3 !text-xs text-red-600 hover:!text-red-700 hover:!bg-red-50">
-                          <XCircle className="mr-1 h-3 w-3" />
+                        <button className="btn-ghost-danger btn-size-s">
+                          <XCircle className="h-3 w-3" />
                           キャンセル
                         </button>
                       </div>

@@ -95,7 +95,7 @@ export default function TeamPage() {
           </p>
         </div>
         <button className="btn-primary">
-          <Plus className="mr-1.5 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           メンバー招待
         </button>
       </div>

@@ -101,7 +101,7 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
               田
             </div>
             <div>
-              <button className="btn-secondary !py-1.5 !px-3 !text-xs">
+              <button className="btn-tertiary btn-size-s">
                 画像を変更
               </button>
               <p className="mt-1 text-xs text-gray-400">
@@ -150,8 +150,8 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
         </div>
 
         <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-          <button onClick={onSave} className="btn-primary !py-2 !px-4">
-            <Save className="mr-1.5 h-4 w-4" />
+          <button onClick={onSave} className="btn-primary">
+            <Save className="h-4 w-4" />
             保存
           </button>
         </div>
@@ -184,7 +184,7 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
           </div>
         </div>
         <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-          <button onClick={onSave} className="btn-secondary !py-2 !px-4">
+          <button onClick={onSave} className="btn-tertiary">
             パスワードを変更
           </button>
         </div>
@@ -285,8 +285,8 @@ function NotificationsTab({ onSave }: { onSave: () => void }) {
       </div>
 
       <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-        <button onClick={onSave} className="btn-primary !py-2 !px-4">
-          <Save className="mr-1.5 h-4 w-4" />
+        <button onClick={onSave} className="btn-primary">
+          <Save className="h-4 w-4" />
           保存
         </button>
       </div>
@@ -357,7 +357,7 @@ function CalendarTab() {
                     {integration.name}
                   </h3>
                   {integration.connected && (
-                    <span className="badge-success">
+                    <span className="badge badge-green">
                       <CheckCircle2 className="mr-1 h-3 w-3" />
                       接続済み
                     </span>
@@ -372,15 +372,15 @@ function CalendarTab() {
               <button
                 className={cn(
                   integration.connected
-                    ? "btn-ghost !py-1.5 !px-3 !text-xs text-red-600 hover:!text-red-700 hover:!bg-red-50"
-                    : "btn-secondary !py-1.5 !px-3 !text-xs"
+                    ? "btn-ghost-danger btn-size-s"
+                    : "btn-tertiary btn-size-s"
                 )}
               >
                 {integration.connected ? (
                   "接続解除"
                 ) : (
                   <>
-                    <Link2 className="mr-1 h-3 w-3" />
+                    <Link2 className="h-3 w-3" />
                     接続
                   </>
                 )}
@@ -518,8 +518,8 @@ function GeneralTab({ onSave }: { onSave: () => void }) {
       </div>
 
       <div className="flex justify-end">
-        <button onClick={onSave} className="btn-primary !py-2 !px-4">
-          <Save className="mr-1.5 h-4 w-4" />
+        <button onClick={onSave} className="btn-primary">
+          <Save className="h-4 w-4" />
           保存
         </button>
       </div>

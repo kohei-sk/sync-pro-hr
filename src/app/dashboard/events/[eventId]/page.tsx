@@ -103,27 +103,28 @@ export default function EventDetailPage() {
               </h1>
               <span
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  "badge",
                   event.status === "active"
-                    ? "bg-green-50 text-green-700"
-                    : "bg-gray-100 text-gray-600"
+                    ? "badge badge-green"
+                    : "badge badge-gray"
                 )}
               >
-                {event.status === "active" ? "公開中" : "下書き"}
+                {event.status === "active" ? "公開中" : "非公開"}
               </span>
             </div>
             <p className="mt-0.5 text-sm text-gray-500">{event.description}</p>
           </div>
           <Link
             href={`/j/${event.slug}`}
-            className="btn-secondary text-sm"
+            target="blank"
+            className="btn-tertiary"
           >
-            <ExternalLink className="mr-1.5 h-4 w-4" />
+            <ExternalLink className="h-4 w-4" />
             プレビュー
           </Link>
           <button
             onClick={handleDelete}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 ring-1 ring-inset ring-red-200 hover:bg-red-50 transition-colors"
+            className="btn-danger"
           >
             <Trash2 className="h-4 w-4" />
             削除
@@ -196,8 +197,8 @@ export default function EventDetailPage() {
                   {event.location_type === "online"
                     ? "オンライン"
                     : event.location_type === "in-person"
-                    ? "対面"
-                    : "電話"}
+                      ? "対面"
+                      : "電話"}
                 </span>
               </div>
             </div>
@@ -401,8 +402,8 @@ function TeamTab({
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-gray-700">メンバー</p>
-            <button className="btn-secondary text-sm">
-              <Plus className="mr-1.5 h-4 w-4" />
+            <button className="btn-tertiary">
+              <Plus className="h-4 w-4" />
               メンバーを追加
             </button>
           </div>
@@ -440,8 +441,8 @@ function TeamTab({
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-gray-700">役割とメンバー</p>
-            <button className="btn-secondary text-sm">
-              <Plus className="mr-1.5 h-4 w-4" />
+            <button className="btn-tertiary">
+              <Plus className="h-4 w-4" />
               役割を追加
             </button>
           </div>
@@ -520,8 +521,8 @@ function ExclusionsTab({ rules }: { rules: ExclusionRule[] }) {
             特定の日時をスケジュール対象外にします
           </p>
         </div>
-        <button className="btn-secondary text-sm">
-          <Plus className="mr-1.5 h-4 w-4" />
+        <button className="btn-tertiary">
+          <Plus className="h-4 w-4" />
           ルールを追加
         </button>
       </div>
@@ -595,8 +596,8 @@ function FormTab({ fields }: { fields: CustomField[] }) {
             候補者に入力してもらう項目を設定します
           </p>
         </div>
-        <button className="btn-secondary text-sm">
-          <Plus className="mr-1.5 h-4 w-4" />
+        <button className="btn-tertiary">
+          <Plus className="h-4 w-4" />
           項目を追加
         </button>
       </div>
