@@ -397,66 +397,109 @@ function TeamTab({
       </div>
 
       {/* Roles and members */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium text-gray-700">役割とメンバー</p>
-        <button className="btn-secondary text-sm">
-          <Plus className="mr-1.5 h-4 w-4" />
-          役割を追加
-        </button>
-      </div>
-      <div className="space-y-4">
-        {roles.map((role) => {
-          const roleMembers = members.filter((m) => m.role_id === role.id);
-          return (
-            <div
-              key={role.id}
-              className="rounded-2xl border border-gray-200 p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <GripVertical className="h-4 w-4 text-gray-300" />
-                  <div>
-                    <span className="font-medium text-gray-900">
-                      {role.name}
+      {mode === "fixed" ? (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">メンバー</p>
+            <button className="btn-secondary text-sm">
+              <Plus className="mr-1.5 h-4 w-4" />
+              メンバーを追加
+            </button>
+          </div>
+          <div className="rounded-2xl border border-gray-200 p-4">
+            <div className="flex flex-wrap gap-2">
+              {roles.flatMap((role) =>
+                members.filter((m) => m.role_id === role.id)
+              ).map((member) => {
+                const user = mockUsers.find((u) => u.id === member.user_id);
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                  >
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                      {user?.full_name.charAt(0) || "?"}
+                    </div>
+                    <span className="text-sm text-gray-700">
+                      {user?.full_name || "Unknown"}
                     </span>
-                    <span className="ml-2 text-sm text-gray-500">
-                      (必要人数: {role.required_count}人)
-                    </span>
+                    <button className="text-gray-400 hover:text-red-500">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+              <button className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600">
+                <Plus className="h-3 w-3" />
+                メンバー追加
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">役割とメンバー</p>
+            <button className="btn-secondary text-sm">
+              <Plus className="mr-1.5 h-4 w-4" />
+              役割を追加
+            </button>
+          </div>
+          <div className="space-y-4">
+            {roles.map((role) => {
+              const roleMembers = members.filter((m) => m.role_id === role.id);
+              return (
+                <div
+                  key={role.id}
+                  className="rounded-2xl border border-gray-200 p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <GripVertical className="h-4 w-4 text-gray-300" />
+                      <div>
+                        <span className="font-medium text-gray-900">
+                          {role.name}
+                        </span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          (必要人数: {role.required_count}人)
+                        </span>
+                      </div>
+                    </div>
+                    <button className="text-gray-400 hover:text-red-500">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {roleMembers.map((member) => {
+                      const user = mockUsers.find((u) => u.id === member.user_id);
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                        >
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                            {user?.full_name.charAt(0) || "?"}
+                          </div>
+                          <span className="text-sm text-gray-700">
+                            {user?.full_name || "Unknown"}
+                          </span>
+                          <button className="text-gray-400 hover:text-red-500">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    <button className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600">
+                      <Plus className="h-3 w-3" />
+                      メンバー追加
+                    </button>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-red-500">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {roleMembers.map((member) => {
-                  const user = mockUsers.find((u) => u.id === member.user_id);
-                  return (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
-                    >
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-                        {user?.full_name.charAt(0) || "?"}
-                      </div>
-                      <span className="text-sm text-gray-700">
-                        {user?.full_name || "Unknown"}
-                      </span>
-                      <button className="text-gray-400 hover:text-red-500">
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-                <button className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600">
-                  <Plus className="h-3 w-3" />
-                  メンバー追加
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 flex justify-end">
         <button className="btn-primary">変更を保存</button>
