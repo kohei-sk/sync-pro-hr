@@ -1,10 +1,12 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import {
   Plus,
   Copy,
+  Check,
+  CheckCircle2,
   ExternalLink,
   Clock,
   MapPin,
@@ -20,6 +22,20 @@ function useEventTypes() {
 
 export default function EventsPage() {
   const eventTypes = useEventTypes();
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
+  const [showCopyToast, setShowCopyToast] = useState(false);
+
+  function handleCopyLink(id: string, slug: string) {
+    const url = `${window.location.origin}/j/${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedEventId(id);
+      setShowCopyToast(true);
+      setTimeout(() => {
+        setCopiedEventId(null);
+        setShowCopyToast(false);
+      }, 2000);
+    });
+  }
 
   return (
     <div>
@@ -136,9 +152,21 @@ export default function EventsPage() {
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
-                  <button className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50">
-                    <Copy className="h-3 w-3" />
-                    リンクをコピー
+                  <button
+                    onClick={() => handleCopyLink(event.id, event.slug)}
+                    className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    {copiedEventId === event.id ? (
+                      <>
+                        <Check className="h-3 w-3 text-green-600" />
+                        <span className="text-green-700">コピーしました</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        リンクをコピー
+                      </>
+                    )}
                   </button>
                   <Link
                     href={`/j/${event.slug}`}
@@ -157,6 +185,13 @@ export default function EventsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {showCopyToast && (
+        <div className="toast">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium text-gray-700">リンクをコピーしました</span>
         </div>
       )}
     </div>

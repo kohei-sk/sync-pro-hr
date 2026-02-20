@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,12 +14,15 @@ import {
   MapPin,
   Plus,
   Trash2,
-  GripVertical,
   Lock,
   Globe,
   EyeOff,
+  CheckCircle2,
+  Pencil,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, generateId } from "@/lib/utils";
 import {
   mockEventTypes,
   mockRoles,
@@ -34,6 +37,7 @@ import type {
   EventMember,
   ExclusionRule,
   CustomField,
+  FieldType,
 } from "@/types";
 
 type TabId = "basic" | "team" | "exclusions" | "form";
@@ -158,10 +162,10 @@ export default function EventDetailPage() {
             <TeamTab roles={roles} members={members} mode={event.scheduling_mode} />
           )}
           {activeTab === "exclusions" && (
-            <ExclusionsTab rules={exclusionRules} />
+            <ExclusionsTab rules={exclusionRules} eventId={eventId} />
           )}
           {activeTab === "form" && (
-            <FormTab fields={customFields} />
+            <FormTab fields={customFields} eventId={eventId} />
           )}
         </div>
       </div>
@@ -354,6 +358,88 @@ function TeamTab({
   mode: string;
 }) {
   const [mode, setMode] = useState(initialMode);
+  const [saved, setSaved] = useState(false);
+
+  // Fixed mode: ordered list of user IDs
+  const initialFixedMemberIds = roles
+    .flatMap((role) => members.filter((m) => m.role_id === role.id))
+    .map((m) => m.user_id);
+  const [fixedMemberIds, setFixedMemberIds] = useState<string[]>(initialFixedMemberIds);
+
+  // Pool mode: ordered roles with ordered member IDs
+  const initialLocalRoles = [...roles]
+    .sort((a, b) => a.priority_order - b.priority_order)
+    .map((role) => ({
+      ...role,
+      memberIds: members
+        .filter((m) => m.role_id === role.id)
+        .map((m) => m.user_id),
+    }));
+  const [localRoles, setLocalRoles] = useState(initialLocalRoles);
+
+  function moveFixedMemberUp(index: number) {
+    if (index === 0) return;
+    const updated = [...fixedMemberIds];
+    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+    setFixedMemberIds(updated);
+  }
+
+  function moveFixedMemberDown(index: number) {
+    if (index === fixedMemberIds.length - 1) return;
+    const updated = [...fixedMemberIds];
+    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+    setFixedMemberIds(updated);
+  }
+
+  function removeFixedMember(userId: string) {
+    setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
+  }
+
+  function moveRoleUp(index: number) {
+    if (index === 0) return;
+    const updated = [...localRoles];
+    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+    setLocalRoles(updated.map((r, i) => ({ ...r, priority_order: i + 1 })));
+  }
+
+  function moveRoleDown(index: number) {
+    if (index === localRoles.length - 1) return;
+    const updated = [...localRoles];
+    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+    setLocalRoles(updated.map((r, i) => ({ ...r, priority_order: i + 1 })));
+  }
+
+  function moveMemberUpInRole(roleIndex: number, memberIndex: number) {
+    if (memberIndex === 0) return;
+    setLocalRoles(localRoles.map((r, ri) => {
+      if (ri !== roleIndex) return r;
+      const ids = [...r.memberIds];
+      [ids[memberIndex - 1], ids[memberIndex]] = [ids[memberIndex], ids[memberIndex - 1]];
+      return { ...r, memberIds: ids };
+    }));
+  }
+
+  function moveMemberDownInRole(roleIndex: number, memberIndex: number) {
+    if (memberIndex === localRoles[roleIndex].memberIds.length - 1) return;
+    setLocalRoles(localRoles.map((r, ri) => {
+      if (ri !== roleIndex) return r;
+      const ids = [...r.memberIds];
+      [ids[memberIndex], ids[memberIndex + 1]] = [ids[memberIndex + 1], ids[memberIndex]];
+      return { ...r, memberIds: ids };
+    }));
+  }
+
+  function removeMemberFromRole(roleIndex: number, userId: string) {
+    setLocalRoles(localRoles.map((r, ri) => {
+      if (ri !== roleIndex) return r;
+      return { ...r, memberIds: r.memberIds.filter((id) => id !== userId) };
+    }));
+  }
+
+  function handleSave() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
 
   return (
     <div>
@@ -400,40 +486,68 @@ function TeamTab({
       {mode === "fixed" ? (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">メンバー</p>
+            <p className="text-sm font-medium text-gray-700">
+              メンバー
+              <span className="ml-1.5 text-xs text-gray-400">（優先度順に上から並べてください）</span>
+            </p>
             <button className="btn-secondary text-sm">
               <Plus className="mr-1.5 h-4 w-4" />
               メンバーを追加
             </button>
           </div>
-          <div className="rounded-2xl border border-gray-200 p-4">
-            <div className="flex flex-wrap gap-2">
-              {roles.flatMap((role) =>
-                members.filter((m) => m.role_id === role.id)
-              ).map((member) => {
-                const user = mockUsers.find((u) => u.id === member.user_id);
+          <div className="rounded-2xl border border-gray-200 divide-y divide-gray-100">
+            {fixedMemberIds.length === 0 ? (
+              <div className="px-4 py-6 text-center text-sm text-gray-400">
+                メンバーを追加してください
+              </div>
+            ) : (
+              fixedMemberIds.map((userId, index) => {
+                const user = mockUsers.find((u) => u.id === userId);
                 return (
                   <div
-                    key={member.id}
-                    className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                    key={userId}
+                    className="flex items-center gap-3 px-4 py-3"
                   >
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
+                      {index + 1}
+                    </span>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
                       {user?.full_name.charAt(0) || "?"}
                     </div>
-                    <span className="text-sm text-gray-700">
-                      {user?.full_name || "Unknown"}
-                    </span>
-                    <button className="text-gray-400 hover:text-red-500">
-                      <Trash2 className="h-3 w-3" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user?.full_name || "Unknown"}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                    </div>
+                    <div className="flex flex-col gap-0.5 shrink-0">
+                      <button
+                        onClick={() => moveFixedMemberUp(index)}
+                        disabled={index === 0}
+                        className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="上へ"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => moveFixedMemberDown(index)}
+                        disabled={index === fixedMemberIds.length - 1}
+                        className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="下へ"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeFixedMember(userId)}
+                      className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 );
-              })}
-              <button className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600">
-                <Plus className="h-3 w-3" />
-                メンバー追加
-              </button>
-            </div>
+              })
+            )}
           </div>
         </div>
       ) : (
@@ -446,145 +560,580 @@ function TeamTab({
             </button>
           </div>
           <div className="space-y-4">
-            {roles.map((role) => {
-              const roleMembers = members.filter((m) => m.role_id === role.id);
-              return (
-                <div
-                  key={role.id}
-                  className="rounded-2xl border border-gray-200 p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="h-4 w-4 text-gray-300" />
-                      <div>
-                        <span className="font-medium text-gray-900">
-                          {role.name}
-                        </span>
-                        <span className="ml-2 text-sm text-gray-500">
-                          (必要人数: {role.required_count}人)
-                        </span>
-                      </div>
-                    </div>
-                    <button className="text-gray-400 hover:text-red-500">
+            {localRoles.map((role, roleIndex) => (
+              <div
+                key={role.id}
+                className="rounded-2xl border border-gray-200 p-4"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-1.5 text-xs font-semibold text-gray-600 shrink-0">
+                      {roleIndex + 1}
+                    </span>
+                    <span className="font-medium text-gray-900">{role.name}</span>
+                    <span className="text-sm text-gray-500">(必要人数: {role.required_count}人)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => moveRoleUp(roleIndex)}
+                      disabled={roleIndex === 0}
+                      className="rounded p-1 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="役割を上へ"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => moveRoleDown(roleIndex)}
+                      disabled={roleIndex === localRoles.length - 1}
+                      className="rounded p-1 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="役割を下へ"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button className="text-gray-400 hover:text-red-500 transition-colors ml-1">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {roleMembers.map((member) => {
-                      const user = mockUsers.find((u) => u.id === member.user_id);
+                </div>
+
+                <div className="rounded-xl border border-gray-100 divide-y divide-gray-50">
+                  {role.memberIds.length === 0 ? (
+                    <p className="px-3 py-3 text-sm text-gray-400 text-center">
+                      メンバーを追加してください
+                    </p>
+                  ) : (
+                    role.memberIds.map((userId, memberIndex) => {
+                      const user = mockUsers.find((u) => u.id === userId);
                       return (
                         <div
-                          key={member.id}
-                          className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                          key={userId}
+                          className="flex items-center gap-2 px-3 py-2.5"
                         >
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                          <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-1 text-xs font-semibold text-primary-600 shrink-0">
+                            {memberIndex + 1}
+                          </span>
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
                             {user?.full_name.charAt(0) || "?"}
                           </div>
-                          <span className="text-sm text-gray-700">
+                          <span className="flex-1 text-sm text-gray-700 truncate">
                             {user?.full_name || "Unknown"}
                           </span>
-                          <button className="text-gray-400 hover:text-red-500">
+                          <div className="flex flex-col gap-0.5 shrink-0">
+                            <button
+                              onClick={() => moveMemberUpInRole(roleIndex, memberIndex)}
+                              disabled={memberIndex === 0}
+                              className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ChevronUp className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => moveMemberDownInRole(roleIndex, memberIndex)}
+                              disabled={memberIndex === role.memberIds.length - 1}
+                              className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ChevronDown className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => removeMemberFromRole(roleIndex, userId)}
+                            className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                          >
                             <Trash2 className="h-3 w-3" />
                           </button>
                         </div>
                       );
-                    })}
-                    <button className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600">
-                      <Plus className="h-3 w-3" />
-                      メンバー追加
-                    </button>
-                  </div>
+                    })
+                  )}
+                  <button className="flex w-full items-center gap-1 px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                    <Plus className="h-3 w-3" />
+                    メンバー追加
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       <div className="mt-6 flex justify-end">
-        <button className="btn-primary">変更を保存</button>
+        <button onClick={handleSave} className="btn-primary">変更を保存</button>
       </div>
+
+      {saved && (
+        <div className="toast">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium text-gray-700">変更を保存しました</span>
+        </div>
+      )}
     </div>
   );
 }
 
-function ExclusionsTab({ rules }: { rules: ExclusionRule[] }) {
+type ExclusionDraft = {
+  name: string;
+  type: "all-day" | "time-range";
+  recurring: boolean;
+  day_of_week?: number;
+  specific_date?: string;
+  start_time?: string;
+  end_time?: string;
+};
+
+const EMPTY_EXCLUSION_DRAFT: ExclusionDraft = {
+  name: "",
+  type: "all-day",
+  recurring: true,
+  day_of_week: undefined,
+  specific_date: "",
+  start_time: "09:00",
+  end_time: "10:00",
+};
+
+function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: string }) {
   const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
+
+  const [localRules, setLocalRules] = useState<ExclusionRule[]>(rules);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [addDraft, setAddDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
+  const [editDraft, setEditDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
+  const [saved, setSaved] = useState(false);
+
+  function handleAddSave() {
+    if (!addDraft.name.trim()) return;
+    const newRule: ExclusionRule = {
+      id: generateId(),
+      event_id: eventId,
+      name: addDraft.name,
+      type: addDraft.type,
+      recurring: addDraft.recurring,
+      day_of_week: addDraft.recurring ? addDraft.day_of_week : undefined,
+      specific_date: !addDraft.recurring ? addDraft.specific_date : undefined,
+      start_time: addDraft.type === "time-range" ? addDraft.start_time : undefined,
+      end_time: addDraft.type === "time-range" ? addDraft.end_time : undefined,
+    };
+    setLocalRules([...localRules, newRule]);
+    setAddDraft({ ...EMPTY_EXCLUSION_DRAFT });
+    setShowAddForm(false);
+  }
+
+  function handleEditStart(rule: ExclusionRule) {
+    setEditingId(rule.id);
+    setEditDraft({
+      name: rule.name,
+      type: rule.type,
+      recurring: rule.recurring,
+      day_of_week: rule.day_of_week,
+      specific_date: rule.specific_date ?? "",
+      start_time: rule.start_time ?? "09:00",
+      end_time: rule.end_time ?? "10:00",
+    });
+  }
+
+  function handleEditSave(ruleId: string) {
+    setLocalRules(
+      localRules.map((r) =>
+        r.id !== ruleId
+          ? r
+          : {
+              ...r,
+              name: editDraft.name,
+              type: editDraft.type,
+              recurring: editDraft.recurring,
+              day_of_week: editDraft.recurring ? editDraft.day_of_week : undefined,
+              specific_date: !editDraft.recurring ? editDraft.specific_date : undefined,
+              start_time: editDraft.type === "time-range" ? editDraft.start_time : undefined,
+              end_time: editDraft.type === "time-range" ? editDraft.end_time : undefined,
+            }
+      )
+    );
+    setEditingId(null);
+  }
+
+  function handleDelete(ruleId: string) {
+    setLocalRules(localRules.filter((r) => r.id !== ruleId));
+  }
+
+  function handleSaveAll() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function renderExclusionForm(
+    draft: ExclusionDraft,
+    setDraft: (d: ExclusionDraft) => void,
+    onSave: () => void,
+    onCancel: () => void,
+    saveLabel = "保存"
+  ) {
+    return (
+      <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+        <div>
+          <label className="label">ルール名</label>
+          <input
+            type="text"
+            className="input mt-1"
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            placeholder="例: 昼休み"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">タイプ</label>
+            <select
+              className="select mt-1"
+              value={draft.type}
+              onChange={(e) => setDraft({ ...draft, type: e.target.value as "all-day" | "time-range" })}
+            >
+              <option value="all-day">終日</option>
+              <option value="time-range">時間帯</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">繰り返し</label>
+            <button
+              onClick={() => setDraft({ ...draft, recurring: !draft.recurring })}
+              className={cn(
+                "mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset transition-colors",
+                draft.recurring
+                  ? "bg-primary-50 ring-primary-300 text-primary-700"
+                  : "bg-white ring-gray-300 text-gray-600"
+              )}
+            >
+              <span>{draft.recurring ? "繰り返しあり" : "1回限り"}</span>
+              <div className={cn("relative inline-flex h-5 w-9 rounded-full transition-colors",
+                draft.recurring ? "bg-primary-500" : "bg-gray-300"
+              )}>
+                <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
+                  draft.recurring ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                )} />
+              </div>
+            </button>
+          </div>
+        </div>
+        {draft.recurring ? (
+          <div>
+            <label className="label">曜日（空白 = 毎日）</label>
+            <select
+              className="select mt-1"
+              value={draft.day_of_week ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                })
+              }
+            >
+              <option value="">毎日</option>
+              {daysOfWeek.map((d, i) => (
+                <option key={i} value={i}>{d}曜日</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div>
+            <label className="label">対象日</label>
+            <input
+              type="date"
+              className="input mt-1"
+              value={draft.specific_date ?? ""}
+              onChange={(e) => setDraft({ ...draft, specific_date: e.target.value })}
+            />
+          </div>
+        )}
+        {draft.type === "time-range" && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">開始時刻</label>
+              <input type="time" className="input mt-1"
+                value={draft.start_time ?? "09:00"}
+                onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">終了時刻</label>
+              <input type="time" className="input mt-1"
+                value={draft.end_time ?? "10:00"}
+                onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
+            </div>
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-1">
+          <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.name.trim()} className="btn-primary text-sm">
+            {saveLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-gray-900">除外ルール</h3>
-          <p className="text-sm text-gray-500">
-            特定の日時をスケジュール対象外にします
-          </p>
+          <p className="text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
         </div>
-        <button className="btn-secondary text-sm">
-          <Plus className="mr-1.5 h-4 w-4" />
-          ルールを追加
-        </button>
+        {!showAddForm && (
+          <button onClick={() => setShowAddForm(true)} className="btn-secondary text-sm">
+            <Plus className="mr-1.5 h-4 w-4" />
+            ルールを追加
+          </button>
+        )}
       </div>
-      {rules.length === 0 ? (
+
+      {showAddForm && renderExclusionForm(
+        addDraft,
+        setAddDraft,
+        handleAddSave,
+        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); },
+        "追加"
+      )}
+
+      {localRules.length === 0 && !showAddForm ? (
         <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
           <ShieldOff className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-500">
-            除外ルールはまだ設定されていません
-          </p>
+          <p className="mt-2 text-sm text-gray-500">除外ルールはまだ設定されていません</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {rules.map((rule) => (
-            <div
-              key={rule.id}
-              className="flex items-center justify-between rounded-2xl border border-gray-200 p-4"
-            >
-              <div>
-                <p className="font-medium text-gray-900">{rule.name}</p>
-                <p className="mt-0.5 text-sm text-gray-500">
-                  {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
-                  {rule.recurring && rule.day_of_week !== undefined && (
-                    <span> · 毎週{daysOfWeek[rule.day_of_week]}曜日</span>
-                  )}
-                  {rule.recurring && rule.day_of_week === undefined && (
-                    <span> · 毎日</span>
-                  )}
-                  {!rule.recurring && rule.specific_date && (
-                    <span> · {rule.specific_date}</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-xs font-medium",
-                    rule.recurring
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-orange-50 text-orange-700"
-                  )}
-                >
-                  {rule.recurring ? "繰り返し" : "1回限り"}
-                </span>
-                <button className="text-gray-400 hover:text-red-500">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+        <div className="mt-3 space-y-3">
+          {localRules.map((rule) => (
+            <div key={rule.id}>
+              {editingId === rule.id ? (
+                renderExclusionForm(
+                  editDraft,
+                  setEditDraft,
+                  () => handleEditSave(rule.id),
+                  () => setEditingId(null),
+                  "保存"
+                )
+              ) : (
+                <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
+                  <div>
+                    <p className="font-medium text-gray-900">{rule.name}</p>
+                    <p className="mt-0.5 text-sm text-gray-500">
+                      {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
+                      {rule.recurring && rule.day_of_week !== undefined && (
+                        <span> · 毎週{daysOfWeek[rule.day_of_week]}曜日</span>
+                      )}
+                      {rule.recurring && rule.day_of_week === undefined && (
+                        <span> · 毎日</span>
+                      )}
+                      {!rule.recurring && rule.specific_date && (
+                        <span> · {rule.specific_date}</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "rounded-full px-2 py-0.5 text-xs font-medium",
+                      rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
+                    )}>
+                      {rule.recurring ? "繰り返し" : "1回限り"}
+                    </span>
+                    <button
+                      onClick={() => handleEditStart(rule)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="編集"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(rule.id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="削除"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
+        </div>
+      )}
+
+      <div className="mt-6 flex justify-end">
+        <button onClick={handleSaveAll} className="btn-primary">変更を保存</button>
+      </div>
+
+      {saved && (
+        <div className="toast">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium text-gray-700">変更を保存しました</span>
         </div>
       )}
     </div>
   );
 }
 
-function FormTab({ fields }: { fields: CustomField[] }) {
+type FieldDraft = {
+  label: string;
+  type: FieldType;
+  placeholder: string;
+  is_required: boolean;
+};
+
+const EMPTY_FIELD_DRAFT: FieldDraft = {
+  label: "",
+  type: "text",
+  placeholder: "",
+  is_required: false,
+};
+
+function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }) {
   const fieldTypeLabels: Record<string, string> = {
     text: "テキスト",
     email: "メール",
     tel: "電話番号",
     multiline: "複数行テキスト",
     url: "URL",
+    file: "ファイル",
   };
+
+  const [localFields, setLocalFields] = useState<CustomField[]>(
+    [...fields].sort((a, b) => a.sort_order - b.sort_order)
+  );
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [addDraft, setAddDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
+  const [editDraft, setEditDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
+  const [saved, setSaved] = useState(false);
+
+  function handleAddField() {
+    if (!addDraft.label.trim()) return;
+    const maxOrder = localFields.reduce((max, f) => Math.max(max, f.sort_order), 0);
+    const newField: CustomField = {
+      id: generateId(),
+      event_id: eventId,
+      label: addDraft.label,
+      type: addDraft.type,
+      placeholder: addDraft.placeholder || undefined,
+      is_required: addDraft.is_required,
+      sort_order: maxOrder + 1,
+    };
+    setLocalFields([...localFields, newField]);
+    setAddDraft({ ...EMPTY_FIELD_DRAFT });
+    setShowAddForm(false);
+  }
+
+  function handleEditStart(field: CustomField) {
+    setEditingId(field.id);
+    setEditDraft({
+      label: field.label,
+      type: field.type,
+      placeholder: field.placeholder ?? "",
+      is_required: field.is_required,
+    });
+  }
+
+  function handleEditSave(fieldId: string) {
+    setLocalFields(
+      localFields.map((f) =>
+        f.id !== fieldId
+          ? f
+          : {
+              ...f,
+              label: editDraft.label,
+              type: editDraft.type,
+              placeholder: editDraft.placeholder || undefined,
+              is_required: editDraft.is_required,
+            }
+      )
+    );
+    setEditingId(null);
+  }
+
+  function handleDelete(fieldId: string) {
+    setLocalFields(localFields.filter((f) => f.id !== fieldId));
+  }
+
+  function handleMoveUp(index: number) {
+    if (index === 0) return;
+    const updated = [...localFields];
+    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+    setLocalFields(updated.map((f, i) => ({ ...f, sort_order: i + 1 })));
+  }
+
+  function handleMoveDown(index: number) {
+    if (index === localFields.length - 1) return;
+    const updated = [...localFields];
+    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+    setLocalFields(updated.map((f, i) => ({ ...f, sort_order: i + 1 })));
+  }
+
+  function handleSaveAll() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function renderFieldForm(
+    draft: FieldDraft,
+    setDraft: (d: FieldDraft) => void,
+    onSave: () => void,
+    onCancel: () => void,
+    formId: string,
+    saveLabel = "保存"
+  ) {
+    return (
+      <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">ラベル名</label>
+            <input
+              type="text"
+              className="input mt-1"
+              value={draft.label}
+              onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+              placeholder="例: 希望年収"
+            />
+          </div>
+          <div>
+            <label className="label">タイプ</label>
+            <select
+              className="select mt-1"
+              value={draft.type}
+              onChange={(e) => setDraft({ ...draft, type: e.target.value as FieldType })}
+            >
+              <option value="text">テキスト</option>
+              <option value="email">メール</option>
+              <option value="tel">電話番号</option>
+              <option value="multiline">複数行テキスト</option>
+              <option value="url">URL</option>
+              <option value="file">ファイル</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="label">プレースホルダー</label>
+          <input
+            type="text"
+            className="input mt-1"
+            value={draft.placeholder}
+            onChange={(e) => setDraft({ ...draft, placeholder: e.target.value })}
+            placeholder="入力例を記入（任意）"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id={`is-required-${formId}`}
+            checked={draft.is_required}
+            onChange={(e) => setDraft({ ...draft, is_required: e.target.checked })}
+            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+          <label htmlFor={`is-required-${formId}`} className="text-sm text-gray-700">必須項目にする</label>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.label.trim()} className="btn-primary text-sm">
+            {saveLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -595,10 +1144,12 @@ function FormTab({ fields }: { fields: CustomField[] }) {
             候補者に入力してもらう項目を設定します
           </p>
         </div>
-        <button className="btn-secondary text-sm">
-          <Plus className="mr-1.5 h-4 w-4" />
-          項目を追加
-        </button>
+        {!showAddForm && (
+          <button onClick={() => setShowAddForm(true)} className="btn-secondary text-sm">
+            <Plus className="mr-1.5 h-4 w-4" />
+            項目を追加
+          </button>
+        )}
       </div>
 
       {/* Default fields (always shown) */}
@@ -614,12 +1165,7 @@ function FormTab({ fields }: { fields: CustomField[] }) {
             key={field.label}
             className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
           >
-            <div className="flex items-center gap-3">
-              <GripVertical className="h-4 w-4 text-gray-300" />
-              <span className="text-sm font-medium text-gray-700">
-                {field.label}
-              </span>
-            </div>
+            <span className="text-sm font-medium text-gray-500">{field.label}</span>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
                 {fieldTypeLabels[field.type]}
@@ -632,52 +1178,105 @@ function FormTab({ fields }: { fields: CustomField[] }) {
         ))}
       </div>
 
+      {/* Add form */}
+      {showAddForm && renderFieldForm(
+        addDraft,
+        setAddDraft,
+        handleAddField,
+        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); },
+        "new",
+        "追加"
+      )}
+
       {/* Custom fields */}
-      {fields.length > 0 && (
+      {localFields.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
             カスタム項目
           </p>
-          {fields.map((field) => (
-            <div
-              key={field.id}
-              className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <GripVertical className="h-4 w-4 cursor-grab text-gray-300" />
-                <span className="text-sm font-medium text-gray-700">
-                  {field.label}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                  {fieldTypeLabels[field.type] || field.type}
-                </span>
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-xs",
-                    field.is_required
-                      ? "bg-red-50 text-red-600"
-                      : "bg-gray-100 text-gray-500"
-                  )}
-                >
-                  {field.is_required ? "必須" : "任意"}
-                </span>
-                <button className="text-gray-400 hover:text-red-500">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+          {localFields.map((field, index) => (
+            <div key={field.id}>
+              {editingId === field.id ? (
+                renderFieldForm(
+                  editDraft,
+                  setEditDraft,
+                  () => handleEditSave(field.id),
+                  () => setEditingId(null),
+                  field.id,
+                  "保存"
+                )
+              ) : (
+                <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0}
+                        className="rounded p-0.5 text-gray-300 hover:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="上へ移動"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === localFields.length - 1}
+                        className="rounded p-0.5 text-gray-300 hover:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="下へ移動"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{field.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                      {fieldTypeLabels[field.type] || field.type}
+                    </span>
+                    <span className={cn(
+                      "rounded-full px-2 py-0.5 text-xs",
+                      field.is_required ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-500"
+                    )}>
+                      {field.is_required ? "必須" : "任意"}
+                    </span>
+                    <button
+                      onClick={() => handleEditStart(field)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="編集"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(field.id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="削除"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {fields.length === 0 && (
+      {localFields.length === 0 && !showAddForm && (
         <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
           <FileText className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">
             カスタム項目はまだ追加されていません
           </p>
+        </div>
+      )}
+
+      <div className="mt-6 flex justify-end">
+        <button onClick={handleSaveAll} className="btn-primary">変更を保存</button>
+      </div>
+
+      {saved && (
+        <div className="toast">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium text-gray-700">変更を保存しました</span>
         </div>
       )}
     </div>
