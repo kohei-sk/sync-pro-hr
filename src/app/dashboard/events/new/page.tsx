@@ -51,6 +51,8 @@ export default function NewEventPage() {
     { id: "role-1", name: "面接官", required_count: 1, memberIds: [] },
   ]);
   const [memberDropdownOpen, setMemberDropdownOpen] = useState<string | null>(null);
+  const [fixedMemberIds, setFixedMemberIds] = useState<string[]>([]);
+  const [fixedMemberDropdownOpen, setFixedMemberDropdownOpen] = useState(false);
 
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
@@ -143,6 +145,17 @@ export default function NewEventPage() {
     );
   }
 
+  function addFixedMember(userId: string) {
+    if (!fixedMemberIds.includes(userId)) {
+      setFixedMemberIds([...fixedMemberIds, userId]);
+    }
+    setFixedMemberDropdownOpen(false);
+  }
+
+  function removeFixedMember(userId: string) {
+    setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
+  }
+
   const colors = [
     "#3b82f6",
     "#8b5cf6",
@@ -154,7 +167,9 @@ export default function NewEventPage() {
     "#6b7280",
   ];
 
-  const totalMembers = roles.reduce((acc, r) => acc + r.memberIds.length, 0);
+  const totalMembers = formData.scheduling_mode === "fixed"
+    ? fixedMemberIds.length
+    : roles.reduce((acc, r) => acc + r.memberIds.length, 0);
 
   return (
     <div>
@@ -495,143 +510,214 @@ export default function NewEventPage() {
                 </div>
               </div>
 
-              {/* Roles and members */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="label">役割とメンバー</label>
-                  <button
-                    onClick={addRole}
-                    className="btn-secondary text-sm"
-                  >
-                    <Plus className="mr-1.5 h-4 w-4" />
-                    役割を追加
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {roles.map((role) => (
-                    <div
-                      key={role.id}
-                      className="rounded-2xl border border-gray-200 p-4"
-                    >
-                      {/* Role header */}
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="text"
-                          className="input flex-1"
-                          value={role.name}
-                          onChange={(e) =>
-                            updateRole(role.id, { name: e.target.value })
-                          }
-                          placeholder="役割名（例: 面接官）"
-                        />
-                        <div className="flex items-center gap-2 shrink-0">
-                          <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
-                          <input
-                            type="number"
-                            className="input w-16 text-center"
-                            value={role.required_count}
-                            onChange={(e) =>
-                              updateRole(role.id, {
-                                required_count: parseInt(e.target.value) || 1,
-                              })
-                            }
-                            min={1}
-                          />
-                        </div>
-                        {roles.length > 1 && (
-                          <button
-                            onClick={() => removeRole(role.id)}
-                            className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+              {/* Members (fixed mode) or Roles and members (pool mode) */}
+              {formData.scheduling_mode === "fixed" ? (
+                <div>
+                  <label className="label">メンバー</label>
+                  <div className="mt-2 rounded-2xl border border-gray-200 p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {fixedMemberIds.map((userId) => {
+                        const user = mockUsers.find((u) => u.id === userId);
+                        return (
+                          <div
+                            key={userId}
+                            className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                              {user?.full_name.charAt(0) || "?"}
+                            </div>
+                            <span className="text-sm text-gray-700">
+                              {user?.full_name || userId}
+                            </span>
+                            <button
+                              onClick={() => removeFixedMember(userId)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* Add member dropdown */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setFixedMemberDropdownOpen(!fixedMemberDropdownOpen)}
+                          className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                          メンバー追加
+                          <ChevronDown className="h-3 w-3" />
+                        </button>
+
+                        {fixedMemberDropdownOpen && (
+                          <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                            {mockUsers
+                              .filter((u) => !fixedMemberIds.includes(u.id))
+                              .map((user) => (
+                                <button
+                                  key={user.id}
+                                  onClick={() => addFixedMember(user.id)}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                    {user.full_name.charAt(0)}
+                                  </div>
+                                  <div className="text-left min-w-0">
+                                    <p className="font-medium truncate">{user.full_name}</p>
+                                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            {mockUsers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
+                              <p className="px-3 py-2 text-sm text-gray-400">
+                                追加できるメンバーがいません
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
-
-                      {/* Members */}
-                      <div className="mt-3">
-                        <div className="flex flex-wrap gap-2">
-                          {role.memberIds.map((userId) => {
-                            const user = mockUsers.find((u) => u.id === userId);
-                            return (
-                              <div
-                                key={userId}
-                                className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
-                              >
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-                                  {user?.full_name.charAt(0) || "?"}
-                                </div>
-                                <span className="text-sm text-gray-700">
-                                  {user?.full_name || userId}
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    removeMemberFromRole(role.id, userId)
-                                  }
-                                  className="text-gray-400 hover:text-red-500 transition-colors"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              </div>
-                            );
-                          })}
-
-                          {/* Add member dropdown */}
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setMemberDropdownOpen(
-                                  memberDropdownOpen === role.id
-                                    ? null
-                                    : role.id
-                                )
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="label">役割とメンバー</label>
+                    <button
+                      onClick={addRole}
+                      className="btn-secondary text-sm"
+                    >
+                      <Plus className="mr-1.5 h-4 w-4" />
+                      役割を追加
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {roles.map((role) => (
+                      <div
+                        key={role.id}
+                        className="rounded-2xl border border-gray-200 p-4"
+                      >
+                        {/* Role header */}
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="text"
+                            className="input flex-1"
+                            value={role.name}
+                            onChange={(e) =>
+                              updateRole(role.id, { name: e.target.value })
+                            }
+                            placeholder="役割名（例: 面接官）"
+                          />
+                          <div className="flex items-center gap-2 shrink-0">
+                            <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                            <input
+                              type="number"
+                              className="input w-16 text-center"
+                              value={role.required_count}
+                              onChange={(e) =>
+                                updateRole(role.id, {
+                                  required_count: parseInt(e.target.value) || 1,
+                                })
                               }
-                              className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                              min={1}
+                            />
+                          </div>
+                          {roles.length > 1 && (
+                            <button
+                              onClick={() => removeRole(role.id)}
+                              className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
                             >
-                              <Plus className="h-3 w-3" />
-                              メンバー追加
-                              <ChevronDown className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
+                          )}
+                        </div>
 
-                            {memberDropdownOpen === role.id && (
-                              <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                {mockUsers
-                                  .filter(
-                                    (u) => !role.memberIds.includes(u.id)
+                        {/* Members */}
+                        <div className="mt-3">
+                          <div className="flex flex-wrap gap-2">
+                            {role.memberIds.map((userId) => {
+                              const user = mockUsers.find((u) => u.id === userId);
+                              return (
+                                <div
+                                  key={userId}
+                                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                                >
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                                    {user?.full_name.charAt(0) || "?"}
+                                  </div>
+                                  <span className="text-sm text-gray-700">
+                                    {user?.full_name || userId}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      removeMemberFromRole(role.id, userId)
+                                    }
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+
+                            {/* Add member dropdown */}
+                            <div className="relative">
+                              <button
+                                onClick={() =>
+                                  setMemberDropdownOpen(
+                                    memberDropdownOpen === role.id
+                                      ? null
+                                      : role.id
                                   )
-                                  .map((user) => (
-                                    <button
-                                      key={user.id}
-                                      onClick={() =>
-                                        addMemberToRole(role.id, user.id)
-                                      }
-                                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                        {user.full_name.charAt(0)}
-                                      </div>
-                                      <div className="text-left min-w-0">
-                                        <p className="font-medium truncate">{user.full_name}</p>
-                                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                                      </div>
-                                    </button>
-                                  ))}
-                                {mockUsers.filter(
-                                  (u) => !role.memberIds.includes(u.id)
-                                ).length === 0 && (
-                                  <p className="px-3 py-2 text-sm text-gray-400">
-                                    追加できるメンバーがいません
-                                  </p>
-                                )}
-                              </div>
-                            )}
+                                }
+                                className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                                メンバー追加
+                                <ChevronDown className="h-3 w-3" />
+                              </button>
+
+                              {memberDropdownOpen === role.id && (
+                                <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                  {mockUsers
+                                    .filter(
+                                      (u) => !role.memberIds.includes(u.id)
+                                    )
+                                    .map((user) => (
+                                      <button
+                                        key={user.id}
+                                        onClick={() =>
+                                          addMemberToRole(role.id, user.id)
+                                        }
+                                        className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                      >
+                                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                          {user.full_name.charAt(0)}
+                                        </div>
+                                        <div className="text-left min-w-0">
+                                          <p className="font-medium truncate">{user.full_name}</p>
+                                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  {mockUsers.filter(
+                                    (u) => !role.memberIds.includes(u.id)
+                                  ).length === 0 && (
+                                    <p className="px-3 py-2 text-sm text-gray-400">
+                                      追加できるメンバーがいません
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -715,33 +801,28 @@ export default function NewEventPage() {
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">チームメンバー</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      {totalMembers}人（{roles.length}役割）
+                      {formData.scheduling_mode === "fixed"
+                        ? `${totalMembers}人`
+                        : `${totalMembers}人（${roles.length}役割）`}
                     </dd>
                   </div>
                 </dl>
               </div>
 
               {/* Team summary */}
-              {roles.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-                    チーム構成
-                  </p>
-                  {roles.map((role) => (
-                    <div
-                      key={role.id}
-                      className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
-                    >
+              {formData.scheduling_mode === "fixed" ? (
+                fixedMemberIds.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                      チーム構成
+                    </p>
+                    <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                       <div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {role.name || "（未入力）"}
-                        </span>
-                        <span className="ml-2 text-xs text-gray-500">
-                          必要人数: {role.required_count}人
-                        </span>
+                        <span className="text-sm font-medium text-gray-900">メンバー</span>
+                        <span className="ml-2 text-xs text-gray-500">{fixedMemberIds.length}人</span>
                       </div>
                       <div className="flex -space-x-1">
-                        {role.memberIds.slice(0, 4).map((userId) => {
+                        {fixedMemberIds.slice(0, 4).map((userId) => {
                           const user = mockUsers.find((u) => u.id === userId);
                           return (
                             <div
@@ -753,20 +834,62 @@ export default function NewEventPage() {
                             </div>
                           );
                         })}
-                        {role.memberIds.length > 4 && (
+                        {fixedMemberIds.length > 4 && (
                           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 ring-2 ring-white">
-                            +{role.memberIds.length - 4}
+                            +{fixedMemberIds.length - 4}
                           </div>
-                        )}
-                        {role.memberIds.length === 0 && (
-                          <span className="text-xs text-gray-400">
-                            メンバーなし
-                          </span>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )
+              ) : (
+                roles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                      チーム構成
+                    </p>
+                    {roles.map((role) => (
+                      <div
+                        key={role.id}
+                        className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
+                      >
+                        <div>
+                          <span className="text-sm font-medium text-gray-900">
+                            {role.name || "（未入力）"}
+                          </span>
+                          <span className="ml-2 text-xs text-gray-500">
+                            必要人数: {role.required_count}人
+                          </span>
+                        </div>
+                        <div className="flex -space-x-1">
+                          {role.memberIds.slice(0, 4).map((userId) => {
+                            const user = mockUsers.find((u) => u.id === userId);
+                            return (
+                              <div
+                                key={userId}
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 ring-2 ring-white"
+                                title={user?.full_name}
+                              >
+                                {user?.full_name.charAt(0) || "?"}
+                              </div>
+                            );
+                          })}
+                          {role.memberIds.length > 4 && (
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 ring-2 ring-white">
+                              +{role.memberIds.length - 4}
+                            </div>
+                          )}
+                          {role.memberIds.length === 0 && (
+                            <span className="text-xs text-gray-400">
+                              メンバーなし
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           </div>
