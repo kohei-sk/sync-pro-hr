@@ -15,13 +15,27 @@ import {
   Globe,
   EyeOff,
   ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, generateId } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
 import { mockUsers } from "@/lib/mock-data";
 
-type Step = "basic" | "team" | "confirm";
+type Step = "basic" | "team" | "exclusions" | "confirm";
+
+type NewExclusionRule = {
+  id: string;
+  name: string;
+  type: "all-day" | "time-range";
+  day_of_week?: number;
+  specific_date?: string;
+  start_time?: string;
+  end_time?: string;
+  recurring: boolean;
+};
+
+type ExclusionDraft = Omit<NewExclusionRule, "id">;
 
 type NewRole = {
   id: string;
@@ -54,9 +68,22 @@ export default function NewEventPage() {
   const [fixedMemberIds, setFixedMemberIds] = useState<string[]>([]);
   const [fixedMemberDropdownOpen, setFixedMemberDropdownOpen] = useState(false);
 
+  const [newExclusionRules, setNewExclusionRules] = useState<NewExclusionRule[]>([]);
+  const [showExclusionForm, setShowExclusionForm] = useState(false);
+  const [exclusionDraft, setExclusionDraft] = useState<ExclusionDraft>({
+    name: "",
+    type: "all-day",
+    recurring: true,
+    day_of_week: undefined,
+    specific_date: "",
+    start_time: "09:00",
+    end_time: "10:00",
+  });
+
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
     { id: "team", label: "チーム設定" },
+    { id: "exclusions", label: "除外ルール" },
     { id: "confirm", label: "確認" },
   ];
 
@@ -154,6 +181,28 @@ export default function NewEventPage() {
 
   function removeFixedMember(userId: string) {
     setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
+  }
+
+  function addExclusionRule() {
+    if (!exclusionDraft.name.trim()) return;
+    setNewExclusionRules([
+      ...newExclusionRules,
+      { ...exclusionDraft, id: generateId() },
+    ]);
+    setExclusionDraft({
+      name: "",
+      type: "all-day",
+      recurring: true,
+      day_of_week: undefined,
+      specific_date: "",
+      start_time: "09:00",
+      end_time: "10:00",
+    });
+    setShowExclusionForm(false);
+  }
+
+  function removeExclusionRule(id: string) {
+    setNewExclusionRules(newExclusionRules.filter((r) => r.id !== id));
   }
 
   const colors = [
@@ -515,20 +564,49 @@ export default function NewEventPage() {
                 <div>
                   <label className="label">メンバー</label>
                   <div className="mt-2 rounded-2xl border border-gray-200 p-4">
-                    <div className="flex flex-wrap gap-2">
-                      {fixedMemberIds.map((userId) => {
+                    <div className="space-y-2">
+                      {fixedMemberIds.map((userId, index) => {
                         const user = mockUsers.find((u) => u.id === userId);
                         return (
                           <div
                             key={userId}
-                            className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
+                            className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5"
                           >
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
+                              {index + 1}
+                            </span>
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
                               {user?.full_name.charAt(0) || "?"}
                             </div>
-                            <span className="text-sm text-gray-700">
+                            <span className="flex-1 text-sm text-gray-700">
                               {user?.full_name || userId}
                             </span>
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                              <button
+                                onClick={() => {
+                                  if (index === 0) return;
+                                  const updated = [...fixedMemberIds];
+                                  [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                                  setFixedMemberIds(updated);
+                                }}
+                                disabled={index === 0}
+                                className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (index === fixedMemberIds.length - 1) return;
+                                  const updated = [...fixedMemberIds];
+                                  [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                                  setFixedMemberIds(updated);
+                                }}
+                                disabled={index === fixedMemberIds.length - 1}
+                                className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                             <button
                               onClick={() => removeFixedMember(userId)}
                               className="text-gray-400 hover:text-red-500 transition-colors"
@@ -584,22 +662,18 @@ export default function NewEventPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="label">役割とメンバー</label>
-                    <button
-                      onClick={addRole}
-                      className="btn-tertiary"
-                    >
-                      <Plus className="h-4 w-4" />
-                      役割を追加
-                    </button>
                   </div>
                   <div className="space-y-3">
-                    {roles.map((role) => (
+                    {roles.map((role, roleIndex) => (
                       <div
                         key={role.id}
                         className="rounded-2xl border border-gray-200 p-4"
                       >
                         {/* Role header */}
                         <div className="flex items-center gap-3">
+                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
+                            {roleIndex + 1}
+                          </span>
                           <input
                             type="text"
                             className="input flex-1"
@@ -609,6 +683,34 @@ export default function NewEventPage() {
                             }
                             placeholder="役割名（例: 面接官）"
                           />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => {
+                                const idx = roleIndex;
+                                if (idx === 0) return;
+                                const updated = [...roles];
+                                [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
+                                setRoles(updated);
+                              }}
+                              disabled={roleIndex === 0}
+                              className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const idx = roleIndex;
+                                if (idx === roles.length - 1) return;
+                                const updated = [...roles];
+                                [updated[idx], updated[idx + 1]] = [updated[idx + 1], updated[idx]];
+                                setRoles(updated);
+                              }}
+                              disabled={roleIndex === roles.length - 1}
+                              className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
                             <input
@@ -634,87 +736,127 @@ export default function NewEventPage() {
                         </div>
 
                         {/* Members */}
-                        <div className="mt-3">
-                          <div className="flex flex-wrap gap-2">
-                            {role.memberIds.map((userId) => {
-                              const user = mockUsers.find((u) => u.id === userId);
-                              return (
-                                <div
-                                  key={userId}
-                                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-1.5"
-                                >
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-                                    {user?.full_name.charAt(0) || "?"}
-                                  </div>
-                                  <span className="text-sm text-gray-700">
-                                    {user?.full_name || userId}
-                                  </span>
+                        <div className="mt-3 space-y-2">
+                          {role.memberIds.map((userId, memberIndex) => {
+                            const user = mockUsers.find((u) => u.id === userId);
+                            return (
+                              <div
+                                key={userId}
+                                className="flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-2"
+                              >
+                                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
+                                  {memberIndex + 1}
+                                </span>
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                  {user?.full_name.charAt(0) || "?"}
+                                </div>
+                                <span className="flex-1 text-sm text-gray-700">
+                                  {user?.full_name || userId}
+                                </span>
+                                <div className="flex flex-col gap-0.5 shrink-0">
                                   <button
-                                    onClick={() =>
-                                      removeMemberFromRole(role.id, userId)
-                                    }
-                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    onClick={() => {
+                                      if (memberIndex === 0) return;
+                                      setRoles(roles.map((r) => {
+                                        if (r.id !== role.id) return r;
+                                        const ids = [...r.memberIds];
+                                        [ids[memberIndex - 1], ids[memberIndex]] = [ids[memberIndex], ids[memberIndex - 1]];
+                                        return { ...r, memberIds: ids };
+                                      }));
+                                    }}
+                                    disabled={memberIndex === 0}
+                                    className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                   >
-                                    <Trash2 className="h-3 w-3" />
+                                    <ChevronUp className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (memberIndex === role.memberIds.length - 1) return;
+                                      setRoles(roles.map((r) => {
+                                        if (r.id !== role.id) return r;
+                                        const ids = [...r.memberIds];
+                                        [ids[memberIndex], ids[memberIndex + 1]] = [ids[memberIndex + 1], ids[memberIndex]];
+                                        return { ...r, memberIds: ids };
+                                      }));
+                                    }}
+                                    disabled={memberIndex === role.memberIds.length - 1}
+                                    className="rounded p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    <ChevronDown className="h-3 w-3" />
                                   </button>
                                 </div>
-                              );
-                            })}
+                                <button
+                                  onClick={() =>
+                                    removeMemberFromRole(role.id, userId)
+                                  }
+                                  className="text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
 
-                            {/* Add member dropdown */}
-                            <div className="relative">
-                              <button
-                                onClick={() =>
-                                  setMemberDropdownOpen(
-                                    memberDropdownOpen === role.id
-                                      ? null
-                                      : role.id
-                                  )
-                                }
-                                className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                              >
-                                <Plus className="h-3 w-3" />
-                                メンバー追加
-                                <ChevronDown className="h-3 w-3" />
-                              </button>
+                          {/* Add member dropdown */}
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setMemberDropdownOpen(
+                                  memberDropdownOpen === role.id
+                                    ? null
+                                    : role.id
+                                )
+                              }
+                              className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <Plus className="h-3 w-3" />
+                              メンバー追加
+                              <ChevronDown className="h-3 w-3" />
+                            </button>
 
-                              {memberDropdownOpen === role.id && (
-                                <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                  {mockUsers
-                                    .filter(
-                                      (u) => !role.memberIds.includes(u.id)
-                                    )
-                                    .map((user) => (
-                                      <button
-                                        key={user.id}
-                                        onClick={() =>
-                                          addMemberToRole(role.id, user.id)
-                                        }
-                                        className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                      >
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                          {user.full_name.charAt(0)}
-                                        </div>
-                                        <div className="text-left min-w-0">
-                                          <p className="font-medium truncate">{user.full_name}</p>
-                                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                                        </div>
-                                      </button>
-                                    ))}
-                                  {mockUsers.filter(
+                            {memberDropdownOpen === role.id && (
+                              <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                {mockUsers
+                                  .filter(
                                     (u) => !role.memberIds.includes(u.id)
-                                  ).length === 0 && (
-                                      <p className="px-3 py-2 text-sm text-gray-400">
-                                        追加できるメンバーがいません
-                                      </p>
-                                    )}
-                                </div>
-                              )}
-                            </div>
+                                  )
+                                  .map((user) => (
+                                    <button
+                                      key={user.id}
+                                      onClick={() =>
+                                        addMemberToRole(role.id, user.id)
+                                      }
+                                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                        {user.full_name.charAt(0)}
+                                      </div>
+                                      <div className="text-left min-w-0">
+                                        <p className="font-medium truncate">{user.full_name}</p>
+                                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                {mockUsers.filter(
+                                  (u) => !role.memberIds.includes(u.id)
+                                ).length === 0 && (
+                                    <p className="px-3 py-2 text-sm text-gray-400">
+                                      追加できるメンバーがいません
+                                    </p>
+                                  )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     ))}
+                    <button
+                      onClick={addRole}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      役割を追加
+                    </button>
                   </div>
                 </div>
               )}
@@ -722,7 +864,206 @@ export default function NewEventPage() {
           </div>
         )}
 
-        {/* Step 3: Confirmation */}
+        {/* Step 3: Exclusion Rules */}
+        {step === "exclusions" && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">除外ルール</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              特定の日時をスケジュール対象外に設定します（省略可能）
+            </p>
+            <div className="mt-6 space-y-4">
+              {/* Existing rules list */}
+              {newExclusionRules.length > 0 && (
+                <div className="space-y-2">
+                  {newExclusionRules.map((rule) => (
+                    <div
+                      key={rule.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{rule.name}</p>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
+                          {rule.recurring && rule.day_of_week !== undefined
+                            ? ` · 毎週${["日", "月", "火", "水", "木", "金", "土"][rule.day_of_week]}曜日`
+                            : rule.recurring
+                              ? " · 毎日"
+                              : rule.specific_date
+                                ? ` · ${rule.specific_date}`
+                                : ""}
+                          <span className={cn(
+                            "ml-2 rounded-full px-2 py-0.5 text-xs font-medium",
+                            rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
+                          )}>
+                            {rule.recurring ? "繰り返し" : "1回限り"}
+                          </span>
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => removeExclusionRule(rule.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add form */}
+              {showExclusionForm ? (
+                <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                  <p className="text-sm font-semibold text-gray-900">新しい除外ルール</p>
+                  <div>
+                    <label className="label">ルール名</label>
+                    <input
+                      type="text"
+                      className="input mt-1"
+                      value={exclusionDraft.name}
+                      onChange={(e) => setExclusionDraft({ ...exclusionDraft, name: e.target.value })}
+                      placeholder="例: 昼休み、全社定例会議"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">タイプ</label>
+                      <select
+                        className="select mt-1"
+                        value={exclusionDraft.type}
+                        onChange={(e) =>
+                          setExclusionDraft({
+                            ...exclusionDraft,
+                            type: e.target.value as "all-day" | "time-range",
+                          })
+                        }
+                      >
+                        <option value="all-day">終日</option>
+                        <option value="time-range">時間帯</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">繰り返し</label>
+                      <button
+                        onClick={() =>
+                          setExclusionDraft({ ...exclusionDraft, recurring: !exclusionDraft.recurring })
+                        }
+                        className={cn(
+                          "mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset transition-colors",
+                          exclusionDraft.recurring
+                            ? "bg-primary-50 ring-primary-300 text-primary-700"
+                            : "bg-white ring-gray-300 text-gray-600"
+                        )}
+                      >
+                        <span>{exclusionDraft.recurring ? "繰り返しあり" : "1回限り"}</span>
+                        <div className={cn(
+                          "relative inline-flex h-5 w-9 rounded-full transition-colors",
+                          exclusionDraft.recurring ? "bg-primary-500" : "bg-gray-300"
+                        )}>
+                          <span className={cn(
+                            "inline-block h-4 w-4 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
+                            exclusionDraft.recurring ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                          )} />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {exclusionDraft.recurring ? (
+                    <div>
+                      <label className="label">曜日（空白 = 毎日）</label>
+                      <select
+                        className="select mt-1"
+                        value={exclusionDraft.day_of_week ?? ""}
+                        onChange={(e) =>
+                          setExclusionDraft({
+                            ...exclusionDraft,
+                            day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                          })
+                        }
+                      >
+                        <option value="">毎日</option>
+                        {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
+                          <option key={i} value={i}>{d}曜日</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="label">対象日</label>
+                      <input
+                        type="date"
+                        className="input mt-1"
+                        value={exclusionDraft.specific_date ?? ""}
+                        onChange={(e) =>
+                          setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value })
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {exclusionDraft.type === "time-range" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="label">開始時刻</label>
+                        <input
+                          type="time"
+                          className="input mt-1"
+                          value={exclusionDraft.start_time ?? "09:00"}
+                          onChange={(e) =>
+                            setExclusionDraft({ ...exclusionDraft, start_time: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="label">終了時刻</label>
+                        <input
+                          type="time"
+                          className="input mt-1"
+                          value={exclusionDraft.end_time ?? "10:00"}
+                          onChange={(e) =>
+                            setExclusionDraft({ ...exclusionDraft, end_time: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      onClick={() => setShowExclusionForm(false)}
+                      className="btn-secondary text-sm"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={addExclusionRule}
+                      disabled={!exclusionDraft.name.trim()}
+                      className="btn-primary text-sm"
+                    >
+                      追加
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowExclusionForm(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  除外ルールを追加
+                </button>
+              )}
+
+              {newExclusionRules.length === 0 && !showExclusionForm && (
+                <p className="text-center text-xs text-gray-400">
+                  除外ルールはオプションです。後から設定することもできます。
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Confirmation */}
         {step === "confirm" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
@@ -804,6 +1145,14 @@ export default function NewEventPage() {
                       {formData.scheduling_mode === "fixed"
                         ? `${totalMembers}人`
                         : `${totalMembers}人（${roles.length}役割）`}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">除外ルール</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {newExclusionRules.length > 0
+                        ? `${newExclusionRules.length}件`
+                        : "なし"}
                     </dd>
                   </div>
                 </dl>
