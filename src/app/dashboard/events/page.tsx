@@ -9,6 +9,7 @@ import {
   Clock,
   MapPin,
   Users,
+  Edit,
 } from "lucide-react";
 import { mockRoles, mockMembers } from "@/lib/mock-data";
 import { getEventTypes, subscribe } from "@/lib/event-store";
@@ -31,7 +32,7 @@ export default function EventsPage() {
           </p>
         </div>
         <Link href="/dashboard/events/new" className="btn-primary">
-          <Plus className="mr-1.5 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           新規イベント作成
         </Link>
       </div>
@@ -48,7 +49,7 @@ export default function EventsPage() {
             新しいイベントを作成して面接日程の調整を始めましょう
           </p>
           <Link href="/dashboard/events/new" className="btn-primary mt-4">
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             新規イベント作成
           </Link>
         </div>
@@ -64,7 +65,7 @@ export default function EventsPage() {
             ).length;
 
             return (
-              <div key={event.id} className="card transition-shadow hover:shadow-card-hover">
+              <div key={event.id} className="card">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div
@@ -78,29 +79,26 @@ export default function EventsPage() {
                         style={{ backgroundColor: event.color || "#0071c1" }}
                       />
                     </div>
-                    <div>
-                      <Link
-                        href={`/dashboard/events/${event.id}`}
-                        className="text-sm font-semibold text-gray-900 hover:text-primary-600"
-                      >
+                    <div className="flex gap-2 items-center">
+                      <div className="font-bold">
                         {event.title}
-                      </Link>
-                      <span
+                      </div>
+                      <div
                         className={cn(
-                          "ml-2 rounded-md px-1.5 py-0.5 text-xs font-medium",
+                          "badge",
                           event.status === "active"
-                            ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                            ? "badge-green"
                             : event.status === "draft"
-                            ? "bg-gray-100 text-gray-600"
-                            : "bg-red-50 text-red-700"
+                              ? "badge-gray"
+                              : "badge-red"
                         )}
                       >
                         {event.status === "active"
                           ? "公開中"
                           : event.status === "draft"
-                          ? "下書き"
-                          : "アーカイブ"}
-                      </span>
+                            ? "非公開"
+                            : "アーカイブ"}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -121,8 +119,8 @@ export default function EventsPage() {
                     {event.location_type === "online"
                       ? "オンライン"
                       : event.location_type === "in-person"
-                      ? "対面"
-                      : "電話"}
+                        ? "対面"
+                        : "電話"}
                   </span>
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
@@ -136,21 +134,23 @@ export default function EventsPage() {
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
-                  <button className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50">
+                  <button className="btn-secondary btn-size-s">
                     <Copy className="h-3 w-3" />
                     リンクをコピー
                   </button>
                   <Link
                     href={`/j/${event.slug}`}
-                    className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-primary-600 ring-1 ring-inset ring-primary-200 hover:bg-primary-50"
+                    target="blank"
+                    className="btn-tertiary btn-size-s"
                   >
                     <ExternalLink className="h-3 w-3" />
                     プレビュー
                   </Link>
                   <Link
                     href={`/dashboard/events/${event.id}`}
-                    className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50"
+                    className="btn-ghost btn-size-s ml-auto"
                   >
+                    <Edit className="h-3 w-3" />
                     編集
                   </Link>
                 </div>

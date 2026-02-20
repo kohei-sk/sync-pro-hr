@@ -10,7 +10,7 @@ import {
   MapPin,
   Video,
   Phone,
-  Calendar,
+  Folder,
   User,
   Mail,
   CheckCircle2,
@@ -105,7 +105,7 @@ export default function NewEventPage() {
           </dl>
         </div>
         <div className="mt-6 flex gap-3">
-          <Link href="/dashboard/bookings" className="btn-secondary">
+          <Link href="/dashboard/bookings" className="btn-tertiary">
             予約一覧を見る
           </Link>
           <button
@@ -141,7 +141,7 @@ export default function NewEventPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            新規イベント作成
+            イベント作成
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
             イベントタイプを選択して新しい面接・面談を作成します
@@ -160,8 +160,8 @@ export default function NewEventPage() {
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
-                    ? "bg-primary-100 text-primary-700 ring-2 ring-primary-600"
-                    : "bg-gray-100 text-gray-400"
+                      ? "bg-primary-100 text-primary-700 ring-2 ring-primary-600"
+                      : "bg-gray-100 text-gray-400"
                 )}
               >
                 {i + 1}
@@ -201,7 +201,7 @@ export default function NewEventPage() {
 
             {activeEventTypes.length === 0 ? (
               <div className="mt-6 rounded-2xl border-2 border-dashed border-gray-300 p-8 text-center">
-                <Calendar className="mx-auto h-8 w-8 text-gray-400" />
+                <Folder className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-3 text-sm font-medium text-gray-900">
                   公開中のイベントタイプがありません
                 </p>
@@ -364,7 +364,7 @@ export default function NewEventPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                    <Folder className="h-3.5 w-3.5 text-gray-400" />
                     希望日
                   </label>
                   <input
@@ -461,9 +461,9 @@ export default function NewEventPage() {
               if (step === "details") setStep("select");
               else if (step === "confirm") setStep("details");
             }}
-            className={cn("btn-secondary", step === "select" && "invisible")}
+            className={cn("btn-tertiary", step === "select" && "invisible")}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             戻る
           </button>
           {step === "confirm" ? (
@@ -484,7 +484,7 @@ export default function NewEventPage() {
               className="btn-primary"
             >
               次へ
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           )}
         </div>
