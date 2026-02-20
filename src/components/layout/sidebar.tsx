@@ -13,9 +13,9 @@ import {
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "アクティビティ", href: "/dashboard/activity", icon: Activity },
   { name: "イベント", href: "/dashboard/events", icon: CalendarPlus },
   { name: "予約一覧", href: "/dashboard/bookings", icon: Calendar },
+  { name: "アクティビティ", href: "/dashboard/activity", icon: Activity },
   { name: "チームメンバー", href: "/dashboard/team", icon: Users },
   { name: "設定", href: "/dashboard/settings", icon: Settings },
 ];

@@ -48,9 +48,9 @@ export default function Home() {
         <div className="mt-10 flex items-center justify-center gap-4">
           <Link href="/dashboard" className="btn-primary text-base">
             ダッシュボードへ
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link href="/j/demo" className="btn-secondary text-base">
+          <Link href="/j/demo" className="btn-tertiary text-base">
             デモを見る
           </Link>
         </div>
@@ -152,7 +152,7 @@ export default function Home() {
         <div className="mt-8">
           <Link href="/dashboard" className="btn-primary text-base">
             無料で始める
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
