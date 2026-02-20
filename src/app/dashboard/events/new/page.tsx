@@ -662,13 +662,6 @@ export default function NewEventPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="label">役割とメンバー</label>
-                    <button
-                      onClick={addRole}
-                      className="btn-tertiary"
-                    >
-                      <Plus className="h-4 w-4" />
-                      役割を追加
-                    </button>
                   </div>
                   <div className="space-y-3">
                     {roles.map((role, roleIndex) => (
@@ -847,16 +840,23 @@ export default function NewEventPage() {
                                 {mockUsers.filter(
                                   (u) => !role.memberIds.includes(u.id)
                                 ).length === 0 && (
-                                  <p className="px-3 py-2 text-sm text-gray-400">
-                                    追加できるメンバーがいません
-                                  </p>
-                                )}
+                                    <p className="px-3 py-2 text-sm text-gray-400">
+                                      追加できるメンバーがいません
+                                    </p>
+                                  )}
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
                     ))}
+                    <button
+                      onClick={addRole}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      役割を追加
+                    </button>
                   </div>
                 </div>
               )}
@@ -885,12 +885,12 @@ export default function NewEventPage() {
                         <p className="mt-0.5 text-xs text-gray-500">
                           {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
                           {rule.recurring && rule.day_of_week !== undefined
-                            ? ` · 毎週${["日","月","火","水","木","金","土"][rule.day_of_week]}曜日`
+                            ? ` · 毎週${["日", "月", "火", "水", "木", "金", "土"][rule.day_of_week]}曜日`
                             : rule.recurring
-                            ? " · 毎日"
-                            : rule.specific_date
-                            ? ` · ${rule.specific_date}`
-                            : ""}
+                              ? " · 毎日"
+                              : rule.specific_date
+                                ? ` · ${rule.specific_date}`
+                                : ""}
                           <span className={cn(
                             "ml-2 rounded-full px-2 py-0.5 text-xs font-medium",
                             rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"

@@ -555,10 +555,6 @@ function TeamTab({
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-gray-700">役割とメンバー</p>
-            <button className="btn-tertiary">
-              <Plus className="h-4 w-4" />
-              役割を追加
-            </button>
           </div>
           <div className="space-y-4">
             {localRoles.map((role, roleIndex) => (
@@ -652,6 +648,10 @@ function TeamTab({
                 </div>
               </div>
             ))}
+            <button className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
+              <Plus className="h-4 w-4" />
+              役割を追加
+            </button>
           </div>
         </div>
       )}
@@ -737,15 +737,15 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
         r.id !== ruleId
           ? r
           : {
-              ...r,
-              name: editDraft.name,
-              type: editDraft.type,
-              recurring: editDraft.recurring,
-              day_of_week: editDraft.recurring ? editDraft.day_of_week : undefined,
-              specific_date: !editDraft.recurring ? editDraft.specific_date : undefined,
-              start_time: editDraft.type === "time-range" ? editDraft.start_time : undefined,
-              end_time: editDraft.type === "time-range" ? editDraft.end_time : undefined,
-            }
+            ...r,
+            name: editDraft.name,
+            type: editDraft.type,
+            recurring: editDraft.recurring,
+            day_of_week: editDraft.recurring ? editDraft.day_of_week : undefined,
+            specific_date: !editDraft.recurring ? editDraft.specific_date : undefined,
+            start_time: editDraft.type === "time-range" ? editDraft.start_time : undefined,
+            end_time: editDraft.type === "time-range" ? editDraft.end_time : undefined,
+          }
       )
     );
     setEditingId(null);
@@ -1035,12 +1035,12 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
         f.id !== fieldId
           ? f
           : {
-              ...f,
-              label: editDraft.label,
-              type: editDraft.type,
-              placeholder: editDraft.placeholder || undefined,
-              is_required: editDraft.is_required,
-            }
+            ...f,
+            label: editDraft.label,
+            type: editDraft.type,
+            placeholder: editDraft.placeholder || undefined,
+            is_required: editDraft.is_required,
+          }
       )
     );
     setEditingId(null);
