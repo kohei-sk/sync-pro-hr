@@ -4,24 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Calendar,
-  Activity,
+  Bell,
   CalendarPlus,
   Users,
   Settings,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNotificationStore } from "@/lib/notification-store";
 
-const navigation = [
+const baseNavigation = [
   { name: "イベント", href: "/dashboard/events", icon: CalendarPlus },
   { name: "予約一覧", href: "/dashboard/bookings", icon: Calendar },
-  { name: "アクティビティ", href: "/dashboard/activity", icon: Activity },
+  { name: "通知", href: "/dashboard/activity", icon: Bell, showBadge: true },
   { name: "チームメンバー", href: "/dashboard/team", icon: Users },
   { name: "設定", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { unreadCount } = useNotificationStore();
 
   return (
     <div className="flex h-screen w-60 flex-col border-r border-gray-200 bg-white">
@@ -35,7 +37,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-0.5 px-3 py-3">
-        {navigation.map((item) => {
+        {baseNavigation.map((item) => {
           const isActive =
             pathname === item.href ||
             pathname.startsWith(item.href + "/");
@@ -53,11 +55,16 @@ export function Sidebar() {
             >
               <item.icon
                 className={cn(
-                  "h-[18px] w-[18px]",
+                  "h-[18px] w-[18px] shrink-0",
                   isActive ? "text-primary-600" : "text-gray-400"
                 )}
               />
-              {item.name}
+              <span className="flex-1">{item.name}</span>
+              {item.showBadge && unreadCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1.5 text-[10px] font-bold text-white">
+                  {unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Search,
   Filter,
@@ -14,6 +15,7 @@ import {
   XCircle,
   AlertCircle,
   ChevronDown,
+  ChevronRight,
   ExternalLink,
   Mail,
   Users,
@@ -322,18 +324,28 @@ export default function BookingsPage() {
                     </div>
 
                     {/* Actions */}
-                    {booking.status !== "cancelled" && (
-                      <div className="mt-4 flex gap-2 border-t border-gray-200/60 pt-3">
-                        <button className="btn-ghost btn-size-s">
-                          <MapPin className="h-3 w-3" />
-                          リスケジュール
-                        </button>
-                        <button className="btn-ghost-danger btn-size-s">
-                          <XCircle className="h-3 w-3" />
-                          キャンセル
-                        </button>
-                      </div>
-                    )}
+                    <div className="mt-4 flex items-center gap-2 border-t border-gray-200/60 pt-3">
+                      <Link
+                        href={`/dashboard/bookings/${booking.id}`}
+                        className="btn-ghost btn-size-s"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        詳細を見る
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                      {booking.status !== "cancelled" && (
+                        <>
+                          <button className="btn-ghost btn-size-s">
+                            <MapPin className="h-3 w-3" />
+                            リスケジュール
+                          </button>
+                          <button className="btn-ghost-danger btn-size-s">
+                            <XCircle className="h-3 w-3" />
+                            キャンセル
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

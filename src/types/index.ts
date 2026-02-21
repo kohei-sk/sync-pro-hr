@@ -155,3 +155,17 @@ export interface ActivityItem {
   timestamp: string;
   metadata?: Record<string, string>;
 }
+
+// --- Notifications ---
+export type NotificationType = "booking_received" | "booking_changed" | "booking_cancelled";
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  booking_id: string;
+  candidate_name: string;
+  event_title: string;
+  message: string;
+  timestamp: string;
+  is_read: boolean;
+}
