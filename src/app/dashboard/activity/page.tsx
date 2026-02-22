@@ -85,26 +85,26 @@ export default function NotificationsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">通知</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+      <header className="header mb-6">
+        <div className="header-col">
+          <h1 className="header-title">通知</h1>
+          <p className="header-sub-title">
             予約の受付・変更・キャンセルをお知らせします
           </p>
         </div>
         {activeTab === "unread" && unreadNotifications.length > 0 && (
           <button
             onClick={markAllAsRead}
-            className="btn-ghost btn-size-s mt-0.5 shrink-0"
+            className="btn-ghost btn-size-s"
           >
             <CheckCheck className="h-3.5 w-3.5" />
             すべて既読にする
           </button>
         )}
-      </div>
+      </header>
 
       {/* Tabs: 未読 / 既読 */}
-      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="tab mb-6">
         {(["unread", "read"] as NotificationTab[]).map((tab) => {
           const count =
             tab === "unread"
@@ -116,19 +116,19 @@ export default function NotificationsPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                "tab-item",
                 activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "tab-item-active"
+                  : ""
               )}
             >
               {label}
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[10px]",
+                  "tab-badge",
                   activeTab === tab
-                    ? "bg-primary-100 text-primary-700"
-                    : "bg-gray-200 text-gray-500"
+                    ? "tab-bade-active"
+                    : ""
                 )}
               >
                 {count}
