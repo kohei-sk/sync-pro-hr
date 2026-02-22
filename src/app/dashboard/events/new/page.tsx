@@ -913,7 +913,7 @@ export default function NewEventPage() {
 
                     <button
                       onClick={addRole}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                      className="add-btn"
                     >
                       <Plus className="h-4 w-4" />
                       役割を追加
@@ -1108,7 +1108,7 @@ export default function NewEventPage() {
               ) : (
                 <button
                   onClick={() => setShowExclusionForm(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                  className="add-btn"
                 >
                   <Plus className="h-4 w-4" />
                   除外ルールを追加
@@ -1310,7 +1310,7 @@ export default function NewEventPage() {
           <button
             onClick={handleBack}
             className={cn(
-              "btn-tertiary",
+              "btn-secondary",
               currentStepIndex === 0 && "invisible"
             )}
           >

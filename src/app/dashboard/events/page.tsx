@@ -152,12 +152,12 @@ export default function EventsPage() {
                 <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
                   <button
                     onClick={() => handleCopyLink(event.id, event.slug)}
-                    className="btn-secondary btn-size-s"
+                    className="btn-emphasis btn-size-s"
                   >
                     {copiedEventId === event.id ? (
                       <>
-                        <Check className="h-3 w-3 text-green-600" />
-                        <span className="text-green-700">コピーしました</span>
+                        <Check className="h-3 w-3" />
+                        コピーしました
                       </>
                     ) : (
                       <>
@@ -169,7 +169,7 @@ export default function EventsPage() {
                   <Link
                     href={`/j/${event.slug}`}
                     target="blank"
-                    className="btn-tertiary btn-size-s"
+                    className="btn-secondary btn-size-s"
                   >
                     <ExternalLink className="h-3 w-3" />
                     プレビュー
