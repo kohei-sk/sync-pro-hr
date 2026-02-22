@@ -8,6 +8,7 @@ import type {
   CalendarEvent,
   Booking,
   ActivityItem,
+  Notification,
 } from "@/types";
 
 // --- Mock Users ---
@@ -457,6 +458,80 @@ export const mockDailyBookingStats = [
   { date: "2/18", count: 2 },
 ];
 
+// --- Mock Notifications ---
+export const mockNotifications: Notification[] = [
+  {
+    id: "n1",
+    type: "booking_received",
+    booking_id: "b7",
+    candidate_name: "吉田 翔太",
+    event_title: "エンジニア一次面接",
+    message: "吉田 翔太さんがエンジニア一次面接を予約しました。2026年2月25日（水）11:00〜12:00",
+    timestamp: "2026-02-17T16:00:00Z",
+    is_read: false,
+  },
+  {
+    id: "n2",
+    type: "booking_cancelled",
+    booking_id: "b5",
+    candidate_name: "小林 さくら",
+    event_title: "エンジニア一次面接",
+    message: "小林 さくらさんがエンジニア一次面接をキャンセルしました。2026年2月17日（火）10:00〜11:00",
+    timestamp: "2026-02-17T10:00:00Z",
+    is_read: false,
+  },
+  {
+    id: "n3",
+    type: "booking_received",
+    booking_id: "b3",
+    candidate_name: "中村 大輔",
+    event_title: "カジュアル面談",
+    message: "中村 大輔さんがカジュアル面談を予約しました。2026年2月22日（日）11:00〜11:30",
+    timestamp: "2026-02-16T09:00:00Z",
+    is_read: false,
+  },
+  {
+    id: "n4",
+    type: "booking_changed",
+    booking_id: "b2",
+    candidate_name: "渡辺 あゆみ",
+    event_title: "エンジニア一次面接",
+    message: "渡辺 あゆみさんがエンジニア一次面接の日程を変更しました。2026年2月21日（土）14:00〜15:00",
+    timestamp: "2026-02-15T12:00:00Z",
+    is_read: false,
+  },
+  {
+    id: "n5",
+    type: "booking_received",
+    booking_id: "b6",
+    candidate_name: "加藤 真理",
+    event_title: "カジュアル面談",
+    message: "加藤 真理さんがカジュアル面談を予約しました。2026年2月18日（水）14:00〜14:30",
+    timestamp: "2026-02-16T11:00:00Z",
+    is_read: true,
+  },
+  {
+    id: "n6",
+    type: "booking_received",
+    booking_id: "b4",
+    candidate_name: "松本 健一",
+    event_title: "エンジニア最終面接",
+    message: "松本 健一さんがエンジニア最終面接を予約しました。2026年2月19日（木）13:00〜14:30",
+    timestamp: "2026-02-14T15:00:00Z",
+    is_read: true,
+  },
+  {
+    id: "n7",
+    type: "booking_received",
+    booking_id: "b1",
+    candidate_name: "高橋 直樹",
+    event_title: "エンジニア一次面接",
+    message: "高橋 直樹さんがエンジニア一次面接を予約しました。2026年2月20日（金）10:00〜11:00",
+    timestamp: "2026-02-15T10:00:00Z",
+    is_read: true,
+  },
+];
+
 // --- Helper functions ---
 export function getEventData(eventId: string) {
   const event = mockEventTypes.find((e) => e.id === eventId);
@@ -477,4 +552,8 @@ export function getEventBySlug(slug: string) {
 
 export function getUserById(userId: string) {
   return mockUsers.find((u) => u.id === userId);
+}
+
+export function getBookingById(bookingId: string) {
+  return mockBookings.find((b) => b.id === bookingId);
 }

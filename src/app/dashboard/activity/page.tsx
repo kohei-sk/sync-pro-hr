@@ -1,38 +1,53 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   CalendarCheck,
+  RefreshCw,
   XCircle,
-  PlusCircle,
-  Users,
-  Clock,
+  Bell,
+  CheckCheck,
 } from "lucide-react";
-import { mockActivities } from "@/lib/mock-data";
+import { mockNotifications } from "@/lib/mock-data";
+import { useNotificationStore } from "@/lib/notification-store";
 import { cn } from "@/lib/utils";
+import type { NotificationType } from "@/types";
 
-const activityIcons: Record<string, typeof CalendarCheck> = {
-  booking_created: CalendarCheck,
-  booking_cancelled: XCircle,
-  event_created: PlusCircle,
-  member_added: Users,
-};
-
-const activityColors: Record<string, string> = {
-  booking_created: "text-green-500",
-  booking_cancelled: "text-red-400",
-  event_created: "text-primary-500",
-  member_added: "text-purple-500",
-};
-
-const activityBgColors: Record<string, string> = {
-  booking_created: "bg-green-50",
-  booking_cancelled: "bg-red-50",
-  event_created: "bg-primary-50",
-  member_added: "bg-purple-50",
+const notificationConfig: Record<
+  NotificationType,
+  {
+    label: string;
+    icon: typeof CalendarCheck;
+    iconColor: string;
+    iconBg: string;
+    badgeClass: string;
+  }
+> = {
+  booking_received: {
+    label: "予約受付",
+    icon: CalendarCheck,
+    iconColor: "text-green-600",
+    iconBg: "bg-green-50",
+    badgeClass: "bg-green-50 text-green-700",
+  },
+  booking_changed: {
+    label: "予約変更",
+    icon: RefreshCw,
+    iconColor: "text-primary-600",
+    iconBg: "bg-primary-50",
+    badgeClass: "bg-primary-50 text-primary-700",
+  },
+  booking_cancelled: {
+    label: "予約キャンセル",
+    icon: XCircle,
+    iconColor: "text-red-500",
+    iconBg: "bg-red-50",
+    badgeClass: "bg-red-50 text-red-700",
+  },
 };
 
 function getRelativeTime(timestamp: string): string {
-  const now = new Date("2026-02-20T10:00:00Z");
+  const now = new Date("2026-02-21T10:00:00Z");
   const then = new Date(timestamp);
   const diffMs = now.getTime() - then.getTime();
   const diffMin = Math.floor(diffMs / 60000);
@@ -49,88 +64,139 @@ function getRelativeTime(timestamp: string): string {
   });
 }
 
-const activityTypeLabels: Record<string, string> = {
-  booking_created: "予約作成",
-  booking_cancelled: "予約キャンセル",
-  event_created: "イベント作成",
-  member_added: "メンバー追加",
-};
+export default function NotificationsPage() {
+  const router = useRouter();
+  const { unreadCount, isRead, markAsRead, markAllAsRead } =
+    useNotificationStore();
 
-export default function ActivityPage() {
+  function handleNotificationClick(notificationId: string, bookingId: string) {
+    markAsRead(notificationId);
+    router.push(`/dashboard/bookings/${bookingId}`);
+  }
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">アクティビティ</h1>
-        <p className="mt-0.5 text-sm text-gray-500">
-          最近の操作履歴を確認できます
-        </p>
+      {/* Header */}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">通知</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            予約の受付・変更・キャンセルをお知らせします
+          </p>
+        </div>
+        {unreadCount > 0 && (
+          <button
+            onClick={markAllAsRead}
+            className="btn-ghost btn-size-s shrink-0 mt-0.5"
+          >
+            <CheckCheck className="h-3.5 w-3.5" />
+            すべて既読にする
+          </button>
+        )}
       </div>
 
-      <div className="card max-w-2xl">
-        <div className="space-y-0">
-          {mockActivities.map((activity, index) => {
-            const Icon = activityIcons[activity.type] || Clock;
-            const color = activityColors[activity.type] || "text-gray-400";
-            const bg = activityBgColors[activity.type] || "bg-gray-50";
-            const timeAgo = getRelativeTime(activity.timestamp);
-            const typeLabel = activityTypeLabels[activity.type] || activity.type;
-            const isLast = index === mockActivities.length - 1;
+      {/* Unread count chip */}
+      {unreadCount > 0 && (
+        <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1">
+          <span className="h-2 w-2 rounded-full bg-primary-500" />
+          <span className="text-xs font-medium text-primary-700">
+            {unreadCount}件の未読通知
+          </span>
+        </div>
+      )}
+
+      {/* Notification list */}
+      {mockNotifications.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-16">
+          <Bell className="h-10 w-10 text-gray-300 mb-3" />
+          <p className="text-sm font-medium text-gray-500">通知はありません</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {mockNotifications.map((notification) => {
+            const read = isRead(notification.id);
+            const cfg = notificationConfig[notification.type];
+            const Icon = cfg.icon;
 
             return (
-              <div key={activity.id} className="relative flex gap-4">
-                {/* Timeline line */}
-                {!isLast && (
-                  <div className="absolute left-5 top-10 bottom-0 w-px bg-gray-100" />
+              <button
+                key={notification.id}
+                onClick={() =>
+                  handleNotificationClick(notification.id, notification.booking_id)
+                }
+                className={cn(
+                  "group relative w-full overflow-hidden rounded-lg border text-left transition-all",
+                  "hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
+                  read
+                    ? "border-gray-100 bg-white"
+                    : "border-primary-100 bg-primary-50/30"
+                )}
+              >
+                {/* Unread indicator bar */}
+                {!read && (
+                  <div className="absolute inset-y-0 left-0 w-1 bg-primary-500 rounded-l-lg" />
                 )}
 
-                {/* Icon */}
-                <div className="relative shrink-0 mt-1">
+                <div className={cn("flex items-start gap-4 px-5 py-4", !read && "pl-6")}>
+                  {/* Icon */}
                   <div
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full",
-                      bg
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                      cfg.iconBg
                     )}
                   >
-                    <Icon className={cn("h-5 w-5", color)} />
+                    <Icon className={cn("h-4.5 w-4.5", cfg.iconColor)} />
                   </div>
-                </div>
 
-                {/* Content */}
-                <div className={cn("flex-1 pb-6", isLast && "pb-0")}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3 mb-1">
                       <span
                         className={cn(
-                          "inline-block rounded-full px-2 py-0.5 text-xs font-medium mb-1",
-                          bg,
-                          color
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                          cfg.badgeClass
                         )}
                       >
-                        {typeLabel}
+                        {cfg.label}
                       </span>
-                      <p className="text-sm text-gray-800 leading-relaxed">
-                        {activity.description}
-                      </p>
+                      <span className="shrink-0 text-xs text-gray-400">
+                        {getRelativeTime(notification.timestamp)}
+                      </span>
                     </div>
-                    <span className="shrink-0 text-xs text-gray-400 mt-0.5">
-                      {timeAgo}
-                    </span>
+                    <p
+                      className={cn(
+                        "text-sm leading-relaxed",
+                        read ? "text-gray-500" : "text-gray-800 font-medium"
+                      )}
+                    >
+                      {notification.candidate_name}
+                      <span
+                        className={cn(
+                          "ml-1",
+                          read ? "text-gray-400" : "text-gray-600 font-normal"
+                        )}
+                      >
+                        ・{notification.event_title}
+                      </span>
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-0.5 text-xs",
+                        read ? "text-gray-400" : "text-gray-500"
+                      )}
+                    >
+                      {notification.message}
+                    </p>
+                    <p className="mt-2 text-xs font-medium text-primary-600 group-hover:text-primary-700">
+                      予約の詳細を確認する →
+                    </p>
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">
-                    {new Date(activity.timestamp).toLocaleDateString("ja-JP", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
-      </div>
+      )}
     </div>
   );
 }
