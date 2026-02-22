@@ -165,11 +165,8 @@ export default function NotificationsPage() {
                   )
                 }
                 className={cn(
-                  "group relative w-full overflow-hidden rounded-lg ring-1 text-left transition-all",
-                  "hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
-                  read
-                    ? "bg-white ring-gray-200/60"
-                    : "bg-primary-50/30 ring-primary-200/60"
+                  "group relative w-full overflow-hidden rounded-lg ring-1 ring-gray-200/60 text-left transition-all",
+                  "bg-white hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 )}
               >
                 {/* Unread indicator bar */}
