@@ -87,10 +87,10 @@ export default function TeamPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">チームメンバー</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+      <header className="header mb-6">
+        <div className="header-col">
+          <h1 className="header-title">チームメンバー</h1>
+          <p className="header-sub-title">
             メンバーとカレンダー連携の状態を管理します
           </p>
         </div>
@@ -98,7 +98,7 @@ export default function TeamPage() {
           <Plus className="h-4 w-4" />
           メンバー招待
         </button>
-      </div>
+      </header>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">

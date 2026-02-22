@@ -153,20 +153,27 @@ export default function EventDetailPage() {
       {/* Left: Settings */}
       <div className="flex-1 min-w-0">
         {/* Header */}
-        <div className="mb-6 flex items-center gap-4">
+        <header className="header mb-6">
           <Link
             href="/dashboard/events"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600"
+            className="header-back-btn"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
+          <div className="header-col">
+            <div className="heading">
               <div
-                className="h-4 w-4 rounded-full"
-                style={{ backgroundColor: event.color }}
-              />
-              <h1 className="text-2xl font-bold text-gray-900">
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{
+                  backgroundColor: (event.color || "#0071c1") + "14",
+                }}
+              >
+                <div
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: event.color || "#0071c1" }}
+                />
+              </div>
+              <h1 className="header-title">
                 {event.title}
               </h1>
               <span
@@ -180,7 +187,7 @@ export default function EventDetailPage() {
                 {event.status === "active" ? "公開中" : "非公開"}
               </span>
             </div>
-            <p className="mt-0.5 text-sm text-gray-500">{event.description}</p>
+            <p className="header-sub-title">{event.description}</p>
           </div>
           <Link
             href={`/j/${event.slug}`}
@@ -197,19 +204,19 @@ export default function EventDetailPage() {
             <Trash2 className="h-4 w-4" />
             削除
           </button>
-        </div>
+        </header>
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-1 rounded-2xl bg-gray-100 p-1">
+        <div className="tab mb-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+                "tab-item",
                 activeTab === tab.id
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "tab-item-active"
+                  : ""
               )}
             >
               <tab.icon className="h-4 w-4" />
@@ -1017,18 +1024,18 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
             <button
               onClick={() => setDraft({ ...draft, recurring: !draft.recurring })}
               className={cn(
-                "mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset transition-colors",
+                "toggle-btn",
                 draft.recurring
-                  ? "bg-primary-50 ring-primary-300 text-primary-700"
-                  : "bg-white ring-gray-300 text-gray-600"
+                  ? "toggle-btn-active"
+                  : ""
               )}
             >
-              <span>{draft.recurring ? "繰り返しあり" : "1回限り"}</span>
-              <div className={cn("relative inline-flex h-5 w-9 rounded-full transition-colors",
-                draft.recurring ? "bg-primary-500" : "bg-gray-300"
+              <span>繰り返しあり</span>
+              <div className={cn("toggle-btn-switch",
+                draft.recurring ? "toggle-btn-switch-active" : ""
               )}>
-                <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
-                  draft.recurring ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                <span className={cn("toggle-btn-switch-handle",
+                  draft.recurring ? "toggle-btn-switch-handle-active" : ""
                 )} />
               </div>
             </button>

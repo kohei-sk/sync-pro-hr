@@ -40,10 +40,10 @@ export default function EventsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">イベント</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+      <header className="header">
+        <div className="header-col">
+          <h1 className="header-title">イベント</h1>
+          <p className="header-sub-title">
             面接や面談のイベントを管理します
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function EventsPage() {
           <Plus className="h-4 w-4" />
           新規イベント作成
         </Link>
-      </div>
+      </header>
 
       {eventTypes.length === 0 ? (
         <div className="mt-12 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 p-12">
@@ -178,7 +178,7 @@ export default function EventsPage() {
                     href={`/dashboard/events/${event.id}`}
                     className="btn-ghost btn-size-s ml-auto"
                   >
-                    <Edit className="h-3 w-3" />
+                    <Edit className="h-3.5 w-3.5" />
                     編集
                   </Link>
                 </div>

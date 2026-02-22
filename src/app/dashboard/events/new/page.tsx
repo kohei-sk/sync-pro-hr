@@ -329,22 +329,22 @@ export default function NewEventPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center gap-4">
+      <header className="header mb-8">
         <Link
           href="/dashboard/events"
           className="flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="header-col">
+          <h1 className="header-title">
             新規イベント作成
           </h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <p className="header-sub-title">
             イベントの基本情報を入力して作成します
           </p>
         </div>
-      </div>
+      </header>
 
       {/* Step indicator */}
       <div className="mb-8">

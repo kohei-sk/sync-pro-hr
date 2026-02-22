@@ -105,16 +105,18 @@ export default function BookingsLayout({
   return (
     <div className="flex h-full flex-col">
       {/* ── Page header ── */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">予約一覧</h1>
-        <p className="mt-0.5 text-sm text-gray-500">
-          面接・面談の予約を管理します
-        </p>
-      </div>
+      <header className="header mb-6">
+        <div className="header-col">
+          <h1 className="header-title">予約一覧</h1>
+          <p className="header-sub-title">
+            面接・面談の予約を管理します
+          </p>
+        </div>
+      </header>
 
       {/* ── Filters ── */}
       {/* Status tabs */}
-      <div className="mb-3 flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="tab mb-3">
         {(["all", "confirmed", "pending", "cancelled"] as FilterStatus[]).map(
           (status) => {
             const label =
@@ -126,19 +128,19 @@ export default function BookingsLayout({
                 key={status}
                 onClick={() => setFilterStatus(status)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  "tab-item",
                   filterStatus === status
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "tab-item-active"
+                    : ""
                 )}
               >
                 {label}
                 <span
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-xs",
+                    "tab-badge",
                     filterStatus === status
-                      ? "bg-primary-100 text-primary-700"
-                      : "bg-gray-200 text-gray-500"
+                      ? "tab-badge-active"
+                      : ""
                   )}
                 >
                   {statusCounts[status]}
@@ -209,24 +211,19 @@ export default function BookingsLayout({
                       <Link
                         href={`/dashboard/bookings/${booking.id}`}
                         className={cn(
-                          "flex items-center gap-3 border-l-2 px-3 py-3 transition-colors",
+                          "flex items-center gap-3 border-l-2 p-4 transition-colors",
                           isSelected
                             ? "border-l-primary-500 bg-primary-50"
                             : "border-l-transparent hover:bg-gray-50"
                         )}
                       >
-                        {/* Event color indicator */}
-                        <div
-                          className="h-8 w-0.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: event?.color || "#0071c1" }}
-                        />
 
                         {/* Candidate info */}
-                        <div className="min-w-0 flex-1">
+                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span
                               className={cn(
-                                "text-xs font-semibold",
+                                "text-sm font-semibold",
                                 isSelected ? "text-gray-900" : "text-gray-800"
                               )}
                             >
@@ -237,18 +234,24 @@ export default function BookingsLayout({
                               {statusInfo.label}
                             </span>
                           </div>
-                          <p className="mt-0.5 truncate text-[11px] text-gray-500">
-                            {event?.title}
-                          </p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <div
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: event?.color || "#0071c1" }}
+                            />
+                            <p className="truncate text-[11px] text-gray-500 text-xs">
+                              {event?.title}
+                            </p>
+                          </div>
                         </div>
 
                         {/* Date/Time */}
-                        <div className="shrink-0 text-right">
-                          <div className="flex items-center justify-end gap-1 text-[11px] text-gray-600">
+                        <div className="flex flex-col items-left gap-0.5">
+                          <div className="flex items-center justify-end gap-1 text-[11px] text-gray-500">
                             <Calendar className="h-3 w-3 shrink-0 text-gray-400" />
                             <span>{formatListDate(booking.start_time)}</span>
                           </div>
-                          <div className="mt-0.5 flex items-center justify-end gap-1 text-[11px] text-gray-400">
+                          <div className="mt-0.5 flex items-center justify-end gap-1 text-[11px] text-gray-500">
                             <Clock className="h-3 w-3 shrink-0 text-gray-400" />
                             <span>
                               {formatListTime(
@@ -268,10 +271,10 @@ export default function BookingsLayout({
         </div>
 
         {/* Right panel: detail */}
-        <div className="flex-1 overflow-y-auto bg-[#f8f9fa] p-8">
+        <div className="flex-1 overflow-y-auto bg-gray-100">
           {children}
         </div>
       </div>
-    </div>
+    </div >
   );
 }
