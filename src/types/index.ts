@@ -8,6 +8,8 @@ export interface User {
   email: string;
   full_name: string;
   avatar_url?: string;
+  status?: "active" | "invited";
+  role?: "admin" | "member";
   calendar_status?: "connected" | "error" | "not_connected";
   last_synced_at?: string;
 }

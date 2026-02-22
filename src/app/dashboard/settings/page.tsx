@@ -13,6 +13,7 @@ import {
   Shield,
   ImagePlus,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -42,7 +43,7 @@ interface MessagingIntegrationState {
 const tabs: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "profile", label: "プロフィール", icon: User },
   { id: "notifications", label: "通知設定", icon: Bell },
-  { id: "calendar", label: "カレンダー連携", icon: Calendar },
+  { id: "calendar", label: "連携設定", icon: Calendar },
   { id: "general", label: "一般設定", icon: Globe },
 ];
 
@@ -809,21 +810,18 @@ const MESSAGING_INTEGRATIONS = [
     icon: "S",
     iconBg: "bg-purple-50",
     iconColor: "text-purple-700",
-    description: "Slackチャンネルに予約通知を送信します",
-    fields: [
-      { key: "webhookUrl", label: "Webhook URL", placeholder: "https://hooks.slack.com/services/..." },
-    ],
+    description: "Slackのワークスペースと連携して、予約通知を自動送信します",
+    authButtonLabel: "Slackで認証する",
+    authHint: "Slackのブラウザ認証画面に移動します",
   },
   {
     name: "Chatwork",
     icon: "C",
     iconBg: "bg-green-50",
     iconColor: "text-green-700",
-    description: "ChatworkルームにBot通知を送信します",
-    fields: [
-      { key: "apiToken", label: "API Token", placeholder: "Chatwork API Token" },
-      { key: "roomId", label: "Room ID", placeholder: "例: 123456789" },
-    ],
+    description: "Chatworkのルームと連携して、予約通知を自動送信します",
+    authButtonLabel: "Chatworkで認証する",
+    authHint: "Chatworkのブラウザ認証画面に移動します",
   },
 ] as const;
 
@@ -833,23 +831,12 @@ function MessagingIntegrationCard() {
     Slack: { connected: false, loading: false },
     Chatwork: { connected: false, loading: false },
   });
-  const [fieldValues, setFieldValues] = useState<Record<string, Record<string, string>>>({
-    Slack: { webhookUrl: "" },
-    Chatwork: { apiToken: "", roomId: "" },
-  });
   const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
   function handleConnect(name: string) {
-    // 入力バリデーション
-    const fields = MESSAGING_INTEGRATIONS.find((m) => m.name === name)?.fields ?? [];
-    for (const field of fields) {
-      if (!fieldValues[name]?.[field.key]?.trim()) {
-        toast.error(`${field.label} を入力してください`);
-        return;
-      }
-    }
     setStates((prev) => ({ ...prev, [name]: { ...prev[name], loading: true } }));
+    // 実際の実装では外部の OAuth 認証画面にリダイレクトする
     setTimeout(() => {
       setStates((prev) => ({ ...prev, [name]: { connected: true, loading: false } }));
       toast.success(`${name} を接続しました`);
@@ -862,10 +849,6 @@ function MessagingIntegrationCard() {
     setTimeout(() => {
       const name = disconnectTarget;
       setStates((prev) => ({ ...prev, [name]: { connected: false, loading: false } }));
-      setFieldValues((prev) => ({
-        ...prev,
-        [name]: Object.fromEntries(Object.keys(prev[name]).map((k) => [k, ""])),
-      }));
       setDisconnectTarget(null);
       setDisconnecting(false);
       toast.success(`${name} の接続を解除しました`);
@@ -928,40 +911,29 @@ function MessagingIntegrationCard() {
                   )}
                 </div>
 
-                {/* 未接続時: 入力フォーム */}
+                {/* 未接続時: OAuth ボタン */}
                 {!state.connected && (
-                  <div className="space-y-3">
-                    {integration.fields.map((field) => (
-                      <div key={field.key}>
-                        <label className="label text-xs">{field.label}</label>
-                        <input
-                          type="text"
-                          value={fieldValues[integration.name]?.[field.key] ?? ""}
-                          onChange={(e) =>
-                            setFieldValues((prev) => ({
-                              ...prev,
-                              [integration.name]: {
-                                ...prev[integration.name],
-                                [field.key]: e.target.value,
-                              },
-                            }))
-                          }
-                          placeholder={field.placeholder}
-                          className="input mt-1"
-                        />
-                      </div>
-                    ))}
-                    <div className="flex justify-end pt-1">
-                      <button
-                        onClick={() => handleConnect(integration.name)}
-                        disabled={state.loading}
-                        className="btn-primary btn-size-s"
-                      >
-                        {state.loading && <span className="spinner" />}
-                        <Link2 className="h-3 w-3" />
-                        接続
-                      </button>
-                    </div>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-400 mb-3">
+                      {integration.authHint}
+                    </p>
+                    <button
+                      onClick={() => handleConnect(integration.name)}
+                      disabled={state.loading}
+                      className="btn-primary btn-size-s"
+                    >
+                      {state.loading ? (
+                        <>
+                          <span className="spinner" />
+                          認証中...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="h-3 w-3" />
+                          {integration.authButtonLabel}
+                        </>
+                      )}
+                    </button>
                   </div>
                 )}
               </div>

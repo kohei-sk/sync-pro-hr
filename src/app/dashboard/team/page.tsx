@@ -16,6 +16,7 @@ import {
   Trash2,
   Shield,
   User as UserIcon,
+  Clock,
 } from "lucide-react";
 import {
   mockUsers,
@@ -39,10 +40,15 @@ export default function TeamPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [detailUser, setDetailUser] = useState<User | null>(null);
+  const [permissionUser, setPermissionUser] = useState<User | null>(null);
+  const [newRole, setNewRole] = useState<"admin" | "member">("member");
+  const [savingPermission, setSavingPermission] = useState(false);
 
   // ローディング状態
   const [reconnectingId, setReconnectingId] = useState<string | null>(null);
   const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [reinvitingId, setReinvitingId] = useState<string | null>(null);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -96,11 +102,12 @@ export default function TeamPage() {
   };
 
   const connectedCount = users.filter(
-    (u) => u.calendar_status === "connected"
+    (u) => u.status !== "invited" && u.calendar_status === "connected"
   ).length;
   const errorCount = users.filter(
-    (u) => u.calendar_status === "error"
+    (u) => u.status !== "invited" && u.calendar_status === "error"
   ).length;
+  const invitedCount = users.filter((u) => u.status === "invited").length;
 
   // カレンダー再接続
   function handleReconnect(userId: string) {
@@ -134,6 +141,15 @@ export default function TeamPage() {
     }, 1500);
   }
 
+  // 再招待
+  function handleReinvite(user: User) {
+    setReinvitingId(user.id);
+    setTimeout(() => {
+      setReinvitingId(null);
+      toast.success(`${user.email} に招待メールを再送しました`);
+    }, 1000);
+  }
+
   // メンバー削除確認
   function handleDeleteConfirm() {
     if (!deleteTargetUser) return;
@@ -145,6 +161,29 @@ export default function TeamPage() {
       setDeletingUser(false);
       toast.success(`${name} をチームから削除しました`);
     }, 1000);
+  }
+
+  // 権限変更モーダルを開く
+  function openPermissionModal(user: User) {
+    setNewRole(user.role ?? "member");
+    setPermissionUser(user);
+  }
+
+  // 権限変更保存
+  function handlePermissionSave() {
+    if (!permissionUser) return;
+    setSavingPermission(true);
+    setTimeout(() => {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === permissionUser.id ? { ...u, role: newRole } : u
+        )
+      );
+      const label = newRole === "admin" ? "管理者" : "メンバー";
+      toast.success(`${permissionUser.full_name} の権限を「${label}」に変更しました`);
+      setSavingPermission(false);
+      setPermissionUser(null);
+    }, 800);
   }
 
   return (
@@ -163,7 +202,7 @@ export default function TeamPage() {
       </header>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
         <div className="card flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50">
             <Users className="h-5 w-5 text-primary-600" />
@@ -195,6 +234,15 @@ export default function TeamPage() {
             <p className="text-xs text-gray-500">要対応</p>
           </div>
         </div>
+        <div className="card flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
+            <Clock className="h-5 w-5 text-purple-600" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{invitedCount}</p>
+            <p className="text-xs text-gray-500">招待中</p>
+          </div>
+        </div>
       </div>
 
       {/* Search */}
@@ -212,6 +260,7 @@ export default function TeamPage() {
       {/* Member List */}
       <div className="space-y-3">
         {filteredUsers.map((user) => {
+          const isInvited = user.status === "invited";
           const stats = getUserStats(user.id);
           const calStatus =
             calendarStatusConfig[user.calendar_status || "not_connected"];
@@ -222,15 +271,23 @@ export default function TeamPage() {
             : null;
           const isReconnecting = reconnectingId === user.id;
           const isConnecting = connectingId === user.id;
+          const isReinviting = reinvitingId === user.id;
 
           return (
             <div
               key={user.id}
-              className="card !p-0 overflow-hidden transition-shadow hover:shadow-card-hover"
+              className="card !p-0 transition-shadow hover:shadow-card-hover"
             >
               <div className="flex items-center gap-4 p-4">
                 {/* Avatar */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                    isInvited
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-primary-100 text-primary-700"
+                  )}
+                >
                   {initial}
                 </div>
 
@@ -240,6 +297,9 @@ export default function TeamPage() {
                     <h3 className="text-sm font-semibold text-gray-900">
                       {user.full_name}
                     </h3>
+                    {user.role === "admin" && !isInvited && (
+                      <span className="badge badge-blue">管理者</span>
+                    )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
                     <Mail className="h-3 w-3" />
@@ -249,69 +309,103 @@ export default function TeamPage() {
 
                 {/* Stats */}
                 <div className="hidden sm:flex items-center gap-4 shrink-0">
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {stats.eventCount}
-                    </p>
-                    <p className="text-xs text-gray-500">イベント</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {stats.upcomingBookings}
-                    </p>
-                    <p className="text-xs text-gray-500">予定面接</p>
-                  </div>
+                  {isInvited ? (
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-300">—</p>
+                      <p className="text-xs text-gray-400">イベント</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {stats.eventCount}
+                        </p>
+                        <p className="text-xs text-gray-500">イベント</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {stats.upcomingBookings}
+                        </p>
+                        <p className="text-xs text-gray-500">予定面接</p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                {/* Calendar Status */}
-                <div
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 shrink-0",
-                    calStatus.bgClass
-                  )}
-                >
-                  <CalStatusIcon
-                    className={cn("h-3.5 w-3.5", calStatus.className)}
-                  />
-                  <span
+                {/* Status Badge */}
+                {isInvited ? (
+                  <div className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 shrink-0 bg-purple-50">
+                    <Clock className="h-3.5 w-3.5 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-600">招待中</span>
+                  </div>
+                ) : (
+                  <div
                     className={cn(
-                      "text-xs font-medium",
-                      calStatus.className
+                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 shrink-0",
+                      calStatus.bgClass
                     )}
                   >
-                    {calStatus.label}
-                  </span>
-                </div>
+                    <CalStatusIcon
+                      className={cn("h-3.5 w-3.5", calStatus.className)}
+                    />
+                    <span
+                      className={cn(
+                        "text-xs font-medium",
+                        calStatus.className
+                      )}
+                    >
+                      {calStatus.label}
+                    </span>
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
-                  {user.calendar_status === "error" && (
+                  {isInvited ? (
                     <button
-                      onClick={() => handleReconnect(user.id)}
-                      disabled={isReconnecting}
-                      className="rounded-md p-1.5 text-amber-600 hover:bg-amber-50 disabled:opacity-50"
-                      title="再接続"
+                      onClick={() => handleReinvite(user)}
+                      disabled={isReinviting}
+                      className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 disabled:opacity-50"
+                      title="招待メールを再送"
                     >
-                      {isReconnecting ? (
-                        <span className="spinner h-4 w-4" />
+                      {isReinviting ? (
+                        <span className="spinner h-3 w-3" />
                       ) : (
-                        <RefreshCw className="h-4 w-4" />
+                        <Mail className="h-3 w-3" />
                       )}
+                      再招待
                     </button>
-                  )}
-                  {user.calendar_status === "not_connected" && (
-                    <button
-                      onClick={() => handleConnect(user.id)}
-                      disabled={isConnecting}
-                      className="rounded-md p-1.5 text-primary-600 hover:bg-primary-50 disabled:opacity-50"
-                      title="カレンダー接続"
-                    >
-                      {isConnecting ? (
-                        <span className="spinner h-4 w-4" />
-                      ) : (
-                        <CalendarPlus className="h-4 w-4" />
+                  ) : (
+                    <>
+                      {user.calendar_status === "error" && (
+                        <button
+                          onClick={() => handleReconnect(user.id)}
+                          disabled={isReconnecting}
+                          className="rounded-md p-1.5 text-amber-600 hover:bg-amber-50 disabled:opacity-50"
+                          title="再接続"
+                        >
+                          {isReconnecting ? (
+                            <span className="spinner h-4 w-4" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </button>
                       )}
-                    </button>
+                      {user.calendar_status === "not_connected" && (
+                        <button
+                          onClick={() => handleConnect(user.id)}
+                          disabled={isConnecting}
+                          className="rounded-md p-1.5 text-primary-600 hover:bg-primary-50 disabled:opacity-50"
+                          title="カレンダー接続"
+                        >
+                          {isConnecting ? (
+                            <span className="spinner h-4 w-4" />
+                          ) : (
+                            <CalendarPlus className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </>
                   )}
 
                   {/* ドロップダウンメニュー */}
@@ -322,34 +416,42 @@ export default function TeamPage() {
                         <MoreVertical className="h-4 w-4" />
                       </button>
                     }
-                    items={[
-                      {
-                        label: "詳細を見る",
-                        icon: UserIcon,
-                        onClick: () =>
-                          toast.info(`${user.full_name} の詳細ページは準備中です`),
-                      },
-                      {
-                        label: "権限を変更",
-                        icon: Shield,
-                        onClick: () =>
-                          toast.info("権限変更機能は準備中です"),
-                        disabled: false,
-                      },
-                      { separator: true },
-                      {
-                        label: "メンバーを削除",
-                        icon: Trash2,
-                        variant: "danger",
-                        onClick: () => setDeleteTargetUser(user),
-                      },
-                    ]}
+                    items={
+                      isInvited
+                        ? [
+                            {
+                              label: "招待を取り消す",
+                              icon: XCircle,
+                              variant: "danger",
+                              onClick: () => setDeleteTargetUser(user),
+                            },
+                          ]
+                        : [
+                            {
+                              label: "詳細を見る",
+                              icon: UserIcon,
+                              onClick: () => setDetailUser(user),
+                            },
+                            {
+                              label: "権限を変更",
+                              icon: Shield,
+                              onClick: () => openPermissionModal(user),
+                            },
+                            { separator: true },
+                            {
+                              label: "メンバーを削除",
+                              icon: Trash2,
+                              variant: "danger",
+                              onClick: () => setDeleteTargetUser(user),
+                            },
+                          ]
+                    }
                   />
                 </div>
               </div>
 
               {/* Sync info bar */}
-              {syncTimeStr && (
+              {syncTimeStr && !isInvited && (
                 <div className="flex items-center gap-1.5 border-t border-gray-100 bg-gray-50/50 px-4 py-2 text-xs text-gray-400">
                   <Calendar className="h-3 w-3" />
                   最終同期: {syncTimeStr}
@@ -379,19 +481,143 @@ export default function TeamPage() {
         }}
       />
 
-      {/* メンバー削除確認ダイアログ */}
+      {/* メンバー削除/招待取り消し確認ダイアログ */}
       <ConfirmDialog
         open={deleteTargetUser !== null}
         onClose={() => {
           if (!deletingUser) setDeleteTargetUser(null);
         }}
         onConfirm={handleDeleteConfirm}
-        title="メンバーを削除しますか？"
-        description={`${deleteTargetUser?.full_name} をチームから削除します。この操作は取り消せません。`}
-        confirmLabel="削除する"
+        title={
+          deleteTargetUser?.status === "invited"
+            ? "招待を取り消しますか？"
+            : "メンバーを削除しますか？"
+        }
+        description={
+          deleteTargetUser?.status === "invited"
+            ? `${deleteTargetUser?.full_name} への招待を取り消します。この操作は取り消せません。`
+            : `${deleteTargetUser?.full_name} をチームから削除します。この操作は取り消せません。`
+        }
+        confirmLabel={
+          deleteTargetUser?.status === "invited" ? "取り消す" : "削除する"
+        }
         confirmVariant="danger"
         loading={deletingUser}
       />
+
+      {/* メンバー詳細モーダル */}
+      <Modal
+        open={detailUser !== null}
+        onClose={() => setDetailUser(null)}
+        title="メンバー詳細"
+        size="md"
+        footer={
+          <button onClick={() => setDetailUser(null)} className="btn-ghost">
+            閉じる
+          </button>
+        }
+      >
+        {detailUser && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 text-lg font-bold text-primary-700">
+                {detailUser.full_name.charAt(0)}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">{detailUser.full_name}</p>
+                <p className="text-sm text-gray-500">{detailUser.email}</p>
+              </div>
+            </div>
+            <dl className="space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-gray-500">権限</dt>
+                <dd className="font-medium text-gray-900">
+                  {detailUser.role === "admin" ? "管理者" : "メンバー"}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">ステータス</dt>
+                <dd className="font-medium text-gray-900">参加済み</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">カレンダー</dt>
+                <dd className="font-medium text-gray-900">
+                  {calendarStatusConfig[detailUser.calendar_status || "not_connected"].label}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">最終同期</dt>
+                <dd className="font-medium text-gray-900">
+                  {detailUser.last_synced_at
+                    ? formatSyncTime(detailUser.last_synced_at)
+                    : "未同期"}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">担当イベント</dt>
+                <dd className="font-medium text-gray-900">
+                  {getUserStats(detailUser.id).eventCount}件
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">予定面接</dt>
+                <dd className="font-medium text-gray-900">
+                  {getUserStats(detailUser.id).upcomingBookings}件
+                </dd>
+              </div>
+            </dl>
+          </div>
+        )}
+      </Modal>
+
+      {/* 権限変更モーダル */}
+      <Modal
+        open={permissionUser !== null}
+        onClose={() => setPermissionUser(null)}
+        title="権限を変更"
+        size="sm"
+        footer={
+          <>
+            <button
+              onClick={() => setPermissionUser(null)}
+              disabled={savingPermission}
+              className="btn-ghost"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={handlePermissionSave}
+              disabled={savingPermission}
+              className="btn-primary"
+            >
+              {savingPermission && <span className="spinner" />}
+              変更する
+            </button>
+          </>
+        }
+      >
+        {permissionUser && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              <strong>{permissionUser.full_name}</strong> の権限を変更します。
+            </p>
+            <div>
+              <label className="label">権限</label>
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value as "admin" | "member")}
+                className="select mt-1"
+              >
+                <option value="member">メンバー（標準）</option>
+                <option value="admin">管理者</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-400">
+                管理者はメンバーの追加・削除や設定変更が可能です
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
