@@ -13,6 +13,9 @@ import {
   Search,
   MoreVertical,
   CalendarPlus,
+  Trash2,
+  Shield,
+  User as UserIcon,
 } from "lucide-react";
 import {
   mockUsers,
@@ -22,12 +25,26 @@ import {
   mockBookings,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
+import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import type { User } from "@/types";
 
 export default function TeamPage() {
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState<User[]>(mockUsers);
 
-  const filteredUsers = mockUsers.filter(
+  // モーダル・ダイアログの開閉状態
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
+
+  // ローディング状態
+  const [reconnectingId, setReconnectingId] = useState<string | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+
+  const filteredUsers = users.filter(
     (u) =>
       !searchQuery ||
       u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -78,12 +95,57 @@ export default function TeamPage() {
     },
   };
 
-  const connectedCount = mockUsers.filter(
+  const connectedCount = users.filter(
     (u) => u.calendar_status === "connected"
   ).length;
-  const errorCount = mockUsers.filter(
+  const errorCount = users.filter(
     (u) => u.calendar_status === "error"
   ).length;
+
+  // カレンダー再接続
+  function handleReconnect(userId: string) {
+    setReconnectingId(userId);
+    setTimeout(() => {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? { ...u, calendar_status: "connected", last_synced_at: new Date().toISOString() }
+            : u
+        )
+      );
+      toast.success("カレンダーを再接続しました");
+      setReconnectingId(null);
+    }, 1500);
+  }
+
+  // カレンダー接続
+  function handleConnect(userId: string) {
+    setConnectingId(userId);
+    setTimeout(() => {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? { ...u, calendar_status: "connected", last_synced_at: new Date().toISOString() }
+            : u
+        )
+      );
+      toast.success("カレンダーを接続しました");
+      setConnectingId(null);
+    }, 1500);
+  }
+
+  // メンバー削除確認
+  function handleDeleteConfirm() {
+    if (!deleteTargetUser) return;
+    setDeletingUser(true);
+    setTimeout(() => {
+      const name = deleteTargetUser.full_name;
+      setUsers((prev) => prev.filter((u) => u.id !== deleteTargetUser.id));
+      setDeleteTargetUser(null);
+      setDeletingUser(false);
+      toast.success(`${name} をチームから削除しました`);
+    }, 1000);
+  }
 
   return (
     <div>
@@ -94,7 +156,7 @@ export default function TeamPage() {
             メンバーとカレンダー連携の状態を管理します
           </p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={() => setInviteOpen(true)}>
           <Plus className="h-4 w-4" />
           メンバー招待
         </button>
@@ -108,7 +170,7 @@ export default function TeamPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">
-              {mockUsers.length}
+              {users.length}
             </p>
             <p className="text-xs text-gray-500">合計メンバー</p>
           </div>
@@ -158,6 +220,8 @@ export default function TeamPage() {
           const syncTimeStr = user.last_synced_at
             ? formatSyncTime(user.last_synced_at)
             : null;
+          const isReconnecting = reconnectingId === user.id;
+          const isConnecting = connectingId === user.id;
 
           return (
             <div
@@ -223,23 +287,64 @@ export default function TeamPage() {
                 <div className="flex items-center gap-1 shrink-0">
                   {user.calendar_status === "error" && (
                     <button
-                      className="rounded-md p-1.5 text-amber-600 hover:bg-amber-50"
+                      onClick={() => handleReconnect(user.id)}
+                      disabled={isReconnecting}
+                      className="rounded-md p-1.5 text-amber-600 hover:bg-amber-50 disabled:opacity-50"
                       title="再接続"
                     >
-                      <RefreshCw className="h-4 w-4" />
+                      {isReconnecting ? (
+                        <span className="spinner h-4 w-4" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
                     </button>
                   )}
                   {user.calendar_status === "not_connected" && (
                     <button
-                      className="rounded-md p-1.5 text-primary-600 hover:bg-primary-50"
+                      onClick={() => handleConnect(user.id)}
+                      disabled={isConnecting}
+                      className="rounded-md p-1.5 text-primary-600 hover:bg-primary-50 disabled:opacity-50"
                       title="カレンダー接続"
                     >
-                      <CalendarPlus className="h-4 w-4" />
+                      {isConnecting ? (
+                        <span className="spinner h-4 w-4" />
+                      ) : (
+                        <CalendarPlus className="h-4 w-4" />
+                      )}
                     </button>
                   )}
-                  <button className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+
+                  {/* ドロップダウンメニュー */}
+                  <DropdownMenu
+                    align="right"
+                    trigger={
+                      <button className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    }
+                    items={[
+                      {
+                        label: "詳細を見る",
+                        icon: UserIcon,
+                        onClick: () =>
+                          toast.info(`${user.full_name} の詳細ページは準備中です`),
+                      },
+                      {
+                        label: "権限を変更",
+                        icon: Shield,
+                        onClick: () =>
+                          toast.info("権限変更機能は準備中です"),
+                        disabled: false,
+                      },
+                      { separator: true },
+                      {
+                        label: "メンバーを削除",
+                        icon: Trash2,
+                        variant: "danger",
+                        onClick: () => setDeleteTargetUser(user),
+                      },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -263,9 +368,149 @@ export default function TeamPage() {
           </div>
         )}
       </div>
+
+      {/* メンバー招待モーダル */}
+      <InviteMemberModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onInvited={(email) => {
+          setInviteOpen(false);
+          toast.success(`${email} に招待メールを送信しました`);
+        }}
+      />
+
+      {/* メンバー削除確認ダイアログ */}
+      <ConfirmDialog
+        open={deleteTargetUser !== null}
+        onClose={() => {
+          if (!deletingUser) setDeleteTargetUser(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="メンバーを削除しますか？"
+        description={`${deleteTargetUser?.full_name} をチームから削除します。この操作は取り消せません。`}
+        confirmLabel="削除する"
+        confirmVariant="danger"
+        loading={deletingUser}
+      />
     </div>
   );
 }
+
+// ============================================================
+// メンバー招待モーダル
+// ============================================================
+
+function InviteMemberModal({
+  open,
+  onClose,
+  onInvited,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onInvited: (email: string) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("member");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleClose() {
+    if (loading) return;
+    setEmail("");
+    setRole("member");
+    setError("");
+    onClose();
+  }
+
+  function handleSubmit() {
+    setError("");
+    if (!email.trim()) {
+      setError("メールアドレスを入力してください");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("有効なメールアドレスを入力してください");
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onInvited(email.trim());
+      setEmail("");
+      setRole("member");
+    }, 1200);
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="メンバーを招待"
+      description="招待メールを送信します。相手が承認するとチームに参加できます。"
+      size="md"
+      footer={
+        <>
+          <button
+            onClick={handleClose}
+            disabled={loading}
+            className="btn-ghost"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="btn-primary"
+          >
+            {loading && <span className="spinner" />}
+            招待を送る
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="label">
+            メールアドレス <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError("");
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            placeholder="recruit@example.com"
+            className={cn("input mt-1", error && "ring-red-400 focus:ring-red-500")}
+            autoFocus
+          />
+          {error && (
+            <p className="mt-1 text-xs text-red-500">{error}</p>
+          )}
+        </div>
+        <div>
+          <label className="label">権限</label>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="select mt-1"
+          >
+            <option value="member">メンバー（標準）</option>
+            <option value="admin">管理者</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-400">
+            管理者はメンバーの追加・削除や設定変更が可能です
+          </p>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================================
+// Helpers
+// ============================================================
 
 function formatSyncTime(timestamp: string): string {
   const date = new Date(timestamp);
