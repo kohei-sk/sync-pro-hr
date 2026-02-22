@@ -101,7 +101,7 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
               田
             </div>
             <div>
-              <button className="btn-tertiary btn-size-s">
+              <button className="btn-secondary btn-size-s">
                 画像を変更
               </button>
               <p className="mt-1 text-xs text-gray-400">
@@ -184,7 +184,7 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
           </div>
         </div>
         <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-          <button onClick={onSave} className="btn-tertiary">
+          <button onClick={onSave} className="btn-secondary">
             パスワードを変更
           </button>
         </div>
@@ -373,7 +373,7 @@ function CalendarTab() {
                 className={cn(
                   integration.connected
                     ? "btn-ghost-danger btn-size-s"
-                    : "btn-tertiary btn-size-s"
+                    : "btn-secondary btn-size-s"
                 )}
               >
                 {integration.connected ? (

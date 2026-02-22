@@ -105,7 +105,7 @@ export default function NewEventPage() {
           </dl>
         </div>
         <div className="mt-6 flex gap-3">
-          <Link href="/dashboard/bookings" className="btn-tertiary">
+          <Link href="/dashboard/bookings" className="btn-secondary">
             予約一覧を見る
           </Link>
           <button
@@ -461,7 +461,7 @@ export default function NewEventPage() {
               if (step === "details") setStep("select");
               else if (step === "confirm") setStep("details");
             }}
-            className={cn("btn-tertiary", step === "select" && "invisible")}
+            className={cn("btn-secondary", step === "select" && "invisible")}
           >
             <ArrowLeft className="h-4 w-4" />
             戻る
