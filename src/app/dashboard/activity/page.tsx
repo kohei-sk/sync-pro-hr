@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarCheck,
@@ -12,6 +13,8 @@ import { mockNotifications } from "@/lib/mock-data";
 import { useNotificationStore } from "@/lib/notification-store";
 import { cn } from "@/lib/utils";
 import type { NotificationType } from "@/types";
+
+type NotificationTab = "unread" | "read";
 
 const notificationConfig: Record<
   NotificationType,
@@ -28,21 +31,21 @@ const notificationConfig: Record<
     icon: CalendarCheck,
     iconColor: "text-green-600",
     iconBg: "bg-green-50",
-    badgeClass: "bg-green-50 text-green-700",
+    badgeClass: "badge-green",
   },
   booking_changed: {
     label: "予約変更",
     icon: RefreshCw,
     iconColor: "text-primary-600",
     iconBg: "bg-primary-50",
-    badgeClass: "bg-primary-50 text-primary-700",
+    badgeClass: "badge-blue",
   },
   booking_cancelled: {
     label: "予約キャンセル",
     icon: XCircle,
     iconColor: "text-red-500",
     iconBg: "bg-red-50",
-    badgeClass: "bg-red-50 text-red-700",
+    badgeClass: "badge-red",
   },
 };
 
@@ -66,8 +69,13 @@ function getRelativeTime(timestamp: string): string {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { unreadCount, isRead, markAsRead, markAllAsRead } =
-    useNotificationStore();
+  const { isRead, markAsRead, markAllAsRead } = useNotificationStore();
+  const [activeTab, setActiveTab] = useState<NotificationTab>("unread");
+
+  const unreadNotifications = mockNotifications.filter((n) => !isRead(n.id));
+  const readNotifications = mockNotifications.filter((n) => isRead(n.id));
+  const displayedNotifications =
+    activeTab === "unread" ? unreadNotifications : readNotifications;
 
   function handleNotificationClick(notificationId: string, bookingId: string) {
     markAsRead(notificationId);
@@ -84,10 +92,10 @@ export default function NotificationsPage() {
             予約の受付・変更・キャンセルをお知らせします
           </p>
         </div>
-        {unreadCount > 0 && (
+        {activeTab === "unread" && unreadNotifications.length > 0 && (
           <button
             onClick={markAllAsRead}
-            className="btn-ghost btn-size-s shrink-0 mt-0.5"
+            className="btn-ghost btn-size-s mt-0.5 shrink-0"
           >
             <CheckCheck className="h-3.5 w-3.5" />
             すべて既読にする
@@ -95,25 +103,54 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {/* Unread count chip */}
-      {unreadCount > 0 && (
-        <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1">
-          <span className="h-2 w-2 rounded-full bg-primary-500" />
-          <span className="text-xs font-medium text-primary-700">
-            {unreadCount}件の未読通知
-          </span>
-        </div>
-      )}
+      {/* Tabs: 未読 / 既読 */}
+      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 p-1">
+        {(["unread", "read"] as NotificationTab[]).map((tab) => {
+          const count =
+            tab === "unread"
+              ? unreadNotifications.length
+              : readNotifications.length;
+          const label = tab === "unread" ? "未読" : "既読";
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              {label}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px]",
+                  activeTab === tab
+                    ? "bg-primary-100 text-primary-700"
+                    : "bg-gray-200 text-gray-500"
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Notification list */}
-      {mockNotifications.length === 0 ? (
+      {displayedNotifications.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-16">
-          <Bell className="h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-sm font-medium text-gray-500">通知はありません</p>
+          <Bell className="mb-3 h-10 w-10 text-gray-300" />
+          <p className="text-sm font-medium text-gray-500">
+            {activeTab === "unread"
+              ? "未読の通知はありません"
+              : "既読の通知はありません"}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {mockNotifications.map((notification) => {
+          {displayedNotifications.map((notification) => {
             const read = isRead(notification.id);
             const cfg = notificationConfig[notification.type];
             const Icon = cfg.icon;
@@ -122,22 +159,30 @@ export default function NotificationsPage() {
               <button
                 key={notification.id}
                 onClick={() =>
-                  handleNotificationClick(notification.id, notification.booking_id)
+                  handleNotificationClick(
+                    notification.id,
+                    notification.booking_id
+                  )
                 }
                 className={cn(
-                  "group relative w-full overflow-hidden rounded-lg border text-left transition-all",
+                  "group relative w-full overflow-hidden rounded-lg ring-1 text-left transition-all",
                   "hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
                   read
-                    ? "border-gray-100 bg-white"
-                    : "border-primary-100 bg-primary-50/30"
+                    ? "bg-white ring-gray-200/60"
+                    : "bg-primary-50/30 ring-primary-200/60"
                 )}
               >
                 {/* Unread indicator bar */}
                 {!read && (
-                  <div className="absolute inset-y-0 left-0 w-1 bg-primary-500 rounded-l-lg" />
+                  <div className="absolute inset-y-0 left-0 w-1 rounded-l-lg bg-primary-500" />
                 )}
 
-                <div className={cn("flex items-start gap-4 px-5 py-4", !read && "pl-6")}>
+                <div
+                  className={cn(
+                    "flex items-start gap-4 px-5 py-4",
+                    !read && "pl-6"
+                  )}
+                >
                   {/* Icon */}
                   <div
                     className={cn(
@@ -145,18 +190,13 @@ export default function NotificationsPage() {
                       cfg.iconBg
                     )}
                   >
-                    <Icon className={cn("h-4.5 w-4.5", cfg.iconColor)} />
+                    <Icon className={cn("h-4 w-4", cfg.iconColor)} />
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3 mb-1">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          cfg.badgeClass
-                        )}
-                      >
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <span className={cn("badge", cfg.badgeClass)}>
                         {cfg.label}
                       </span>
                       <span className="shrink-0 text-xs text-gray-400">
@@ -166,14 +206,14 @@ export default function NotificationsPage() {
                     <p
                       className={cn(
                         "text-sm leading-relaxed",
-                        read ? "text-gray-500" : "text-gray-800 font-medium"
+                        read ? "text-gray-500" : "font-medium text-gray-800"
                       )}
                     >
                       {notification.candidate_name}
                       <span
                         className={cn(
                           "ml-1",
-                          read ? "text-gray-400" : "text-gray-600 font-normal"
+                          read ? "text-gray-400" : "font-normal text-gray-600"
                         )}
                       >
                         ・{notification.event_title}

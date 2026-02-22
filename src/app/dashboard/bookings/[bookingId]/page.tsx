@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  ChevronLeft,
   Calendar,
   Clock,
   Mail,
@@ -83,19 +81,10 @@ export default function BookingDetailPage() {
 
   if (!booking) {
     return (
-      <div>
-        <Link
-          href="/dashboard/bookings"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          予約一覧
-        </Link>
-        <div className="card flex flex-col items-center justify-center py-16">
-          <Calendar className="h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-sm font-medium text-gray-500">予約が見つかりません</p>
-          <p className="text-xs text-gray-400 mt-1">URLを確認してください</p>
-        </div>
+      <div className="card flex flex-col items-center justify-center py-16">
+        <Calendar className="h-10 w-10 text-gray-300 mb-3" />
+        <p className="text-sm font-medium text-gray-500">予約が見つかりません</p>
+        <p className="text-xs text-gray-400 mt-1">URLを確認してください</p>
       </div>
     );
   }
@@ -108,15 +97,6 @@ export default function BookingDetailPage() {
 
   return (
     <div className="max-w-2xl">
-      {/* Back link */}
-      <Link
-        href="/dashboard/bookings"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-5 transition-colors"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        予約一覧
-      </Link>
-
       {/* Header card */}
       <div className="card mb-4">
         <div className="flex items-start gap-4">
