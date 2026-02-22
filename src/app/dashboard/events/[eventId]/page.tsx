@@ -185,7 +185,7 @@ export default function EventDetailPage() {
           <Link
             href={`/j/${event.slug}`}
             target="blank"
-            className="btn-tertiary"
+            className="btn-secondary"
           >
             <ExternalLink className="h-4 w-4" />
             プレビュー
@@ -602,7 +602,7 @@ function TeamTab({
             <div className="relative">
               <button
                 onClick={() => setShowMemberPicker(!showMemberPicker)}
-                className="btn-tertiary"
+                className="btn-secondary"
               >
                 <Plus className="h-4 w-4" />
                 メンバーを追加
@@ -867,7 +867,7 @@ function TeamTab({
             ) : (
               <button
                 onClick={() => setShowAddRoleForm(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                className="add-btn"
               >
                 <Plus className="h-4 w-4" />
                 役割を追加
@@ -1097,21 +1097,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
           <h3 className="font-semibold text-gray-900">除外ルール</h3>
           <p className="text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
         </div>
-        {!showAddForm && (
-          <button onClick={() => setShowAddForm(true)} className="btn-tertiary">
-            <Plus className="h-4 w-4" />
-            ルールを追加
-          </button>
-        )}
       </div>
-
-      {showAddForm && renderExclusionForm(
-        addDraft,
-        setAddDraft,
-        handleAddSave,
-        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); },
-        "追加"
-      )}
 
       {localRules.length === 0 && !showAddForm ? (
         <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
@@ -1173,6 +1159,21 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
               )}
             </div>
           ))}
+
+          {showAddForm && renderExclusionForm(
+            addDraft,
+            setAddDraft,
+            handleAddSave,
+            () => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); },
+            "追加"
+          )}
+
+          {!showAddForm && (
+            <button onClick={() => setShowAddForm(true)} className="add-btn">
+              <Plus className="h-4 w-4" />
+              ルールを追加
+            </button>
+          )}
         </div>
       )}
 
@@ -1371,12 +1372,6 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
             候補者に入力してもらう項目を設定します
           </p>
         </div>
-        {!showAddForm && (
-          <button onClick={() => setShowAddForm(true)} className="btn-tertiary">
-            <Plus className="h-4 w-4" />
-            項目を追加
-          </button>
-        )}
       </div>
 
       {/* Default fields (always shown) */}
@@ -1404,16 +1399,6 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
           </div>
         ))}
       </div>
-
-      {/* Add form */}
-      {showAddForm && renderFieldForm(
-        addDraft,
-        setAddDraft,
-        handleAddField,
-        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); },
-        "new",
-        "追加"
-      )}
 
       {/* Custom fields */}
       {localFields.length > 0 && (
@@ -1482,6 +1467,23 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
               ))}
             </SortableContext>
           </DndContext>
+
+          {/* Add form */}
+          {showAddForm && renderFieldForm(
+            addDraft,
+            setAddDraft,
+            handleAddField,
+            () => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); },
+            "new",
+            "追加"
+          )}
+
+          {!showAddForm && (
+            <button onClick={() => setShowAddForm(true)} className="add-btn">
+              <Plus className="h-4 w-4" />
+              項目を追加
+            </button>
+          )}
         </div>
       )}
 

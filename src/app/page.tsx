@@ -50,7 +50,7 @@ export default function Home() {
             ダッシュボードへ
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link href="/j/demo" className="btn-tertiary text-base">
+          <Link href="/j/demo" className="btn-secondary text-base">
             デモを見る
           </Link>
         </div>
