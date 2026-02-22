@@ -96,15 +96,10 @@ export default function BookingDetailPage() {
   const LocationIcon = locCfg.icon;
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl bg-white">
       {/* Header card */}
-      <div className="card mb-4">
+      <div className="p-6 border-b-[1px] border-gray-100">
         <div className="flex items-start gap-4">
-          {/* Event color bar */}
-          <div
-            className="mt-1 h-12 w-1.5 shrink-0 rounded-full"
-            style={{ backgroundColor: event?.color || "#0071c1" }}
-          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg font-bold text-gray-900">
@@ -115,7 +110,13 @@ export default function BookingDetailPage() {
                 {statusInfo.label}
               </span>
             </div>
-            <p className="mt-0.5 text-sm text-gray-500">{event?.title}</p>
+            <div className="mt-1 flex items-center gap-1">
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: event?.color || "#0071c1" }}
+              />
+              <p className="text-sm text-gray-500">{event?.title}</p>
+            </div>
             {event?.description && (
               <p className="mt-1.5 text-xs text-gray-400">{event.description}</p>
             )}
@@ -125,18 +126,20 @@ export default function BookingDetailPage() {
 
       {/* Cancelled notice */}
       {booking.status === "cancelled" && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <XCircle className="h-4 w-4 shrink-0 text-red-500" />
-            <p className="text-sm font-medium text-red-700">
-              この予約はキャンセルされています
-            </p>
+        <div className="p-6 pb-0">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+              <p className="text-sm font-medium text-red-700">
+                この予約はキャンセルされています
+              </p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Details card */}
-      <div className="card divide-y divide-gray-100">
+      <div className="p-6 divide-y divide-gray-100">
         {/* Date/Time */}
         <section className="py-4 first:pt-0 last:pb-0">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
@@ -237,13 +240,13 @@ export default function BookingDetailPage() {
 
       {/* Actions */}
       {booking.status !== "cancelled" && (
-        <div className="mt-4 flex gap-2">
-          <button className="btn-ghost btn-size-s">
-            <MapPin className="h-3.5 w-3.5" />
+        <div className="p-4 flex gap-2 border-t-[1px] border-gray-100 sticky bg-white bottom-0">
+          <button className="btn-ghost">
+            <MapPin className="h-4 w-4" />
             リスケジュール
           </button>
-          <button className="btn-ghost-danger btn-size-s">
-            <XCircle className="h-3.5 w-3.5" />
+          <button className="btn-ghost-danger">
+            <XCircle className="h-4 w-4" />
             キャンセル
           </button>
         </div>

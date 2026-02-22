@@ -29,21 +29,21 @@ const notificationConfig: Record<
   booking_received: {
     label: "予約受付",
     icon: CalendarCheck,
-    iconColor: "text-green-600",
+    iconColor: "text-green-700",
     iconBg: "bg-green-50",
     badgeClass: "badge-green",
   },
   booking_changed: {
     label: "予約変更",
     icon: RefreshCw,
-    iconColor: "text-primary-600",
+    iconColor: "text-primary-700",
     iconBg: "bg-primary-50",
     badgeClass: "badge-blue",
   },
   booking_cancelled: {
     label: "予約キャンセル",
     icon: XCircle,
-    iconColor: "text-red-500",
+    iconColor: "text-red-700",
     iconBg: "bg-red-50",
     badgeClass: "badge-red",
   },
@@ -149,7 +149,7 @@ export default function NotificationsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {displayedNotifications.map((notification) => {
             const read = isRead(notification.id);
             const cfg = notificationConfig[notification.type];
@@ -169,16 +169,8 @@ export default function NotificationsPage() {
                   "bg-white hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 )}
               >
-                {/* Unread indicator bar */}
-                {!read && (
-                  <div className="absolute inset-y-0 left-0 w-1 rounded-l-lg bg-primary-500" />
-                )}
-
                 <div
-                  className={cn(
-                    "flex items-start gap-4 px-5 py-4",
-                    !read && "pl-6"
-                  )}
+                  className={"flex items-center gap-4 px-5 py-4"}
                 >
                   {/* Icon */}
                   <div
@@ -193,9 +185,9 @@ export default function NotificationsPage() {
                   {/* Content */}
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center justify-between gap-3">
-                      <span className={cn("badge", cfg.badgeClass)}>
+                      {/* <span className={cn("badge", cfg.badgeClass)}>
                         {cfg.label}
-                      </span>
+                      </span> */}
                       <span className="shrink-0 text-xs text-gray-400">
                         {getRelativeTime(notification.timestamp)}
                       </span>
@@ -223,9 +215,6 @@ export default function NotificationsPage() {
                       )}
                     >
                       {notification.message}
-                    </p>
-                    <p className="mt-2 text-xs font-medium text-primary-600 group-hover:text-primary-700">
-                      予約の詳細を確認する →
                     </p>
                   </div>
                 </div>

@@ -163,9 +163,16 @@ export default function EventDetailPage() {
           <div className="header-col">
             <div className="heading">
               <div
-                className="h-4 w-4 rounded-full"
-                style={{ backgroundColor: event.color }}
-              />
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{
+                  backgroundColor: (event.color || "#0071c1") + "14",
+                }}
+              >
+                <div
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: event.color || "#0071c1" }}
+                />
+              </div>
               <h1 className="header-title">
                 {event.title}
               </h1>
