@@ -15,7 +15,6 @@ import {
   CalendarPlus,
   Trash2,
   Shield,
-  User as UserIcon,
   Clock,
 } from "lucide-react";
 import {
@@ -276,7 +275,17 @@ export default function TeamPage() {
           return (
             <div
               key={user.id}
-              className="card !p-0 transition-shadow hover:shadow-card-hover"
+              role="button"
+              tabIndex={0}
+              aria-label={`${user.full_name} の詳細を見る`}
+              onClick={() => setDetailUser(user)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setDetailUser(user);
+                }
+              }}
+              className="card card-clickable !p-0 transition-shadow hover:shadow-card-hover"
             >
               <div className="flex items-center gap-4 p-4">
                 {/* Avatar */}
@@ -359,89 +368,71 @@ export default function TeamPage() {
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  {isInvited ? (
-                    <button
-                      onClick={() => handleReinvite(user)}
-                      disabled={isReinviting}
-                      className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 disabled:opacity-50"
-                      title="招待メールを再送"
-                    >
-                      {isReinviting ? (
-                        <span className="spinner h-3 w-3" />
-                      ) : (
-                        <Mail className="h-3 w-3" />
-                      )}
-                      再招待
-                    </button>
-                  ) : (
-                    <>
-                      {user.calendar_status === "error" && (
-                        <button
-                          onClick={() => handleReconnect(user.id)}
-                          disabled={isReconnecting}
-                          className="rounded-md p-1.5 text-amber-600 hover:bg-amber-50 disabled:opacity-50"
-                          title="再接続"
-                        >
-                          {isReconnecting ? (
-                            <span className="spinner h-4 w-4" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
-                          )}
-                        </button>
-                      )}
-                      {user.calendar_status === "not_connected" && (
-                        <button
-                          onClick={() => handleConnect(user.id)}
-                          disabled={isConnecting}
-                          className="rounded-md p-1.5 text-primary-600 hover:bg-primary-50 disabled:opacity-50"
-                          title="カレンダー接続"
-                        >
-                          {isConnecting ? (
-                            <span className="spinner h-4 w-4" />
-                          ) : (
-                            <CalendarPlus className="h-4 w-4" />
-                          )}
-                        </button>
-                      )}
-                    </>
-                  )}
-
+                {/* Actions — カードクリックへの伝播を防ぐ */}
+                <div
+                  className="flex items-center gap-1 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
                   {/* ドロップダウンメニュー */}
                   <DropdownMenu
                     align="right"
                     trigger={
-                      <button className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                        <MoreVertical className="h-4 w-4" />
+                      <button
+                        className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
+                        disabled={isReconnecting || isConnecting || isReinviting}
+                      >
+                        {isReconnecting || isConnecting || isReinviting ? (
+                          <span className="spinner h-4 w-4" />
+                        ) : (
+                          <MoreVertical className="h-4 w-4" />
+                        )}
                       </button>
                     }
                     items={
                       isInvited
                         ? [
                             {
+                              label: "招待メールを再送",
+                              icon: Mail,
+                              onClick: () => handleReinvite(user),
+                            },
+                            { separator: true as const },
+                            {
                               label: "招待を取り消す",
                               icon: XCircle,
-                              variant: "danger",
+                              variant: "danger" as const,
                               onClick: () => setDeleteTargetUser(user),
                             },
                           ]
                         : [
-                            {
-                              label: "詳細を見る",
-                              icon: UserIcon,
-                              onClick: () => setDetailUser(user),
-                            },
+                            ...(user.calendar_status === "error"
+                              ? [{
+                                  label: "カレンダーを再接続",
+                                  icon: RefreshCw,
+                                  onClick: () => handleReconnect(user.id),
+                                }]
+                              : []),
+                            ...(user.calendar_status === "not_connected"
+                              ? [{
+                                  label: "カレンダーを接続",
+                                  icon: CalendarPlus,
+                                  onClick: () => handleConnect(user.id),
+                                }]
+                              : []),
+                            ...((user.calendar_status === "error" || user.calendar_status === "not_connected")
+                              ? [{ separator: true as const }]
+                              : []),
                             {
                               label: "権限を変更",
                               icon: Shield,
                               onClick: () => openPermissionModal(user),
                             },
-                            { separator: true },
+                            { separator: true as const },
                             {
                               label: "メンバーを削除",
                               icon: Trash2,
-                              variant: "danger",
+                              variant: "danger" as const,
                               onClick: () => setDeleteTargetUser(user),
                             },
                           ]
@@ -520,7 +511,14 @@ export default function TeamPage() {
         {detailUser && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 text-lg font-bold text-primary-700">
+              <div
+                className={cn(
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold",
+                  detailUser.status === "invited"
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-primary-100 text-primary-700"
+                )}
+              >
                 {detailUser.full_name.charAt(0)}
               </div>
               <div>
@@ -537,34 +535,40 @@ export default function TeamPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">ステータス</dt>
-                <dd className="font-medium text-gray-900">参加済み</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">カレンダー</dt>
                 <dd className="font-medium text-gray-900">
-                  {calendarStatusConfig[detailUser.calendar_status || "not_connected"].label}
+                  {detailUser.status === "invited" ? "招待中" : "参加済み"}
                 </dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">最終同期</dt>
-                <dd className="font-medium text-gray-900">
-                  {detailUser.last_synced_at
-                    ? formatSyncTime(detailUser.last_synced_at)
-                    : "未同期"}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">担当イベント</dt>
-                <dd className="font-medium text-gray-900">
-                  {getUserStats(detailUser.id).eventCount}件
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">予定面接</dt>
-                <dd className="font-medium text-gray-900">
-                  {getUserStats(detailUser.id).upcomingBookings}件
-                </dd>
-              </div>
+              {detailUser.status !== "invited" && (
+                <>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">カレンダー</dt>
+                    <dd className="font-medium text-gray-900">
+                      {calendarStatusConfig[detailUser.calendar_status || "not_connected"].label}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">最終同期</dt>
+                    <dd className="font-medium text-gray-900">
+                      {detailUser.last_synced_at
+                        ? formatSyncTime(detailUser.last_synced_at)
+                        : "未同期"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">担当イベント</dt>
+                    <dd className="font-medium text-gray-900">
+                      {getUserStats(detailUser.id).eventCount}件
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">予定面接</dt>
+                    <dd className="font-medium text-gray-900">
+                      {getUserStats(detailUser.id).upcomingBookings}件
+                    </dd>
+                  </div>
+                </>
+              )}
             </dl>
           </div>
         )}
