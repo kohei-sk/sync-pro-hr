@@ -46,8 +46,7 @@
 
   /* クリッカブルカード: カード全体がアクションのトリガーになる場合に使用 */
   .card-clickable {
-    @apply cursor-pointer outline-none
-      focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1;
+    @apply cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1;
   }
 
   .input {
@@ -235,7 +234,7 @@
   }
 
   .dropdown-item {
-    @apply flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition-colors;
+    @apply flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
   }
 
   .dropdown-item-danger {

@@ -701,7 +701,7 @@ function CalendarTab() {
                       : "btn-secondary btn-size-s"
                   )}
                 >
-                  {state.loading && <span className="spinner" />}
+                  {state.loading && <><span className="spinner" />接続中</>}
                   {!state.loading && state.connected ? (
                     "接続解除"
                   ) : !state.loading ? (
@@ -811,8 +811,7 @@ const MESSAGING_INTEGRATIONS = [
     iconBg: "bg-purple-50",
     iconColor: "text-purple-700",
     description: "Slackのワークスペースと連携して、予約通知を自動送信します",
-    authButtonLabel: "Slackで認証する",
-    authHint: "Slackのブラウザ認証画面に移動します",
+    authButtonLabel: "Slackで認証",
   },
   {
     name: "Chatwork",
@@ -820,8 +819,7 @@ const MESSAGING_INTEGRATIONS = [
     iconBg: "bg-green-50",
     iconColor: "text-green-700",
     description: "Chatworkのルームと連携して、予約通知を自動送信します",
-    authButtonLabel: "Chatworkで認証する",
-    authHint: "Chatworkのブラウザ認証画面に移動します",
+    authButtonLabel: "Chatworkで認証",
   },
 ] as const;
 
@@ -874,10 +872,10 @@ function MessagingIntegrationCard() {
                 key={integration.name}
                 className="rounded-lg border border-gray-200 p-4"
               >
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3">
                   <div
                     className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
                       integration.iconBg,
                       integration.iconColor
                     )}
@@ -909,18 +907,12 @@ function MessagingIntegrationCard() {
                       接続解除
                     </button>
                   )}
-                </div>
-
-                {/* 未接続時: OAuth ボタン */}
-                {!state.connected && (
-                  <div className="mt-1">
-                    <p className="text-xs text-gray-400 mb-3">
-                      {integration.authHint}
-                    </p>
+                  {/* 未接続時: OAuth ボタン */}
+                  {!state.connected && (
                     <button
                       onClick={() => handleConnect(integration.name)}
                       disabled={state.loading}
-                      className="btn-primary btn-size-s"
+                      className="btn-secondary btn-size-s"
                     >
                       {state.loading ? (
                         <>
@@ -934,8 +926,9 @@ function MessagingIntegrationCard() {
                         </>
                       )}
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
+
               </div>
             );
           })}

@@ -81,7 +81,7 @@ export default function TeamPage() {
     { label: string; icon: typeof CheckCircle2; className: string; bgClass: string }
   > = {
     connected: {
-      label: "接続済み",
+      label: "接続済",
       icon: CheckCircle2,
       className: "text-green-600",
       bgClass: "bg-green-50",
@@ -317,12 +317,18 @@ export default function TeamPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="hidden sm:flex items-center gap-4 shrink-0">
+                <div className="hidden sm:flex items-center gap-5 shrink-0 mr-3">
                   {isInvited ? (
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-300">—</p>
-                      <p className="text-xs text-gray-400">イベント</p>
-                    </div>
+                    <>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-300">—</p>
+                        <p className="text-xs text-gray-400">イベント</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-300">—</p>
+                        <p className="text-xs text-gray-400">予定面接</p>
+                      </div>
+                    </>
                   ) : (
                     <>
                       <div className="text-center">
@@ -392,50 +398,50 @@ export default function TeamPage() {
                     items={
                       isInvited
                         ? [
-                            {
-                              label: "招待メールを再送",
-                              icon: Mail,
-                              onClick: () => handleReinvite(user),
-                            },
-                            { separator: true as const },
-                            {
-                              label: "招待を取り消す",
-                              icon: XCircle,
-                              variant: "danger" as const,
-                              onClick: () => setDeleteTargetUser(user),
-                            },
-                          ]
+                          {
+                            label: "招待メールを再送",
+                            icon: Mail,
+                            onClick: () => handleReinvite(user),
+                          },
+                          { separator: true as const },
+                          {
+                            label: "招待を取り消す",
+                            icon: XCircle,
+                            variant: "danger" as const,
+                            onClick: () => setDeleteTargetUser(user),
+                          },
+                        ]
                         : [
-                            ...(user.calendar_status === "error"
-                              ? [{
-                                  label: "カレンダーを再接続",
-                                  icon: RefreshCw,
-                                  onClick: () => handleReconnect(user.id),
-                                }]
-                              : []),
-                            ...(user.calendar_status === "not_connected"
-                              ? [{
-                                  label: "カレンダーを接続",
-                                  icon: CalendarPlus,
-                                  onClick: () => handleConnect(user.id),
-                                }]
-                              : []),
-                            ...((user.calendar_status === "error" || user.calendar_status === "not_connected")
-                              ? [{ separator: true as const }]
-                              : []),
-                            {
-                              label: "権限を変更",
-                              icon: Shield,
-                              onClick: () => openPermissionModal(user),
-                            },
-                            { separator: true as const },
-                            {
-                              label: "メンバーを削除",
-                              icon: Trash2,
-                              variant: "danger" as const,
-                              onClick: () => setDeleteTargetUser(user),
-                            },
-                          ]
+                          ...(user.calendar_status === "error"
+                            ? [{
+                              label: "カレンダーを再接続",
+                              icon: RefreshCw,
+                              onClick: () => handleReconnect(user.id),
+                            }]
+                            : []),
+                          ...(user.calendar_status === "not_connected"
+                            ? [{
+                              label: "カレンダーを接続",
+                              icon: CalendarPlus,
+                              onClick: () => handleConnect(user.id),
+                            }]
+                            : []),
+                          ...((user.calendar_status === "error" || user.calendar_status === "not_connected")
+                            ? [{ separator: true as const }]
+                            : []),
+                          {
+                            label: "権限を変更",
+                            icon: Shield,
+                            onClick: () => openPermissionModal(user),
+                          },
+                          { separator: true as const },
+                          {
+                            label: "メンバーを削除",
+                            icon: Trash2,
+                            variant: "danger" as const,
+                            onClick: () => setDeleteTargetUser(user),
+                          },
+                        ]
                     }
                   />
                 </div>
