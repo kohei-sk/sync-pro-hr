@@ -622,42 +622,46 @@ export default function NewEventPage() {
                       setFormData({ ...formData, scheduling_mode: "fixed" })
                     }
                     className={cn(
-                      "rounded-2xl border-2 p-4 text-left transition-all",
+                      "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
                       formData.scheduling_mode === "fixed"
                         ? "border-primary-600 bg-primary-50"
                         : "border-gray-200 hover:border-gray-300"
                     )}
                   >
                     <Lock className="h-5 w-5 text-gray-600" />
-                    <h4 className="mt-2 font-semibold text-gray-900">
-                      固定モード
-                    </h4>
-                    <p className="mt-1 text-xs text-gray-500">
-                      指定メンバー全員が空いている枠のみ表示
-                    </p>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        固定モード
+                      </h4>
+                      <p className="mt-1 text-xs text-gray-500">
+                        指定メンバー全員が空いている枠のみ表示
+                      </p>
+                    </div>
                   </button>
                   <button
                     onClick={() =>
                       setFormData({ ...formData, scheduling_mode: "pool" })
                     }
                     className={cn(
-                      "rounded-2xl border-2 p-4 text-left transition-all",
+                      "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
                       formData.scheduling_mode === "pool"
                         ? "border-primary-600 bg-primary-50"
                         : "border-gray-200 hover:border-gray-300"
                     )}
                   >
                     <Users className="h-5 w-5 text-gray-600" />
-                    <h4 className="mt-2 font-semibold text-gray-900">
-                      プールモード
-                    </h4>
-                    <p className="mt-1 text-xs text-gray-500">
-                      役割ごとに必要人数を満たす枠を自動選出
-                    </p>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        プールモード
+                      </h4>
+                      <p className="mt-1 text-xs text-gray-500">
+                        役割ごとに必要人数を満たす枠を自動選出
+                      </p>
+                    </div>
                   </button>
                 </div>
                 <div className="mt-3 rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600">
                     {formData.scheduling_mode === "fixed"
                       ? "固定モードでは、全メンバーの空き時間が一致する枠のみが候補者に表示されます。少人数の面接に適しています。"
                       : "プールモードでは、役割ごとに必要人数を設定し、条件を満たす枠が自動で選出されます。大人数の面接パネルに適しています。"}
@@ -690,9 +694,6 @@ export default function NewEventPage() {
                                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
                                       {index + 1}
                                     </span>
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                      {user?.full_name.charAt(0) || "?"}
-                                    </div>
                                     <span className="flex-1 text-sm text-gray-700">
                                       {user?.full_name || userId}
                                     </span>
@@ -831,9 +832,6 @@ export default function NewEventPage() {
                                                 <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
                                                   {memberIndex + 1}
                                                 </span>
-                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                                  {user?.full_name.charAt(0) || "?"}
-                                                </div>
                                                 <span className="flex-1 text-sm text-gray-700">
                                                   {user?.full_name || userId}
                                                 </span>
