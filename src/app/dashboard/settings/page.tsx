@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   User,
   Bell,
@@ -11,26 +11,48 @@ import {
   Link2,
   Clock,
   Shield,
+  ImagePlus,
+  MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
+import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+
+// ============================================================
+// Types
+// ============================================================
 
 type Tab = "profile" | "notifications" | "calendar" | "general";
+
+interface CalendarIntegrationState {
+  connected: boolean;
+  account: string | null;
+  loading: boolean;
+}
+
+interface MessagingIntegrationState {
+  connected: boolean;
+  loading: boolean;
+}
+
+// ============================================================
+// Tab 定義
+// ============================================================
 
 const tabs: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "profile", label: "プロフィール", icon: User },
   { id: "notifications", label: "通知設定", icon: Bell },
-  { id: "calendar", label: "カレンダー連携", icon: Calendar },
+  { id: "calendar", label: "連携設定", icon: Calendar },
   { id: "general", label: "一般設定", icon: Globe },
 ];
 
+// ============================================================
+// Page
+// ============================================================
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
-  const [saved, setSaved] = useState(false);
-
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
 
   return (
     <div>
@@ -51,9 +73,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab(tab.id)}
             className={cn(
               "tab-item",
-              activeTab === tab.id
-                ? "tab-item-active"
-                : ""
+              activeTab === tab.id ? "tab-item-active" : ""
             )}
           >
             <tab.icon className="h-4 w-4" />
@@ -64,53 +84,72 @@ export default function SettingsPage() {
 
       {/* Tab Content */}
       <div className="max-w-2xl">
-        {activeTab === "profile" && <ProfileTab onSave={handleSave} />}
-        {activeTab === "notifications" && (
-          <NotificationsTab onSave={handleSave} />
-        )}
+        {activeTab === "profile" && <ProfileTab />}
+        {activeTab === "notifications" && <NotificationsTab />}
         {activeTab === "calendar" && <CalendarTab />}
-        {activeTab === "general" && <GeneralTab onSave={handleSave} />}
+        {activeTab === "general" && <GeneralTab />}
       </div>
-
-      {/* Toast */}
-      {
-        saved && (
-          <div className="toast">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span className="text-sm font-medium text-gray-700">
-              設定を保存しました
-            </span>
-          </div>
-        )
-      }
-    </div >
+    </div>
   );
 }
 
-function ProfileTab({ onSave }: { onSave: () => void }) {
+// ============================================================
+// ProfileTab
+// ============================================================
+
+function ProfileTab() {
+  const toast = useToast();
   const [name, setName] = useState("田中 太郎");
   const [email, setEmail] = useState("tanaka@example.com");
   const [timezone, setTimezone] = useState("Asia/Tokyo");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  function handleSaveProfile() {
+    setSavingProfile(true);
+    setTimeout(() => {
+      setSavingProfile(false);
+      toast.success("基本情報を保存しました");
+    }, 800);
+  }
+
+  function handleSavePassword() {
+    setSavingPassword(true);
+    setTimeout(() => {
+      setSavingPassword(false);
+      toast.success("パスワードを変更しました");
+    }, 800);
+  }
 
   return (
     <div className="space-y-6">
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          基本情報
-        </h2>
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">基本情報</h2>
         <div className="space-y-4">
           {/* Avatar */}
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-700">
-              田
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 overflow-hidden">
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="プロフィール画像"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-bold text-primary-700">田</span>
+              )}
             </div>
             <div>
-              <button className="btn-secondary btn-size-s">
+              <button
+                className="btn-secondary btn-size-s"
+                onClick={() => setUploadModalOpen(true)}
+              >
+                <ImagePlus className="h-3.5 w-3.5" />
                 画像を変更
               </button>
-              <p className="mt-1 text-xs text-gray-400">
-                JPG, PNG 最大 2MB
-              </p>
+              <p className="mt-1 text-xs text-gray-400">JPG, PNG 最大 2MB</p>
             </div>
           </div>
 
@@ -154,8 +193,16 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
         </div>
 
         <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-          <button onClick={onSave} className="btn-primary">
-            <Save className="h-4 w-4" />
+          <button
+            onClick={handleSaveProfile}
+            disabled={savingProfile}
+            className="btn-primary"
+          >
+            {savingProfile ? (
+              <span className="spinner" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             保存
           </button>
         </div>
@@ -188,23 +235,155 @@ function ProfileTab({ onSave }: { onSave: () => void }) {
           </div>
         </div>
         <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-          <button onClick={onSave} className="btn-secondary">
+          <button
+            onClick={handleSavePassword}
+            disabled={savingPassword}
+            className="btn-secondary"
+          >
+            {savingPassword && <span className="spinner" />}
             パスワードを変更
           </button>
         </div>
       </div>
+
+      {/* 画像アップロードモーダル */}
+      <AvatarUploadModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUploaded={(dataUrl) => {
+          setAvatarPreview(dataUrl);
+          setUploadModalOpen(false);
+          toast.success("プロフィール画像を変更しました");
+        }}
+      />
     </div>
   );
 }
 
-function NotificationsTab({ onSave }: { onSave: () => void }) {
+// ============================================================
+// AvatarUploadModal
+// ============================================================
+
+function AvatarUploadModal({
+  open,
+  onClose,
+  onUploaded,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onUploaded: (dataUrl: string) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  function handleClose() {
+    if (loading) return;
+    setPreview(null);
+    onClose();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("ファイルサイズは2MB以下にしてください");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleUpload() {
+    if (!preview) return;
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onUploaded(preview);
+      setPreview(null);
+    }, 1000);
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="プロフィール画像を変更"
+      size="sm"
+      footer={
+        <>
+          <button onClick={handleClose} disabled={loading} className="btn-ghost">
+            キャンセル
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={!preview || loading}
+            className="btn-primary"
+          >
+            {loading && <span className="spinner" />}
+            アップロード
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {/* プレビュー */}
+        <div className="flex justify-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100 overflow-hidden ring-2 ring-gray-200">
+            {preview ? (
+              <img
+                src={preview}
+                alt="プレビュー"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-2xl font-bold text-primary-700">田</span>
+            )}
+          </div>
+        </div>
+
+        {/* ドロップエリア */}
+        <div
+          className="upload-area"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <ImagePlus className="h-8 w-8 text-gray-400 mb-2" />
+          <p className="text-sm font-medium text-gray-600">
+            クリックして画像を選択
+          </p>
+          <p className="mt-1 text-xs text-gray-400">JPG, PNG 最大2MB</p>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================================
+// NotificationsTab
+// ============================================================
+
+function NotificationsTab() {
+  const toast = useToast();
   const [emailBookingNew, setEmailBookingNew] = useState(true);
   const [emailBookingCancel, setEmailBookingCancel] = useState(true);
   const [emailReminder, setEmailReminder] = useState(true);
   const [emailDigest, setEmailDigest] = useState(false);
   const [reminderTime, setReminderTime] = useState("30");
+  const [slackNotify, setSlackNotify] = useState(false);
+  const [chatworkNotify, setChatworkNotify] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const notifications = [
+  const emailNotifications = [
     {
       id: "new",
       label: "新規予約通知",
@@ -235,62 +414,87 @@ function NotificationsTab({ onSave }: { onSave: () => void }) {
     },
   ];
 
+  const messagingNotifications = [
+    {
+      id: "slack",
+      label: "Slack通知",
+      description: "SlackチャンネルにもNotifyします（連携設定が必要）",
+      checked: slackNotify,
+      onChange: setSlackNotify,
+    },
+    {
+      id: "chatwork",
+      label: "Chatwork通知",
+      description: "ChatworkルームにもNotifyします（連携設定が必要）",
+      checked: chatworkNotify,
+      onChange: setChatworkNotify,
+    },
+  ];
+
+  function handleSave() {
+    setSaving(true);
+    setTimeout(() => {
+      setSaving(false);
+      toast.success("通知設定を保存しました");
+    }, 800);
+  }
+
   return (
-    <div className="card">
-      <h2 className="text-sm font-semibold text-gray-900 mb-4">
-        メール通知
-      </h2>
+    <div className="space-y-4">
+      {/* メール通知 */}
+      <div className="card">
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">メール通知</h2>
 
-      <div className="space-y-4">
-        {notifications.map((n) => (
-          <div
-            key={n.id}
-            className="flex items-center justify-between rounded-lg border border-gray-100 p-3"
-          >
-            <div>
-              <p className="text-sm font-medium text-gray-900">{n.label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{n.description}</p>
-            </div>
-            <button
-              onClick={() => n.onChange(!n.checked)}
-              className={cn(
-                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors",
-                n.checked ? "bg-primary-500" : "bg-gray-200"
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform mt-0.5",
-                  n.checked ? "translate-x-5 ml-0.5" : "translate-x-0.5"
-                )}
-              />
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Reminder Time */}
-      <div className="mt-6 pt-4 border-t border-gray-100">
-        <div className="flex items-center gap-2 mb-2">
-          <Clock className="h-4 w-4 text-gray-400" />
-          <label className="label !mb-0">リマインダー送信タイミング</label>
+        <div className="space-y-3">
+          {emailNotifications.map((n) => (
+            <NotificationToggleRow key={n.id} {...n} />
+          ))}
         </div>
-        <select
-          value={reminderTime}
-          onChange={(e) => setReminderTime(e.target.value)}
-          className="select mt-1 max-w-xs"
-        >
-          <option value="15">15分前</option>
-          <option value="30">30分前</option>
-          <option value="60">1時間前</option>
-          <option value="120">2時間前</option>
-          <option value="1440">1日前</option>
-        </select>
+
+        {/* Reminder Time */}
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="h-4 w-4 text-gray-400" />
+            <label className="label !mb-0">リマインダー送信タイミング</label>
+          </div>
+          <select
+            value={reminderTime}
+            onChange={(e) => setReminderTime(e.target.value)}
+            className="select mt-1 max-w-xs"
+          >
+            <option value="15">15分前</option>
+            <option value="30">30分前</option>
+            <option value="60">1時間前</option>
+            <option value="120">2時間前</option>
+            <option value="1440">1日前</option>
+          </select>
+        </div>
       </div>
 
-      <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-        <button onClick={onSave} className="btn-primary">
-          <Save className="h-4 w-4" />
+      {/* メッセージ通知 */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-1">
+          <MessageSquare className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-900">メッセージ通知</h2>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          連携設定は「カレンダー連携」タブから設定できます
+        </p>
+
+        <div className="space-y-3">
+          {messagingNotifications.map((n) => (
+            <NotificationToggleRow key={n.id} {...n} />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button onClick={handleSave} disabled={saving} className="btn-primary">
+          {saving ? (
+            <span className="spinner" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
           保存
         </button>
       </div>
@@ -298,40 +502,149 @@ function NotificationsTab({ onSave }: { onSave: () => void }) {
   );
 }
 
+function NotificationToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
+      <div>
+        <p className="text-sm font-medium text-gray-900">{label}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors",
+          checked ? "bg-primary-500" : "bg-gray-200"
+        )}
+        role="switch"
+        aria-checked={checked}
+      >
+        <span
+          className={cn(
+            "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform mt-0.5",
+            checked ? "translate-x-5 ml-0.5" : "translate-x-0.5"
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ============================================================
+// CalendarTab
+// ============================================================
+
+const CALENDAR_INTEGRATIONS = [
+  {
+    name: "Google Calendar",
+    description: "Googleカレンダーと同期して空き時間を自動取得します",
+    icon: "G",
+    iconBg: "bg-red-50",
+    iconColor: "text-red-600",
+    defaultAccount: "tanaka@example.com",
+    defaultConnected: true,
+  },
+  {
+    name: "Outlook Calendar",
+    description: "Microsoft Outlookカレンダーと連携します",
+    icon: "O",
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-600",
+    defaultAccount: null,
+    defaultConnected: false,
+  },
+  {
+    name: "Apple Calendar",
+    description: "Apple iCloudカレンダーと連携します",
+    icon: "A",
+    iconBg: "bg-gray-100",
+    iconColor: "text-gray-700",
+    defaultAccount: null,
+    defaultConnected: false,
+  },
+];
+
 function CalendarTab() {
-  const integrations = [
-    {
-      name: "Google Calendar",
-      description: "Googleカレンダーと同期して空き時間を自動取得します",
-      icon: "G",
-      iconBg: "bg-red-50",
-      iconColor: "text-red-600",
-      connected: true,
-      account: "tanaka@example.com",
-    },
-    {
-      name: "Outlook Calendar",
-      description:
-        "Microsoft Outlookカレンダーと連携します",
-      icon: "O",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-      connected: false,
-      account: null,
-    },
-    {
-      name: "Apple Calendar",
-      description: "Apple iCloudカレンダーと連携します",
-      icon: "A",
-      iconBg: "bg-gray-100",
-      iconColor: "text-gray-700",
-      connected: false,
-      account: null,
-    },
-  ];
+  const toast = useToast();
+
+  // カレンダー連携状態
+  const [calendarStates, setCalendarStates] = useState<
+    Record<string, CalendarIntegrationState>
+  >(() => {
+    const initial: Record<string, CalendarIntegrationState> = {};
+    for (const c of CALENDAR_INTEGRATIONS) {
+      initial[c.name] = {
+        connected: c.defaultConnected,
+        account: c.defaultConnected ? c.defaultAccount : null,
+        loading: false,
+      };
+    }
+    return initial;
+  });
+  const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  // 同期設定
+  const [autoSync, setAutoSync] = useState(true);
+  const [savingSyncSettings, setSavingSyncSettings] = useState(false);
+
+  function handleConnect(name: string) {
+    setCalendarStates((prev) => ({
+      ...prev,
+      [name]: { ...prev[name], loading: true },
+    }));
+    setTimeout(() => {
+      setCalendarStates((prev) => ({
+        ...prev,
+        [name]: {
+          connected: true,
+          account: "tanaka@example.com",
+          loading: false,
+        },
+      }));
+      toast.success(`${name} を接続しました`);
+    }, 1500);
+  }
+
+  function handleDisconnect(name: string) {
+    setDisconnectTarget(name);
+  }
+
+  function handleDisconnectConfirm() {
+    if (!disconnectTarget) return;
+    setDisconnecting(true);
+    setTimeout(() => {
+      const name = disconnectTarget;
+      setCalendarStates((prev) => ({
+        ...prev,
+        [name]: { connected: false, account: null, loading: false },
+      }));
+      setDisconnectTarget(null);
+      setDisconnecting(false);
+      toast.success(`${name} の接続を解除しました`);
+    }, 1000);
+  }
+
+  function handleSaveSyncSettings() {
+    setSavingSyncSettings(true);
+    setTimeout(() => {
+      setSavingSyncSettings(false);
+      toast.success("同期設定を保存しました");
+    }, 800);
+  }
 
   return (
     <div className="space-y-4">
+      {/* カレンダー連携 */}
       <div className="card">
         <h2 className="text-sm font-semibold text-gray-900 mb-1">
           カレンダー連携
@@ -341,76 +654,98 @@ function CalendarTab() {
         </p>
 
         <div className="space-y-3">
-          {integrations.map((integration) => (
-            <div
-              key={integration.name}
-              className="flex items-center gap-4 rounded-lg border border-gray-200 p-4"
-            >
+          {CALENDAR_INTEGRATIONS.map((integration) => {
+            const state = calendarStates[integration.name];
+            return (
               <div
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold",
-                  integration.iconBg,
-                  integration.iconColor
-                )}
+                key={integration.name}
+                className="flex items-center gap-4 rounded-lg border border-gray-200 p-4"
               >
-                {integration.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    {integration.name}
-                  </h3>
-                  {integration.connected && (
-                    <span className="badge badge-green">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      接続済み
-                    </span>
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
+                    integration.iconBg,
+                    integration.iconColor
                   )}
+                >
+                  {integration.icon}
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {integration.connected
-                    ? integration.account
-                    : integration.description}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {integration.name}
+                    </h3>
+                    {state.connected && (
+                      <span className="badge badge-green">
+                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                        接続済み
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {state.connected
+                      ? state.account
+                      : integration.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    state.connected
+                      ? handleDisconnect(integration.name)
+                      : handleConnect(integration.name)
+                  }
+                  disabled={state.loading}
+                  className={cn(
+                    state.connected
+                      ? "btn-ghost-danger btn-size-s"
+                      : "btn-secondary btn-size-s"
+                  )}
+                >
+                  {state.loading && <><span className="spinner" />接続中</>}
+                  {!state.loading && state.connected ? (
+                    "接続解除"
+                  ) : !state.loading ? (
+                    <>
+                      <Link2 className="h-3 w-3" />
+                      接続
+                    </>
+                  ) : null}
+                </button>
               </div>
-              <button
-                className={cn(
-                  integration.connected
-                    ? "btn-ghost-danger btn-size-s"
-                    : "btn-secondary btn-size-s"
-                )}
-              >
-                {integration.connected ? (
-                  "接続解除"
-                ) : (
-                  <>
-                    <Link2 className="h-3 w-3" />
-                    接続
-                  </>
-                )}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Sync Settings */}
+      {/* メッセージングツール連携 */}
+      <MessagingIntegrationCard />
+
+      {/* 同期設定 */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          同期設定
-        </h2>
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">同期設定</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
             <div>
-              <p className="text-sm font-medium text-gray-900">
-                自動同期
-              </p>
+              <p className="text-sm font-medium text-gray-900">自動同期</p>
               <p className="text-xs text-gray-500 mt-0.5">
                 カレンダーの変更を自動的に反映します
               </p>
             </div>
-            <button className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-primary-500 transition-colors">
-              <span className="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm translate-x-5 ml-0.5 mt-0.5" />
+            <button
+              onClick={() => setAutoSync((v) => !v)}
+              className={cn(
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors",
+                autoSync ? "bg-primary-500" : "bg-gray-200"
+              )}
+              role="switch"
+              aria-checked={autoSync}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
+                  autoSync ? "translate-x-5 ml-0.5" : "translate-x-0.5"
+                )}
+              />
             </button>
           </div>
           <div>
@@ -432,16 +767,212 @@ function CalendarTab() {
             </select>
           </div>
         </div>
+        <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
+          <button
+            onClick={handleSaveSyncSettings}
+            disabled={savingSyncSettings}
+            className="btn-primary"
+          >
+            {savingSyncSettings ? (
+              <span className="spinner" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            保存
+          </button>
+        </div>
       </div>
+
+      {/* 接続解除確認ダイアログ */}
+      <ConfirmDialog
+        open={disconnectTarget !== null}
+        onClose={() => {
+          if (!disconnecting) setDisconnectTarget(null);
+        }}
+        onConfirm={handleDisconnectConfirm}
+        title="接続を解除しますか？"
+        description={`${disconnectTarget} との連携を解除します。カレンダーの同期が停止されます。`}
+        confirmLabel="接続解除"
+        confirmVariant="danger"
+        loading={disconnecting}
+      />
     </div>
   );
 }
 
-function GeneralTab({ onSave }: { onSave: () => void }) {
+// ============================================================
+// MessagingIntegrationCard
+// ============================================================
+
+const MESSAGING_INTEGRATIONS = [
+  {
+    name: "Slack",
+    icon: "S",
+    iconBg: "bg-purple-50",
+    iconColor: "text-purple-700",
+    description: "Slackのワークスペースと連携して、予約通知を自動送信します",
+    authButtonLabel: "Slackで認証",
+  },
+  {
+    name: "Chatwork",
+    icon: "C",
+    iconBg: "bg-green-50",
+    iconColor: "text-green-700",
+    description: "Chatworkのルームと連携して、予約通知を自動送信します",
+    authButtonLabel: "Chatworkで認証",
+  },
+] as const;
+
+function MessagingIntegrationCard() {
+  const toast = useToast();
+  const [states, setStates] = useState<Record<string, MessagingIntegrationState>>({
+    Slack: { connected: false, loading: false },
+    Chatwork: { connected: false, loading: false },
+  });
+  const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  function handleConnect(name: string) {
+    setStates((prev) => ({ ...prev, [name]: { ...prev[name], loading: true } }));
+    // 実際の実装では外部の OAuth 認証画面にリダイレクトする
+    setTimeout(() => {
+      setStates((prev) => ({ ...prev, [name]: { connected: true, loading: false } }));
+      toast.success(`${name} を接続しました`);
+    }, 1500);
+  }
+
+  function handleDisconnectConfirm() {
+    if (!disconnectTarget) return;
+    setDisconnecting(true);
+    setTimeout(() => {
+      const name = disconnectTarget;
+      setStates((prev) => ({ ...prev, [name]: { connected: false, loading: false } }));
+      setDisconnectTarget(null);
+      setDisconnecting(false);
+      toast.success(`${name} の接続を解除しました`);
+    }, 1000);
+  }
+
+  return (
+    <>
+      <div className="card">
+        <div className="flex items-center gap-2 mb-1">
+          <MessageSquare className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-900">メッセージングツール連携</h2>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          SlackやChatworkに予約通知を送信できます
+        </p>
+
+        <div className="space-y-4">
+          {MESSAGING_INTEGRATIONS.map((integration) => {
+            const state = states[integration.name];
+            return (
+              <div
+                key={integration.name}
+                className="rounded-lg border border-gray-200 p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
+                      integration.iconBg,
+                      integration.iconColor
+                    )}
+                  >
+                    {integration.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        {integration.name}
+                      </h3>
+                      {state.connected && (
+                        <span className="badge badge-green">
+                          <CheckCircle2 className="mr-1 h-3 w-3" />
+                          接続済み
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {integration.description}
+                    </p>
+                  </div>
+                  {state.connected && (
+                    <button
+                      onClick={() => setDisconnectTarget(integration.name)}
+                      disabled={state.loading}
+                      className="btn-ghost-danger btn-size-s shrink-0"
+                    >
+                      接続解除
+                    </button>
+                  )}
+                  {/* 未接続時: OAuth ボタン */}
+                  {!state.connected && (
+                    <button
+                      onClick={() => handleConnect(integration.name)}
+                      disabled={state.loading}
+                      className="btn-secondary btn-size-s"
+                    >
+                      {state.loading ? (
+                        <>
+                          <span className="spinner" />
+                          認証中...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="h-3 w-3" />
+                          {integration.authButtonLabel}
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 接続解除確認ダイアログ */}
+      <ConfirmDialog
+        open={disconnectTarget !== null}
+        onClose={() => {
+          if (!disconnecting) setDisconnectTarget(null);
+        }}
+        onConfirm={handleDisconnectConfirm}
+        title="接続を解除しますか？"
+        description={`${disconnectTarget} との連携を解除します。通知の送信が停止されます。`}
+        confirmLabel="接続解除"
+        confirmVariant="danger"
+        loading={disconnecting}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// GeneralTab
+// ============================================================
+
+function GeneralTab() {
+  const toast = useToast();
   const [workStart, setWorkStart] = useState("09:00");
   const [workEnd, setWorkEnd] = useState("18:00");
   const [language, setLanguage] = useState("ja");
-  const [bookingUrl, setBookingUrl] = useState("https://syncpro-hr.example.com/j/");
+  const [bookingUrl, setBookingUrl] = useState(
+    "https://syncpro-hr.example.com/j/"
+  );
+  const [saving, setSaving] = useState(false);
+
+  function handleSave() {
+    setSaving(true);
+    setTimeout(() => {
+      setSaving(false);
+      toast.success("一般設定を保存しました");
+    }, 800);
+  }
 
   return (
     <div className="space-y-4">
@@ -522,8 +1053,12 @@ function GeneralTab({ onSave }: { onSave: () => void }) {
       </div>
 
       <div className="flex justify-end">
-        <button onClick={onSave} className="btn-primary">
-          <Save className="h-4 w-4" />
+        <button onClick={handleSave} disabled={saving} className="btn-primary">
+          {saving ? (
+            <span className="spinner" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
           保存
         </button>
       </div>

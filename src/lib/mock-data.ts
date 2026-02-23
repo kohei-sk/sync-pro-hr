@@ -53,6 +53,26 @@ export const mockUsers: User[] = [
     calendar_status: "not_connected",
     last_synced_at: undefined,
   },
+  {
+    id: "u6",
+    email: "nakamura@example.com",
+    full_name: "中村 健太",
+    avatar_url: undefined,
+    status: "invited",
+    role: "member",
+    calendar_status: undefined,
+    last_synced_at: undefined,
+  },
+  {
+    id: "u7",
+    email: "kobayashi@example.com",
+    full_name: "小林 あやか",
+    avatar_url: undefined,
+    status: "invited",
+    role: "admin",
+    calendar_status: undefined,
+    last_synced_at: undefined,
+  },
 ];
 
 // --- Mock Event Types ---

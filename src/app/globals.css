@@ -44,6 +44,11 @@
     @apply rounded-xl bg-white p-6 shadow-card ring-1 ring-gray-200/60;
   }
 
+  /* クリッカブルカード: カード全体がアクションのトリガーになる場合に使用 */
+  .card-clickable {
+    @apply cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1;
+  }
+
   .input {
     @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 transition-shadow;
   }
@@ -154,7 +159,11 @@
 
   /* Toast notifications */
   .toast {
-    @apply fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg bg-white px-4 py-3 shadow-lg ring-1 ring-gray-200/80 animate-slide-up;
+    @apply flex items-center gap-3 rounded-lg bg-white px-4 py-3 shadow-lg ring-1 ring-gray-200/80 animate-slide-up;
+  }
+
+  .toast-stack {
+    @apply fixed bottom-6 right-6 z-50 flex flex-col gap-2;
   }
 
   @keyframes slide-up {
@@ -171,5 +180,73 @@
 
   .animate-slide-up {
     animation: slide-up 0.3s ease-out;
+  }
+
+  /* Spinner */
+  .spinner {
+    @apply inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    @apply fixed inset-0 bg-gray-900/50 z-40;
+  }
+
+  .modal-container {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  }
+
+  .modal-panel {
+    @apply bg-white rounded-xl shadow-xl ring-1 ring-gray-200 w-full;
+  }
+
+  .modal-panel-sm {
+    @apply max-w-sm;
+  }
+
+  .modal-panel-md {
+    @apply max-w-md;
+  }
+
+  .modal-panel-lg {
+    @apply max-w-lg;
+  }
+
+  .modal-header {
+    @apply flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100;
+  }
+
+  .modal-body {
+    @apply px-6 py-4;
+  }
+
+  .modal-footer {
+    @apply flex items-center justify-end gap-2 px-6 pb-6 pt-4 border-t border-gray-100;
+  }
+
+  /* Dropdown */
+  .dropdown-wrapper {
+    @apply relative inline-block;
+  }
+
+  .dropdown-panel {
+    @apply absolute z-20 mt-1 min-w-40 bg-white rounded-lg shadow-lg ring-1 ring-gray-200 py-1;
+  }
+
+  .dropdown-item {
+    @apply flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
+  }
+
+  .dropdown-item-danger {
+    @apply text-red-600 hover:bg-red-50 hover:text-red-700;
+  }
+
+  .dropdown-separator {
+    @apply my-1 border-t border-gray-100;
+  }
+
+  /* Upload area */
+  .upload-area {
+    @apply flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors text-center;
   }
 }
