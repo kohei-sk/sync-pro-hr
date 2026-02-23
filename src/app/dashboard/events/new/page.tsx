@@ -146,7 +146,7 @@ export default function NewEventPage() {
 
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
-    { id: "team", label: "チーム設定" },
+    { id: "team", label: "メンバー設定" },
     { id: "exclusions", label: "除外ルール" },
     { id: "confirm", label: "確認" },
   ];
@@ -348,12 +348,12 @@ export default function NewEventPage() {
 
       {/* Step indicator */}
       <div className="mb-8">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3.5">
           {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
+            <div key={s.id} className="flex items-center gap-3.5">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
@@ -365,7 +365,7 @@ export default function NewEventPage() {
               </div>
               <span
                 className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-semibold",
                   i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
                 )}
               >
@@ -375,7 +375,7 @@ export default function NewEventPage() {
                 <div
                   className={cn(
                     "h-px w-8",
-                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-200"
+                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-300"
                   )}
                 />
               )}
@@ -607,7 +607,7 @@ export default function NewEventPage() {
         {step === "team" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              チーム設定
+              メンバー設定
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               面接に参加するメンバーの役割と配分を設定します
@@ -926,7 +926,7 @@ export default function NewEventPage() {
         {/* Step 3: Exclusion Rules */}
         {step === "exclusions" && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">除外ルール</h2>
+            <h2 className="mb-1 text-lg font-semibold text-gray-900">除外ルール</h2>
             <p className="mt-1 text-sm text-gray-500">
               特定の日時をスケジュール対象外に設定します（省略可能）
             </p>
@@ -983,7 +983,7 @@ export default function NewEventPage() {
                       placeholder="例: 昼休み、全社定例会議"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="label">タイプ</label>
                       <select
@@ -1007,85 +1007,86 @@ export default function NewEventPage() {
                           setExclusionDraft({ ...exclusionDraft, recurring: !exclusionDraft.recurring })
                         }
                         className={cn(
-                          "mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset transition-colors",
+                          "toggle-btn",
                           exclusionDraft.recurring
-                            ? "bg-primary-50 ring-primary-300 text-primary-700"
-                            : "bg-white ring-gray-300 text-gray-600"
+                            ? "toggle-btn-active"
+                            : ""
                         )}
                       >
-                        <span>{exclusionDraft.recurring ? "繰り返しあり" : "1回限り"}</span>
+                        <span>{exclusionDraft.recurring ? "繰り返し" : "1回限り"}</span>
                         <div className={cn(
-                          "relative inline-flex h-5 w-9 rounded-full transition-colors",
-                          exclusionDraft.recurring ? "bg-primary-500" : "bg-gray-300"
+                          "toggle-btn-switch",
+                          exclusionDraft.recurring ? "toggle-btn-switch-active" : ""
                         )}>
                           <span className={cn(
-                            "inline-block h-4 w-4 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
-                            exclusionDraft.recurring ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                            "toggle-btn-switch-handle",
+                            exclusionDraft.recurring ? "toggle-btn-switch-handle-active" : ""
                           )} />
                         </div>
                       </button>
                     </div>
                   </div>
 
-                  {exclusionDraft.recurring ? (
-                    <div>
-                      <label className="label">曜日（空白 = 毎日）</label>
-                      <select
-                        className="select mt-1"
-                        value={exclusionDraft.day_of_week ?? ""}
-                        onChange={(e) =>
-                          setExclusionDraft({
-                            ...exclusionDraft,
-                            day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
-                          })
-                        }
-                      >
-                        <option value="">毎日</option>
-                        {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
-                          <option key={i} value={i}>{d}曜日</option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="label">対象日</label>
-                      <input
-                        type="date"
-                        className="input mt-1"
-                        value={exclusionDraft.specific_date ?? ""}
-                        onChange={(e) =>
-                          setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value })
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {exclusionDraft.type === "time-range" && (
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    {exclusionDraft.recurring ? (
                       <div>
-                        <label className="label">開始時刻</label>
-                        <input
-                          type="time"
-                          className="input mt-1"
-                          value={exclusionDraft.start_time ?? "09:00"}
+                        <label className="label">曜日</label>
+                        <select
+                          className="select mt-1"
+                          value={exclusionDraft.day_of_week ?? ""}
                           onChange={(e) =>
-                            setExclusionDraft({ ...exclusionDraft, start_time: e.target.value })
+                            setExclusionDraft({
+                              ...exclusionDraft,
+                              day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                            })
+                          }
+                        >
+                          <option value="">毎日</option>
+                          {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
+                            <option key={i} value={i}>{d}曜日</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="label">対象日</label>
+                        <input
+                          type="date"
+                          className="input mt-1"
+                          value={exclusionDraft.specific_date ?? ""}
+                          onChange={(e) =>
+                            setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value })
                           }
                         />
                       </div>
-                      <div>
-                        <label className="label">終了時刻</label>
-                        <input
-                          type="time"
-                          className="input mt-1"
-                          value={exclusionDraft.end_time ?? "10:00"}
-                          onChange={(e) =>
-                            setExclusionDraft({ ...exclusionDraft, end_time: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  )}
+                    )}
+                    {exclusionDraft.type === "time-range" && (
+                      <>
+                        <div>
+                          <label className="label">開始時刻</label>
+                          <input
+                            type="time"
+                            className="input mt-1"
+                            value={exclusionDraft.start_time ?? "09:00"}
+                            onChange={(e) =>
+                              setExclusionDraft({ ...exclusionDraft, start_time: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="label">終了時刻</label>
+                          <input
+                            type="time"
+                            className="input mt-1"
+                            value={exclusionDraft.end_time ?? "10:00"}
+                            onChange={(e) =>
+                              setExclusionDraft({ ...exclusionDraft, end_time: e.target.value })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   <div className="flex justify-end gap-2 pt-1">
                     <button

@@ -151,12 +151,12 @@ export default function NewEventPage() {
 
       {/* Step indicator */}
       <div className="mb-8">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3.5">
           {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
+            <div key={s.id} className="flex items-center gap-3.5">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
@@ -168,7 +168,7 @@ export default function NewEventPage() {
               </div>
               <span
                 className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-semibold",
                   i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
                 )}
               >
@@ -178,7 +178,7 @@ export default function NewEventPage() {
                 <div
                   className={cn(
                     "h-px w-8",
-                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-200"
+                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-300"
                   )}
                 />
               )}

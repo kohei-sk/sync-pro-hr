@@ -61,7 +61,7 @@ type TabId = "basic" | "team" | "exclusions" | "form";
 
 const tabs: { id: TabId; label: string; icon: typeof Settings }[] = [
   { id: "basic", label: "基本設定", icon: Settings },
-  { id: "team", label: "チーム", icon: Users },
+  { id: "team", label: "メンバー", icon: Users },
   { id: "exclusions", label: "除外ルール", icon: ShieldOff },
   { id: "form", label: "フォーム", icon: FileText },
 ];
@@ -320,6 +320,14 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
 
   return (
     <div className="space-y-5">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">基本設定</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            イベントの基本情報を設定します
+          </p>
+        </div>
+      </div>
       <div>
         <label className="label">イベント名</label>
         <input type="text" className="input mt-1" defaultValue={event.title} />
@@ -561,9 +569,9 @@ function TeamTab({
     <div>
       {/* Mode selector */}
       <div className="mb-6">
-        <h3 className="font-semibold text-gray-900 mb-1">チームメンバー</h3>
-        <p className="text-sm text-gray-500 mb-4">スケジューリングモードとメンバーを設定します</p>
-        <label className="label">スケジューリングモード</label>
+        <h3 className="text-lg font-semibold text-gray-900">メンバー</h3>
+        <p className="text-sm text-gray-500 mt-1">スケジューリングモードとメンバーを設定します</p>
+        <label className="label mt-6">スケジューリングモード</label>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <button
             onClick={() => setMode("fixed")}
@@ -832,26 +840,28 @@ function TeamTab({
             {/* Add role */}
             {showAddRoleForm ? (
               <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
-                <div>
-                  <label className="label">役割名</label>
-                  <input
-                    type="text"
-                    className="input mt-1"
-                    value={newRoleName}
-                    onChange={(e) => setNewRoleName(e.target.value)}
-                    placeholder="例: 面接官"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="label">必要人数</label>
-                  <input
-                    type="number"
-                    className="input mt-1 w-24"
-                    value={newRoleCount}
-                    min={1}
-                    onChange={(e) => setNewRoleCount(parseInt(e.target.value) || 1)}
-                  />
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="label">役割名</label>
+                    <input
+                      type="text"
+                      className="input mt-1"
+                      value={newRoleName}
+                      onChange={(e) => setNewRoleName(e.target.value)}
+                      placeholder="例: 面接官"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="label">必要人数</label>
+                    <input
+                      type="number"
+                      className="input mt-1 w-24"
+                      value={newRoleCount}
+                      min={1}
+                      onChange={(e) => setNewRoleCount(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-1">
                   <button
@@ -1009,7 +1019,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
             placeholder="例: 昼休み"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="label">タイプ</label>
             <select
@@ -1032,7 +1042,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
                   : ""
               )}
             >
-              <span>繰り返しあり</span>
+              <span>{draft.recurring ? "繰り返し" : "1回限り"}</span>
               <div className={cn("toggle-btn-switch",
                 draft.recurring ? "toggle-btn-switch-active" : ""
               )}>
@@ -1043,52 +1053,54 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
             </button>
           </div>
         </div>
-        {draft.recurring ? (
-          <div>
-            <label className="label">曜日（空白 = 毎日）</label>
-            <select
-              className="select mt-1"
-              value={draft.day_of_week ?? ""}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
-                })
-              }
-            >
-              <option value="">毎日</option>
-              {daysOfWeek.map((d, i) => (
-                <option key={i} value={i}>{d}曜日</option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <div>
-            <label className="label">対象日</label>
-            <input
-              type="date"
-              className="input mt-1"
-              value={draft.specific_date ?? ""}
-              onChange={(e) => setDraft({ ...draft, specific_date: e.target.value })}
-            />
-          </div>
-        )}
-        {draft.type === "time-range" && (
-          <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
+          {draft.recurring ? (
             <div>
-              <label className="label">開始時刻</label>
-              <input type="time" className="input mt-1"
-                value={draft.start_time ?? "09:00"}
-                onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
+              <label className="label">曜日</label>
+              <select
+                className="select mt-1"
+                value={draft.day_of_week ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                  })
+                }
+              >
+                <option value="">毎日</option>
+                {daysOfWeek.map((d, i) => (
+                  <option key={i} value={i}>{d}曜日</option>
+                ))}
+              </select>
             </div>
+          ) : (
             <div>
-              <label className="label">終了時刻</label>
-              <input type="time" className="input mt-1"
-                value={draft.end_time ?? "10:00"}
-                onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
+              <label className="label">対象日</label>
+              <input
+                type="date"
+                className="input mt-1"
+                value={draft.specific_date ?? ""}
+                onChange={(e) => setDraft({ ...draft, specific_date: e.target.value })}
+              />
             </div>
-          </div>
-        )}
+          )}
+          {draft.type === "time-range" && (
+            <>
+              <div>
+                <label className="label">開始時刻</label>
+                <input type="time" className="input mt-1"
+                  value={draft.start_time ?? "09:00"}
+                  onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">終了時刻</label>
+                <input type="time" className="input mt-1"
+                  value={draft.end_time ?? "10:00"}
+                  onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
+              </div>
+            </>
+          )}
+        </div>
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
           <button onClick={onSave} disabled={!draft.name.trim()} className="btn-primary text-sm">
@@ -1101,10 +1113,10 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">除外ルール</h3>
-          <p className="text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
+          <h3 className="text-lg font-semibold text-gray-900">除外ルール</h3>
+          <p className="mt-1 text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
         </div>
       </div>
 
@@ -1374,10 +1386,10 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">カスタムフォーム項目</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-gray-900">カスタムフォーム項目</h3>
+          <p className="mt-1 text-sm text-gray-500">
             候補者に入力してもらう項目を設定します
           </p>
         </div>
