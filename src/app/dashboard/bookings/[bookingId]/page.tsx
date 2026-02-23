@@ -96,7 +96,7 @@ export default function BookingDetailPage() {
   const LocationIcon = locCfg.icon;
 
   return (
-    <div className="max-w-2xl bg-white">
+    <div className="bg-white">
       {/* Header card */}
       <div className="p-6 border-b-[1px] border-gray-100">
         <div className="flex items-start gap-4">
