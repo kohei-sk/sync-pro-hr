@@ -226,7 +226,7 @@ export default function EventDetailPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="card">
+        <div className="card max-w-3xl">
           {activeTab === "basic" && (
             <BasicTab event={event} />
           )}
