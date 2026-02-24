@@ -261,7 +261,9 @@ const EVENT_COLORS = [
 
 function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
   const [isPublic, setIsPublic] = useState(event.status === "active");
-  const [color, setColor] = useState(event.color || "#0071c1");
+  const [color, setColor] = useState(
+    EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0]
+  );
 
   return (
     <div className="space-y-5">
