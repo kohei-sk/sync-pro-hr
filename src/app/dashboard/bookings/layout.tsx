@@ -116,7 +116,7 @@ export default function BookingsLayout({
 
       {/* ── Filters ── */}
       {/* Status tabs */}
-      <div className="tab mb-3">
+      <div className="tab mb-6">
         {(["all", "confirmed", "pending", "cancelled"] as FilterStatus[]).map(
           (status) => {
             const label =
@@ -149,35 +149,35 @@ export default function BookingsLayout({
             );
           }
         )}
-      </div>
 
-      {/* Search + Event filter */}
-      <div className="mb-4 flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="候補者名またはメールで検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-9"
-          />
-        </div>
-        <div className="relative">
-          <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <select
-            value={filterEvent}
-            onChange={(e) => setFilterEvent(e.target.value)}
-            className="select appearance-none pl-9 pr-8 min-w-[180px]"
-          >
-            <option value="all">すべてのイベント</option>
-            {mockEventTypes.map((evt) => (
-              <option key={evt.id} value={evt.id}>
-                {evt.title}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        {/* Search + Event filter */}
+        <div className="flex items-center gap-3 w-[450px] ml-auto">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="候補者名またはメールで検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input pl-8 text-xs h-[32px]"
+            />
+          </div>
+          <div className="relative">
+            <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+            <select
+              value={filterEvent}
+              onChange={(e) => setFilterEvent(e.target.value)}
+              className="select appearance-none pl-8 pr-8 !py-0.5 min-w-[180px] text-xs h-[32px]"
+            >
+              <option value="all">すべてのイベント</option>
+              {mockEventTypes.map((evt) => (
+                <option key={evt.id} value={evt.id}>
+                  {evt.title}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+          </div>
         </div>
       </div>
 
@@ -187,12 +187,12 @@ export default function BookingsLayout({
         <div className="flex w-[360px] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white">
           <div className="flex-1 overflow-y-auto">
             {filteredBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-                <Calendar className="mb-2 h-8 w-8 text-gray-300" />
-                <p className="text-xs font-medium text-gray-500">
+              <div className="flex flex-col items-center justify-center h-full">
+                <Calendar className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+                <p className="text-sm font-medium text-gray-500">
                   該当する予約がありません
                 </p>
-                <p className="mt-0.5 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-gray-400">
                   フィルター条件を変更してください
                 </p>
               </div>

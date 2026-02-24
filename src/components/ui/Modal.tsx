@@ -100,7 +100,7 @@ export function Modal({
             <div>
               <h2
                 id={titleId.current}
-                className="text-base font-semibold text-gray-900"
+                className="text-xl font-semibold text-gray-900"
               >
                 {title}
               </h2>
@@ -113,7 +113,7 @@ export function Modal({
               className="ml-4 shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
               aria-label="閉じる"
             >
-              <X className="h-4 w-4" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 
@@ -164,7 +164,7 @@ export function ConfirmDialog({
           <button
             onClick={onClose}
             disabled={loading}
-            className="btn-secondary"
+            className="btn btn-secondary"
           >
             キャンセル
           </button>
@@ -172,6 +172,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={loading}
             className={cn(
+              "btn",
               confirmVariant === "danger" ? "btn-ghost-danger" : "btn-primary"
             )}
           >

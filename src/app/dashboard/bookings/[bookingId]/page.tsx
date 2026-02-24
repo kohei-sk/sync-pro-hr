@@ -96,7 +96,7 @@ export default function BookingDetailPage() {
   const LocationIcon = locCfg.icon;
 
   return (
-    <div className="max-w-2xl bg-white">
+    <div className="bg-white">
       {/* Header card */}
       <div className="p-6 border-b-[1px] border-gray-100">
         <div className="flex items-start gap-4">
@@ -142,9 +142,6 @@ export default function BookingDetailPage() {
       <div className="p-6 divide-y divide-gray-100">
         {/* Date/Time */}
         <section className="py-4 first:pt-0 last:pb-0">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
-            日時
-          </h2>
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 text-sm text-gray-800">
               <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
@@ -162,9 +159,6 @@ export default function BookingDetailPage() {
 
         {/* Contact */}
         <section className="py-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
-            候補者連絡先
-          </h2>
           <div className="flex items-center gap-2.5 text-sm text-gray-800">
             <Mail className="h-4 w-4 shrink-0 text-gray-400" />
             <a
@@ -178,9 +172,6 @@ export default function BookingDetailPage() {
 
         {/* Location */}
         <section className="py-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
-            場所
-          </h2>
           <div className="flex items-start gap-2.5">
             <LocationIcon className="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
             <div>
@@ -241,11 +232,11 @@ export default function BookingDetailPage() {
       {/* Actions */}
       {booking.status !== "cancelled" && (
         <div className="p-4 flex gap-2 border-t-[1px] border-gray-100 sticky bg-white bottom-0">
-          <button className="btn-ghost">
+          <button className="btn btn-ghost">
             <MapPin className="h-4 w-4" />
             リスケジュール
           </button>
-          <button className="btn-ghost-danger">
+          <button className="btn btn-ghost-danger">
             <XCircle className="h-4 w-4" />
             キャンセル
           </button>

@@ -105,7 +105,7 @@ export default function NewEventPage() {
           </dl>
         </div>
         <div className="mt-6 flex gap-3">
-          <Link href="/dashboard/bookings" className="btn-secondary">
+          <Link href="/dashboard/bookings" className="btn btn-secondary">
             予約一覧を見る
           </Link>
           <button
@@ -120,7 +120,7 @@ export default function NewEventPage() {
                 time: "",
               });
             }}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             続けて作成
           </button>
@@ -151,12 +151,12 @@ export default function NewEventPage() {
 
       {/* Step indicator */}
       <div className="mb-8">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3.5">
           {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
+            <div key={s.id} className="flex items-center gap-3.5">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
@@ -168,7 +168,7 @@ export default function NewEventPage() {
               </div>
               <span
                 className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-semibold",
                   i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
                 )}
               >
@@ -178,7 +178,7 @@ export default function NewEventPage() {
                 <div
                   className={cn(
                     "h-px w-8",
-                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-200"
+                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-300"
                   )}
                 />
               )}
@@ -210,7 +210,7 @@ export default function NewEventPage() {
                 </p>
                 <Link
                   href="/dashboard/events/new"
-                  className="btn-primary mt-4 inline-flex"
+                  className="btn btn-primary mt-4"
                 >
                   イベントタイプを作成
                 </Link>
@@ -461,13 +461,13 @@ export default function NewEventPage() {
               if (step === "details") setStep("select");
               else if (step === "confirm") setStep("details");
             }}
-            className={cn("btn-secondary", step === "select" && "invisible")}
+            className={cn("btn btn-secondary", step === "select" && "invisible")}
           >
             <ArrowLeft className="h-4 w-4" />
             戻る
           </button>
           {step === "confirm" ? (
-            <button onClick={handleCreate} className="btn-primary">
+            <button onClick={handleCreate} className="btn btn-primary">
               イベントを作成
             </button>
           ) : (
@@ -481,7 +481,7 @@ export default function NewEventPage() {
                 (step === "details" &&
                   (!formData.candidate_name || !formData.candidate_email))
               }
-              className="btn-primary"
+              className="btn btn-primary"
             >
               次へ
               <ArrowRight className="h-4 w-4" />
