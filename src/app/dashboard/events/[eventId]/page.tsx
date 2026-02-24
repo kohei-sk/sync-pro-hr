@@ -189,21 +189,23 @@ export default function EventDetailPage() {
             </div>
             <p className="header-sub-title">{event.description}</p>
           </div>
-          <Link
-            href={`/j/${event.slug}`}
-            target="blank"
-            className="btn btn-secondary"
-          >
-            <ExternalLink className="h-4 w-4" />
-            プレビュー
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="btn btn-danger"
-          >
-            <Trash2 className="h-4 w-4" />
-            削除
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/j/${event.slug}`}
+              target="blank"
+              className="btn btn-secondary"
+            >
+              <ExternalLink className="h-4 w-4" />
+              プレビュー
+            </Link>
+            <button
+              onClick={handleDelete}
+              className="btn btn-danger"
+            >
+              <Trash2 className="h-4 w-4" />
+              削除
+            </button>
+          </div>
         </header>
 
         {/* Tabs */}
