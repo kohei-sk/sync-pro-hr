@@ -141,7 +141,7 @@ export default function EventDetailPage() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">イベントが見つかりません</p>
-        <Link href="/dashboard/events" className="btn-primary mt-4 inline-block">
+        <Link href="/dashboard/events" className="btn btn-primary mt-4 inline-block">
           イベント一覧に戻る
         </Link>
       </div>
@@ -192,14 +192,14 @@ export default function EventDetailPage() {
           <Link
             href={`/j/${event.slug}`}
             target="blank"
-            className="btn-secondary"
+            className="btn btn-secondary"
           >
             <ExternalLink className="h-4 w-4" />
             プレビュー
           </Link>
           <button
             onClick={handleDelete}
-            className="btn-danger"
+            className="btn btn-danger"
           >
             <Trash2 className="h-4 w-4" />
             削除
@@ -422,7 +422,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
       </div>
 
       <div className="flex justify-end pt-4">
-        <button className="btn-primary">変更を保存</button>
+        <button className="btn btn-primary">変更を保存</button>
       </div>
     </div>
   );
@@ -870,14 +870,14 @@ function TeamTab({
                       setNewRoleName("");
                       setNewRoleCount(1);
                     }}
-                    className="btn-secondary text-sm"
+                    className="btn btn-secondary text-sm"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={handleAddRole}
                     disabled={!newRoleName.trim()}
-                    className="btn-primary text-sm"
+                    className="btn btn-primary text-sm"
                   >
                     追加
                   </button>
@@ -897,7 +897,7 @@ function TeamTab({
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSave} className="btn-primary">変更を保存</button>
+        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
       </div>
 
       {saved && (
@@ -1102,8 +1102,8 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
           )}
         </div>
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.name.trim()} className="btn-primary text-sm">
+          <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary text-sm">
             {saveLabel}
           </button>
         </div>
@@ -1199,7 +1199,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
       </div>
 
       {saved && (
@@ -1375,8 +1375,8 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
           <label htmlFor={`is-required-${formId}`} className="text-sm text-gray-700">必須項目にする</label>
         </div>
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.label.trim()} className="btn-primary text-sm">
+          <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary text-sm">
             {saveLabel}
           </button>
         </div>
@@ -1518,7 +1518,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
       </div>
 
       {saved && (

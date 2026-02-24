@@ -1091,14 +1091,14 @@ export default function NewEventPage() {
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => setShowExclusionForm(false)}
-                      className="btn-secondary text-sm"
+                      className="btn btn-secondary text-sm"
                     >
                       キャンセル
                     </button>
                     <button
                       onClick={addExclusionRule}
                       disabled={!exclusionDraft.name.trim()}
-                      className="btn-primary text-sm"
+                      className="btn btn-primary text-sm"
                     >
                       追加
                     </button>
@@ -1309,7 +1309,7 @@ export default function NewEventPage() {
           <button
             onClick={handleBack}
             className={cn(
-              "btn-secondary",
+              "btn btn-secondary",
               currentStepIndex === 0 && "invisible"
             )}
           >
@@ -1317,14 +1317,14 @@ export default function NewEventPage() {
             戻る
           </button>
           {step === "confirm" ? (
-            <button onClick={handleCreate} className="btn-primary">
+            <button onClick={handleCreate} className="btn btn-primary">
               イベントを作成
             </button>
           ) : (
             <button
               onClick={handleNext}
               disabled={step === "basic" && !formData.title.trim()}
-              className="btn-primary"
+              className="btn btn-primary"
             >
               次へ
               <ArrowRight className="h-4 w-4" />

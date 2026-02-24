@@ -492,7 +492,7 @@ export default function BookingPage() {
                   </div>
                 ))}
 
-                <button type="submit" className="btn-primary w-full mt-6">
+                <button type="submit" className="btn btn-primary w-full mt-6">
                   予約を確定する
                 </button>
               </form>

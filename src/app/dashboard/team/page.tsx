@@ -16,6 +16,9 @@ import {
   Trash2,
   Shield,
   Clock,
+  CircleX,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import {
   mockUsers,
@@ -78,25 +81,22 @@ export default function TeamPage() {
 
   const calendarStatusConfig: Record<
     NonNullable<User["calendar_status"]>,
-    { label: string; icon: typeof CheckCircle2; className: string; bgClass: string }
+    { label: string; icon: typeof CheckCircle2; className: string }
   > = {
     connected: {
       label: "接続済",
       icon: CheckCircle2,
-      className: "text-green-600",
-      bgClass: "bg-green-50",
+      className: "badge-green",
     },
     error: {
       label: "エラー",
       icon: AlertTriangle,
-      className: "text-amber-600",
-      bgClass: "bg-amber-50",
+      className: "badge-red",
     },
     not_connected: {
       label: "未接続",
       icon: XCircle,
-      className: "text-gray-400",
-      bgClass: "bg-gray-50",
+      className: "badge-gray",
     },
   };
 
@@ -107,6 +107,7 @@ export default function TeamPage() {
     (u) => u.status !== "invited" && u.calendar_status === "error"
   ).length;
   const invitedCount = users.filter((u) => u.status === "invited").length;
+  const notConnectedCount = users.filter((u) => u.calendar_status === "not_connected").length;
 
   // カレンダー再接続
   function handleReconnect(userId: string) {
@@ -194,66 +195,74 @@ export default function TeamPage() {
             メンバーとカレンダー連携の状態を管理します
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setInviteOpen(true)}>
+        <button className="btn btn-primary" onClick={() => setInviteOpen(true)}>
           <Plus className="h-4 w-4" />
           メンバー招待
         </button>
       </header>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <div className="card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50">
-            <Users className="h-5 w-5 text-primary-600" />
-          </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
+        <div className="rounded-xl p-6 flex items-center gap-5 bg-green-100/60">
+          <CheckCircle2 className="h-5.5 w-5.5 text-green-600" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">
-              {users.length}
-            </p>
-            <p className="text-xs text-gray-500">合計メンバー</p>
-          </div>
-        </div>
-        <div className="card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">
-              {connectedCount}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{connectedCount}</p>
             <p className="text-xs text-gray-500">カレンダー接続済み</p>
           </div>
         </div>
-        <div className="card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-          </div>
+        <div className="rounded-xl p-6 flex items-center gap-5 bg-red-100/40">
+          <AlertTriangle className="h-5.5 w-5.5 text-red-600" />
           <div>
             <p className="text-2xl font-bold text-gray-900">{errorCount}</p>
-            <p className="text-xs text-gray-500">要対応</p>
+            <p className="text-xs text-gray-500">エラー</p>
           </div>
         </div>
-        <div className="card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
-            <Clock className="h-5 w-5 text-purple-600" />
-          </div>
+        <div className="rounded-xl p-6 flex items-center gap-5 bg-purple-100/50">
+          <Clock className="h-5.5 w-5.5 text-purple-600" />
           <div>
             <p className="text-2xl font-bold text-gray-900">{invitedCount}</p>
             <p className="text-xs text-gray-500">招待中</p>
           </div>
         </div>
+        <div className="rounded-xl p-6 flex items-center gap-5 bg-gray-200/50">
+          <CircleX className="h-5.5 w-5.5 text-gray-600" />
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{notConnectedCount}</p>
+            <p className="text-xs text-gray-500">カレンダー接続なし</p>
+          </div>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="名前またはメールで検索..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input pl-9"
-        />
+      <div className="flex items-center gap-3 mb-4">
+
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="名前またはメールで検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input pl-9"
+          />
+        </div>
+
+        {/* Filter */}
+        <div className="relative">
+          <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <select
+            value={"all"}
+            className="select appearance-none pl-9 pr-8 !py-1 min-w-[180px] h-[42px]"
+          >
+            <option value="all">すべての状態</option>
+            <option value="1">接続済</option>
+            <option value="2">エラー</option>
+            <option value="3">招待中</option>
+            <option value="4">未接続</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        </div>
+
       </div>
 
       {/* Member List */}
@@ -349,28 +358,19 @@ export default function TeamPage() {
 
                 {/* Status Badge */}
                 {isInvited ? (
-                  <div className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 shrink-0 bg-purple-50">
-                    <Clock className="h-3.5 w-3.5 text-purple-600" />
-                    <span className="text-xs font-medium text-purple-600">招待中</span>
+                  <div className="badge badge-purple">
+                    <Clock className="h-3 w-3" />
+                    招待中
                   </div>
                 ) : (
                   <div
                     className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 shrink-0",
-                      calStatus.bgClass
+                      "badge",
+                      calStatus.className
                     )}
                   >
-                    <CalStatusIcon
-                      className={cn("h-3.5 w-3.5", calStatus.className)}
-                    />
-                    <span
-                      className={cn(
-                        "text-xs font-medium",
-                        calStatus.className
-                      )}
-                    >
-                      {calStatus.label}
-                    </span>
+                    <CalStatusIcon className="h-3 w-3" />
+                    {calStatus.label}
                   </div>
                 )}
 
@@ -448,12 +448,14 @@ export default function TeamPage() {
               </div>
 
               {/* Sync info bar */}
-              {syncTimeStr && !isInvited && (
-                <div className="flex items-center gap-1.5 border-t border-gray-100 bg-gray-50/50 px-4 py-2 text-xs text-gray-400">
-                  <Calendar className="h-3 w-3" />
-                  最終同期: {syncTimeStr}
-                </div>
-              )}
+              {
+                syncTimeStr && !isInvited && (
+                  <div className="flex items-center gap-1.5 border-t border-gray-100 bg-gray-50/50 px-4 py-2 text-xs text-gray-400">
+                    <Calendar className="h-3 w-3" />
+                    最終同期: {syncTimeStr}
+                  </div>
+                )
+              }
             </div>
           );
         })}
@@ -509,7 +511,7 @@ export default function TeamPage() {
         title="メンバー詳細"
         size="md"
         footer={
-          <button onClick={() => setDetailUser(null)} className="btn-ghost">
+          <button onClick={() => setDetailUser(null)} className="btn btn-ghost">
             閉じる
           </button>
         }
@@ -591,14 +593,14 @@ export default function TeamPage() {
             <button
               onClick={() => setPermissionUser(null)}
               disabled={savingPermission}
-              className="btn-ghost"
+              className="btn btn-ghost"
             >
               キャンセル
             </button>
             <button
               onClick={handlePermissionSave}
               disabled={savingPermission}
-              className="btn-primary"
+              className="btn btn-primary"
             >
               {savingPermission && <span className="spinner" />}
               変更する
@@ -628,7 +630,7 @@ export default function TeamPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </div >
   );
 }
 
@@ -689,14 +691,14 @@ function InviteMemberModal({
           <button
             onClick={handleClose}
             disabled={loading}
-            className="btn-ghost"
+            className="btn btn-ghost"
           >
             キャンセル
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             {loading && <span className="spinner" />}
             招待を送る
