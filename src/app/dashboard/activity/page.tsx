@@ -73,11 +73,12 @@ export default function NotificationsPage() {
   const router = useRouter();
   const { isRead, markAsRead, markAllAsRead } = useNotificationStore();
   const [activeTab, setActiveTab] = useState<NotificationTab>("unread");
+  const [filterType, setFilterType] = useState<"all" | NotificationType>("all");
 
   const unreadNotifications = mockNotifications.filter((n) => !isRead(n.id));
   const readNotifications = mockNotifications.filter((n) => isRead(n.id));
-  const displayedNotifications =
-    activeTab === "unread" ? unreadNotifications : readNotifications;
+  const displayedNotifications = (activeTab === "unread" ? unreadNotifications : readNotifications)
+    .filter((n) => filterType === "all" || n.type === filterType);
 
   function handleNotificationClick(notificationId: string, bookingId: string) {
     markAsRead(notificationId);
@@ -146,13 +147,14 @@ export default function NotificationsPage() {
           <div className="relative">
             <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
             <select
-              value={"all"}
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as "all" | NotificationType)}
               className="select appearance-none pl-8 pr-8 !py-1 min-w-[160px] text-xs h-[32px]"
             >
               <option value="all">すべての通知</option>
-              <option value="1">予約受付</option>
-              <option value="2">予約キャンセル</option>
-              <option value="3">予約変更</option>
+              <option value="booking_received">予約受付</option>
+              <option value="booking_cancelled">予約キャンセル</option>
+              <option value="booking_changed">予約変更</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
           </div>

@@ -36,6 +36,7 @@ import type { User } from "@/types";
 export default function TeamPage() {
   const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "connected" | "error" | "invited" | "not_connected">("all");
   const [users, setUsers] = useState<User[]>(mockUsers);
 
   // モーダル・ダイアログの開閉状態
@@ -52,12 +53,17 @@ export default function TeamPage() {
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [reinvitingId, setReinvitingId] = useState<string | null>(null);
 
-  const filteredUsers = users.filter(
-    (u) =>
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
       !searchQuery ||
       u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "invited" && u.status === "invited") ||
+      (statusFilter !== "invited" && u.status !== "invited" && u.calendar_status === statusFilter);
+    return matchesSearch && matchesStatus;
+  });
 
   function getUserStats(userId: string) {
     const memberEntries = mockMembers.filter((m) => m.user_id === userId);
@@ -251,14 +257,15 @@ export default function TeamPage() {
         <div className="relative">
           <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <select
-            value={"all"}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             className="select appearance-none pl-9 pr-8 !py-1 min-w-[180px] h-[42px]"
           >
             <option value="all">すべての状態</option>
-            <option value="1">接続済</option>
-            <option value="2">エラー</option>
-            <option value="3">招待中</option>
-            <option value="4">未接続</option>
+            <option value="connected">接続済</option>
+            <option value="error">エラー</option>
+            <option value="invited">招待中</option>
+            <option value="not_connected">未接続</option>
           </select>
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>

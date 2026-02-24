@@ -16,6 +16,8 @@ import {
   EyeOff,
   ChevronDown,
   GripVertical,
+  Pencil,
+  FileText,
 } from "lucide-react";
 import {
   DndContext,
@@ -39,7 +41,7 @@ import { cn, generateId } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
 import { mockUsers } from "@/lib/mock-data";
 
-type Step = "basic" | "team" | "exclusions" | "confirm";
+type Step = "basic" | "team" | "exclusions" | "form" | "confirm";
 
 type NewExclusionRule = {
   id: string;
@@ -53,6 +55,24 @@ type NewExclusionRule = {
 };
 
 type ExclusionDraft = Omit<NewExclusionRule, "id">;
+
+type FieldType = "text" | "email" | "tel" | "multiline" | "url" | "file";
+
+type NewFieldDraft = {
+  label: string;
+  type: FieldType;
+  placeholder: string;
+  is_required: boolean;
+};
+
+type NewCustomField = NewFieldDraft & { id: string };
+
+const EMPTY_FIELD_DRAFT: NewFieldDraft = {
+  label: "",
+  type: "text",
+  placeholder: "",
+  is_required: false,
+};
 
 type NewRole = {
   id: string;
@@ -143,11 +163,29 @@ export default function NewEventPage() {
     start_time: "09:00",
     end_time: "10:00",
   });
+  const [editingExclusionId, setEditingExclusionId] = useState<string | null>(null);
+  const [editExclusionDraft, setEditExclusionDraft] = useState<ExclusionDraft>({
+    name: "",
+    type: "all-day",
+    recurring: true,
+    day_of_week: undefined,
+    specific_date: "",
+    start_time: "09:00",
+    end_time: "10:00",
+  });
+
+  // フォームフィールド
+  const [formFields, setFormFields] = useState<NewCustomField[]>([]);
+  const [showFieldForm, setShowFieldForm] = useState(false);
+  const [fieldDraft, setFieldDraft] = useState<NewFieldDraft>({ ...EMPTY_FIELD_DRAFT });
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [editFieldDraft, setEditFieldDraft] = useState<NewFieldDraft>({ ...EMPTY_FIELD_DRAFT });
 
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
     { id: "team", label: "メンバー設定" },
     { id: "exclusions", label: "除外ルール" },
+    { id: "form", label: "フォーム" },
     { id: "confirm", label: "確認" },
   ];
 
@@ -267,6 +305,57 @@ export default function NewEventPage() {
 
   function removeExclusionRule(id: string) {
     setNewExclusionRules(newExclusionRules.filter((r) => r.id !== id));
+  }
+
+  function startEditExclusionRule(rule: NewExclusionRule) {
+    setEditingExclusionId(rule.id);
+    setEditExclusionDraft({
+      name: rule.name,
+      type: rule.type,
+      recurring: rule.recurring,
+      day_of_week: rule.day_of_week,
+      specific_date: rule.specific_date ?? "",
+      start_time: rule.start_time ?? "09:00",
+      end_time: rule.end_time ?? "10:00",
+    });
+  }
+
+  function saveEditExclusionRule(id: string) {
+    setNewExclusionRules(
+      newExclusionRules.map((r) =>
+        r.id !== id
+          ? r
+          : { ...r, ...editExclusionDraft }
+      )
+    );
+    setEditingExclusionId(null);
+  }
+
+  // フォームフィールド操作
+  function addFormField() {
+    if (!fieldDraft.label.trim()) return;
+    setFormFields([...formFields, { ...fieldDraft, id: generateId() }]);
+    setFieldDraft({ ...EMPTY_FIELD_DRAFT });
+    setShowFieldForm(false);
+  }
+
+  function startEditFormField(field: NewCustomField) {
+    setEditingFieldId(field.id);
+    setEditFieldDraft({
+      label: field.label,
+      type: field.type,
+      placeholder: field.placeholder,
+      is_required: field.is_required,
+    });
+  }
+
+  function saveEditFormField(id: string) {
+    setFormFields(formFields.map((f) => f.id !== id ? f : { ...f, ...editFieldDraft }));
+    setEditingFieldId(null);
+  }
+
+  function removeFormField(id: string) {
+    setFormFields(formFields.filter((f) => f.id !== id));
   }
 
   // DnD sensors
@@ -935,35 +1024,129 @@ export default function NewEventPage() {
               {newExclusionRules.length > 0 && (
                 <div className="space-y-2">
                   {newExclusionRules.map((rule) => (
-                    <div
-                      key={rule.id}
-                      className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{rule.name}</p>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                          {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
-                          {rule.recurring && rule.day_of_week !== undefined
-                            ? ` · 毎週${["日", "月", "火", "水", "木", "金", "土"][rule.day_of_week]}曜日`
-                            : rule.recurring
-                              ? " · 毎日"
-                              : rule.specific_date
-                                ? ` · ${rule.specific_date}`
-                                : ""}
-                          <span className={cn(
-                            "ml-2 rounded-full px-2 py-0.5 text-xs font-medium",
-                            rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
-                          )}>
-                            {rule.recurring ? "繰り返し" : "1回限り"}
-                          </span>
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => removeExclusionRule(rule.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                    <div key={rule.id}>
+                      {editingExclusionId === rule.id ? (
+                        /* Edit form for this rule */
+                        <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                          <p className="text-sm font-semibold text-gray-900">除外ルールを編集</p>
+                          <div>
+                            <label className="label">ルール名</label>
+                            <input
+                              type="text"
+                              className="input mt-1"
+                              value={editExclusionDraft.name}
+                              onChange={(e) => setEditExclusionDraft({ ...editExclusionDraft, name: e.target.value })}
+                              placeholder="例: 昼休み、全社定例会議"
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="label">タイプ</label>
+                              <select
+                                className="select mt-1"
+                                value={editExclusionDraft.type}
+                                onChange={(e) => setEditExclusionDraft({ ...editExclusionDraft, type: e.target.value as "all-day" | "time-range" })}
+                              >
+                                <option value="all-day">終日</option>
+                                <option value="time-range">時間帯</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label">繰り返し</label>
+                              <button
+                                onClick={() => setEditExclusionDraft({ ...editExclusionDraft, recurring: !editExclusionDraft.recurring })}
+                                className={cn("toggle-btn", editExclusionDraft.recurring ? "toggle-btn-active" : "")}
+                              >
+                                <span>{editExclusionDraft.recurring ? "繰り返し" : "1回限り"}</span>
+                                <div className={cn("toggle-btn-switch", editExclusionDraft.recurring ? "toggle-btn-switch-active" : "")}>
+                                  <span className={cn("toggle-btn-switch-handle", editExclusionDraft.recurring ? "toggle-btn-switch-handle-active" : "")} />
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {editExclusionDraft.recurring ? (
+                              <div>
+                                <label className="label">曜日</label>
+                                <select
+                                  className="select mt-1"
+                                  value={editExclusionDraft.day_of_week ?? ""}
+                                  onChange={(e) => setEditExclusionDraft({ ...editExclusionDraft, day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value) })}
+                                >
+                                  <option value="">毎日</option>
+                                  {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
+                                    <option key={i} value={i}>{d}曜日</option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <div>
+                                <label className="label">対象日</label>
+                                <input
+                                  type="date"
+                                  className="input mt-1"
+                                  value={editExclusionDraft.specific_date ?? ""}
+                                  onChange={(e) => setEditExclusionDraft({ ...editExclusionDraft, specific_date: e.target.value })}
+                                />
+                              </div>
+                            )}
+                            {editExclusionDraft.type === "time-range" && (
+                              <>
+                                <div>
+                                  <label className="label">開始時刻</label>
+                                  <input type="time" className="input mt-1" value={editExclusionDraft.start_time ?? "09:00"} onChange={(e) => setEditExclusionDraft({ ...editExclusionDraft, start_time: e.target.value })} />
+                                </div>
+                                <div>
+                                  <label className="label">終了時刻</label>
+                                  <input type="time" className="input mt-1" value={editExclusionDraft.end_time ?? "10:00"} onChange={(e) => setEditExclusionDraft({ ...editExclusionDraft, end_time: e.target.value })} />
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button onClick={() => setEditingExclusionId(null)} className="btn btn-secondary">キャンセル</button>
+                            <button onClick={() => saveEditExclusionRule(rule.id)} disabled={!editExclusionDraft.name.trim()} className="btn btn-primary">保存</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{rule.name}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                              {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
+                              {rule.recurring && rule.day_of_week !== undefined
+                                ? ` · 毎週${["日", "月", "火", "水", "木", "金", "土"][rule.day_of_week]}曜日`
+                                : rule.recurring
+                                  ? " · 毎日"
+                                  : rule.specific_date
+                                    ? ` · ${rule.specific_date}`
+                                    : ""}
+                              <span className={cn(
+                                "ml-2 rounded-full px-2 py-0.5 text-xs font-medium",
+                                rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
+                              )}>
+                                {rule.recurring ? "繰り返し" : "1回限り"}
+                              </span>
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => startEditExclusionRule(rule)}
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                              title="編集"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => removeExclusionRule(rule.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1123,7 +1306,158 @@ export default function NewEventPage() {
           </div>
         )}
 
-        {/* Step 4: Confirmation */}
+        {/* Step 4: Form Fields */}
+        {step === "form" && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">フォーム設定</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              候補者に入力してもらう追加項目を設定します（省略可能）
+            </p>
+            <div className="mt-6 space-y-4">
+              {/* Default fields */}
+              <div className="space-y-2">
+                <p className="label">デフォルト項目（変更不可）</p>
+                {[
+                  { label: "お名前", type: "テキスト" },
+                  { label: "メールアドレス", type: "メール" },
+                ].map((f) => (
+                  <div key={f.label} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                    <span className="text-sm font-medium text-gray-500">{f.label}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">{f.type}</span>
+                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">必須</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Custom fields */}
+              {formFields.length > 0 && (
+                <div className="space-y-2">
+                  <p className="label">カスタム項目</p>
+                  {formFields.map((field) => (
+                    <div key={field.id}>
+                      {editingFieldId === field.id ? (
+                        <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="label">ラベル名</label>
+                              <input type="text" className="input mt-1" value={editFieldDraft.label} onChange={(e) => setEditFieldDraft({ ...editFieldDraft, label: e.target.value })} placeholder="例: 希望年収" />
+                            </div>
+                            <div>
+                              <label className="label">タイプ</label>
+                              <select className="select mt-1" value={editFieldDraft.type} onChange={(e) => setEditFieldDraft({ ...editFieldDraft, type: e.target.value as FieldType })}>
+                                <option value="text">テキスト</option>
+                                <option value="email">メール</option>
+                                <option value="tel">電話番号</option>
+                                <option value="multiline">複数行テキスト</option>
+                                <option value="url">URL</option>
+                                <option value="file">ファイル</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="label">プレースホルダー</label>
+                            <input type="text" className="input mt-1" value={editFieldDraft.placeholder} onChange={(e) => setEditFieldDraft({ ...editFieldDraft, placeholder: e.target.value })} placeholder="入力例を記入（任意）" />
+                          </div>
+                          <div>
+                            <button
+                              onClick={() => setEditFieldDraft({ ...editFieldDraft, is_required: !editFieldDraft.is_required })}
+                              className={cn("toggle-btn", editFieldDraft.is_required ? "toggle-btn-active" : "")}
+                            >
+                              <span>必須項目にする</span>
+                              <div className={cn("toggle-btn-switch", editFieldDraft.is_required ? "toggle-btn-switch-active" : "")}>
+                                <span className={cn("toggle-btn-switch-handle", editFieldDraft.is_required ? "toggle-btn-switch-handle-active" : "")} />
+                              </div>
+                            </button>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button onClick={() => setEditingFieldId(null)} className="btn btn-secondary">キャンセル</button>
+                            <button onClick={() => saveEditFormField(field.id)} disabled={!editFieldDraft.label.trim()} className="btn btn-primary">保存</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                          <span className="text-sm font-medium text-gray-700">{field.label}</span>
+                          <div className="flex items-center gap-4">
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                              {{ text: "テキスト", email: "メール", tel: "電話番号", multiline: "複数行テキスト", url: "URL", file: "ファイル" }[field.type]}
+                            </span>
+                            <span className={cn("rounded-full px-2 py-0.5 text-xs", field.is_required ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-500")}>
+                              {field.is_required ? "必須" : "任意"}
+                            </span>
+                            <button onClick={() => startEditFormField(field)} className="text-gray-400 hover:text-gray-600 transition-colors" title="編集">
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => removeFormField(field.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="削除">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add field form */}
+              {showFieldForm ? (
+                <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                  <p className="text-sm font-semibold text-gray-900">新しい項目</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">ラベル名</label>
+                      <input type="text" className="input mt-1" value={fieldDraft.label} onChange={(e) => setFieldDraft({ ...fieldDraft, label: e.target.value })} placeholder="例: 希望年収" />
+                    </div>
+                    <div>
+                      <label className="label">タイプ</label>
+                      <select className="select mt-1" value={fieldDraft.type} onChange={(e) => setFieldDraft({ ...fieldDraft, type: e.target.value as FieldType })}>
+                        <option value="text">テキスト</option>
+                        <option value="email">メール</option>
+                        <option value="tel">電話番号</option>
+                        <option value="multiline">複数行テキスト</option>
+                        <option value="url">URL</option>
+                        <option value="file">ファイル</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">プレースホルダー</label>
+                    <input type="text" className="input mt-1" value={fieldDraft.placeholder} onChange={(e) => setFieldDraft({ ...fieldDraft, placeholder: e.target.value })} placeholder="入力例を記入（任意）" />
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setFieldDraft({ ...fieldDraft, is_required: !fieldDraft.is_required })}
+                      className={cn("toggle-btn", fieldDraft.is_required ? "toggle-btn-active" : "")}
+                    >
+                      <span>必須項目にする</span>
+                      <div className={cn("toggle-btn-switch", fieldDraft.is_required ? "toggle-btn-switch-active" : "")}>
+                        <span className={cn("toggle-btn-switch-handle", fieldDraft.is_required ? "toggle-btn-switch-handle-active" : "")} />
+                      </div>
+                    </button>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-secondary">キャンセル</button>
+                    <button onClick={addFormField} disabled={!fieldDraft.label.trim()} className="btn btn-primary">追加</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowFieldForm(true)} className="add-btn">
+                  <Plus className="h-4 w-4" />
+                  項目を追加
+                </button>
+              )}
+
+              {formFields.length === 0 && !showFieldForm && (
+                <p className="text-center text-xs text-gray-400">
+                  カスタム項目はオプションです。後から設定することもできます。
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Confirmation */}
         {step === "confirm" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
@@ -1213,6 +1547,13 @@ export default function NewEventPage() {
                       {newExclusionRules.length > 0
                         ? `${newExclusionRules.length}件`
                         : "なし"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">フォーム項目</dt>
+                    <dd className="flex items-center gap-1 text-sm font-medium text-gray-900">
+                      <FileText className="h-3.5 w-3.5 text-gray-400" />
+                      デフォルト2件{formFields.length > 0 ? ` + カスタム${formFields.length}件` : ""}
                     </dd>
                   </div>
                 </dl>

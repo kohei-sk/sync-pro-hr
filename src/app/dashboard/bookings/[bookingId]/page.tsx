@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import {
   Calendar,
@@ -14,14 +15,18 @@ import {
   XCircle,
   MapPin,
   Users,
+  FileText,
 } from "lucide-react";
 import {
   getBookingById,
   mockEventTypes,
   mockRoles,
+  mockCustomFields,
   getUserById,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 import type { BookingStatus } from "@/types";
 
 const statusConfig: Record<
@@ -76,8 +81,28 @@ function formatDuration(startStr: string, endStr: string) {
 
 export default function BookingDetailPage() {
   const params = useParams();
+  const toast = useToast();
   const bookingId = params.bookingId as string;
   const booking = getBookingById(bookingId);
+
+  const [bookingStatus, setBookingStatus] = useState<BookingStatus | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+
+  function handleCancel() {
+    setBookingStatus("cancelled");
+    setCancelOpen(false);
+    toast.success("予約をキャンセルしました");
+  }
+
+  function handleReschedule() {
+    setRescheduleOpen(false);
+    setNewDate("");
+    setNewTime("");
+    toast.success("リスケジュールの依頼を送信しました");
+  }
 
   if (!booking) {
     return (
@@ -90,10 +115,12 @@ export default function BookingDetailPage() {
   }
 
   const event = mockEventTypes.find((e) => e.id === booking.event_id);
-  const statusInfo = statusConfig[booking.status];
+  const currentStatus = bookingStatus ?? booking.status;
+  const statusInfo = statusConfig[currentStatus];
   const StatusIcon = statusInfo.icon;
   const locCfg = locationConfig[event?.location_type || "online"];
   const LocationIcon = locCfg.icon;
+  const eventCustomFields = mockCustomFields.filter((f) => f.event_id === booking.event_id);
 
   return (
     <div className="bg-white">
@@ -110,6 +137,7 @@ export default function BookingDetailPage() {
                 {statusInfo.label}
               </span>
             </div>
+
             <div className="mt-1 flex items-center gap-1">
               <div
                 className="h-2 w-2 rounded-full"
@@ -125,7 +153,7 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Cancelled notice */}
-      {booking.status === "cancelled" && (
+      {currentStatus === "cancelled" && (
         <div className="p-6 pb-0">
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
             <div className="flex items-center gap-2">
@@ -194,7 +222,7 @@ export default function BookingDetailPage() {
         </section>
 
         {/* Assigned Members */}
-        <section className="py-4 last:pb-0">
+        <section className="py-4">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
             面接官
           </h2>
@@ -227,21 +255,108 @@ export default function BookingDetailPage() {
             </div>
           )}
         </section>
+
+        {/* Form Answers */}
+        {eventCustomFields.length > 0 && booking.custom_field_values && (
+          <section className="py-4 last:pb-0">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              フォームの回答
+            </h2>
+            <dl className="space-y-3">
+              {eventCustomFields.map((field) => {
+                const value = booking.custom_field_values?.[field.id];
+                if (!value) return null;
+                return (
+                  <div key={field.id}>
+                    <dt className="text-xs text-gray-400 mb-0.5">{field.label}</dt>
+                    <dd className="text-sm text-gray-800 break-all">
+                      {field.type === "url" ? (
+                        <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 hover:underline">
+                          {value}
+                        </a>
+                      ) : field.type === "multiline" ? (
+                        <p className="whitespace-pre-wrap">{value}</p>
+                      ) : (
+                        value
+                      )}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </section>
+        )}
       </div>
 
       {/* Actions */}
-      {booking.status !== "cancelled" && (
+      {currentStatus !== "cancelled" && (
         <div className="p-4 flex gap-2 border-t-[1px] border-gray-100 sticky bg-white bottom-0">
-          <button className="btn btn-ghost">
+          <button className="btn btn-ghost" onClick={() => setRescheduleOpen(true)}>
             <MapPin className="h-4 w-4" />
             リスケジュール
           </button>
-          <button className="btn btn-ghost-danger">
+          <button className="btn btn-ghost-danger" onClick={() => setCancelOpen(true)}>
             <XCircle className="h-4 w-4" />
             キャンセル
           </button>
         </div>
       )}
+
+      {/* Cancel confirm dialog */}
+      <ConfirmDialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        onConfirm={handleCancel}
+        title="予約をキャンセルしますか？"
+        description={`${booking.candidate_name} さんの予約をキャンセルします。この操作は取り消せません。`}
+        confirmLabel="キャンセルする"
+        confirmVariant="danger"
+      />
+
+      {/* Reschedule modal */}
+      <Modal
+        open={rescheduleOpen}
+        onClose={() => { setRescheduleOpen(false); setNewDate(""); setNewTime(""); }}
+        title="リスケジュール"
+        description="新しい日時を選択して候補者にリスケジュールを依頼します"
+        size="sm"
+        footer={
+          <>
+            <button onClick={() => { setRescheduleOpen(false); setNewDate(""); setNewTime(""); }} className="btn btn-ghost">
+              キャンセル
+            </button>
+            <button
+              onClick={handleReschedule}
+              disabled={!newDate || !newTime}
+              className="btn btn-primary"
+            >
+              依頼を送信
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label">新しい日付</label>
+            <input
+              type="date"
+              className="input mt-1"
+              value={newDate}
+              onChange={(e) => setNewDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">新しい時刻</label>
+            <input
+              type="time"
+              className="input mt-1"
+              value={newTime}
+              onChange={(e) => setNewTime(e.target.value)}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
