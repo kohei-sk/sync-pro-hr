@@ -870,14 +870,14 @@ function TeamTab({
                       setNewRoleName("");
                       setNewRoleCount(1);
                     }}
-                    className="btn btn-secondary text-sm"
+                    className="btn btn-secondary"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={handleAddRole}
                     disabled={!newRoleName.trim()}
-                    className="btn btn-primary text-sm"
+                    className="btn btn-primary"
                   >
                     追加
                   </button>
@@ -1376,7 +1376,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
         </div>
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary text-sm">
+          <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary">
             {saveLabel}
           </button>
         </div>

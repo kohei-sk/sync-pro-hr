@@ -210,7 +210,7 @@ export default function NewEventPage() {
                 </p>
                 <Link
                   href="/dashboard/events/new"
-                  className="btn btn-primary mt-4 inline-flex"
+                  className="btn btn-primary mt-4"
                 >
                   イベントタイプを作成
                 </Link>

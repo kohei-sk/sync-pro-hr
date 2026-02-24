@@ -1091,14 +1091,14 @@ export default function NewEventPage() {
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => setShowExclusionForm(false)}
-                      className="btn btn-secondary text-sm"
+                      className="btn btn-secondary"
                     >
                       キャンセル
                     </button>
                     <button
                       onClick={addExclusionRule}
                       disabled={!exclusionDraft.name.trim()}
-                      className="btn btn-primary text-sm"
+                      className="btn btn-primary"
                     >
                       追加
                     </button>
