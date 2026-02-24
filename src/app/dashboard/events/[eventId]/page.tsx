@@ -61,7 +61,7 @@ type TabId = "basic" | "team" | "exclusions" | "form";
 
 const tabs: { id: TabId; label: string; icon: typeof Settings }[] = [
   { id: "basic", label: "基本設定", icon: Settings },
-  { id: "team", label: "チーム", icon: Users },
+  { id: "team", label: "メンバー", icon: Users },
   { id: "exclusions", label: "除外ルール", icon: ShieldOff },
   { id: "form", label: "フォーム", icon: FileText },
 ];
@@ -141,7 +141,7 @@ export default function EventDetailPage() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">イベントが見つかりません</p>
-        <Link href="/dashboard/events" className="btn-primary mt-4 inline-block">
+        <Link href="/dashboard/events" className="btn btn-primary mt-4 inline-block">
           イベント一覧に戻る
         </Link>
       </div>
@@ -192,14 +192,14 @@ export default function EventDetailPage() {
           <Link
             href={`/j/${event.slug}`}
             target="blank"
-            className="btn-secondary"
+            className="btn btn-secondary"
           >
             <ExternalLink className="h-4 w-4" />
             プレビュー
           </Link>
           <button
             onClick={handleDelete}
-            className="btn-danger"
+            className="btn btn-danger"
           >
             <Trash2 className="h-4 w-4" />
             削除
@@ -320,6 +320,14 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
 
   return (
     <div className="space-y-5">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">基本設定</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            イベントの基本情報を設定します
+          </p>
+        </div>
+      </div>
       <div>
         <label className="label">イベント名</label>
         <input type="text" className="input mt-1" defaultValue={event.title} />
@@ -392,7 +400,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
             <Globe className={cn("h-5 w-5", isPublic ? "text-green-600" : "text-gray-400")} />
             <div>
               <p className={cn("font-semibold text-sm", isPublic ? "text-green-800" : "text-gray-700")}>公開</p>
-              <p className="text-xs text-gray-500">候補者が予約できます</p>
+              <p className="mt-1 text-xs text-gray-500">候補者が予約できます</p>
             </div>
           </button>
           <button
@@ -407,14 +415,14 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
             <EyeOff className={cn("h-5 w-5", !isPublic ? "text-gray-600" : "text-gray-400")} />
             <div>
               <p className={cn("font-semibold text-sm", !isPublic ? "text-gray-800" : "text-gray-700")}>非公開</p>
-              <p className="text-xs text-gray-500">下書き状態で保存します</p>
+              <p className="mt-1 text-xs text-gray-500">下書き状態で保存します</p>
             </div>
           </button>
         </div>
       </div>
 
       <div className="flex justify-end pt-4">
-        <button className="btn-primary">変更を保存</button>
+        <button className="btn btn-primary">変更を保存</button>
       </div>
     </div>
   );
@@ -561,39 +569,43 @@ function TeamTab({
     <div>
       {/* Mode selector */}
       <div className="mb-6">
-        <h3 className="font-semibold text-gray-900 mb-1">チームメンバー</h3>
-        <p className="text-sm text-gray-500 mb-4">スケジューリングモードとメンバーを管理します</p>
-        <label className="label">スケジューリングモード</label>
+        <h3 className="text-lg font-semibold text-gray-900">メンバー</h3>
+        <p className="text-sm text-gray-500 mt-1">スケジューリングモードとメンバーを設定します</p>
+        <label className="label mt-6">スケジューリングモード</label>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <button
             onClick={() => setMode("fixed")}
             className={cn(
-              "rounded-2xl border-2 p-4 text-left transition-all",
+              "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
               mode === "fixed"
                 ? "border-primary-600 bg-primary-50"
                 : "border-gray-200 hover:border-gray-300"
             )}
           >
             <Lock className={cn("h-5 w-5", mode === "fixed" ? "text-primary-600" : "text-gray-400")} />
-            <h4 className="mt-2 font-semibold text-gray-900">固定モード</h4>
-            <p className="mt-1 text-xs text-gray-500">
-              指定メンバー全員が空いている枠のみ表示
-            </p>
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900">固定モード</h4>
+              <p className="mt-1 text-xs text-gray-500">
+                指定メンバー全員が空いている枠のみ表示
+              </p>
+            </div>
           </button>
           <button
             onClick={() => setMode("pool")}
             className={cn(
-              "rounded-2xl border-2 p-4 text-left transition-all",
+              "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
               mode === "pool"
                 ? "border-primary-600 bg-primary-50"
                 : "border-gray-200 hover:border-gray-300"
             )}
           >
             <Users className={cn("h-5 w-5", mode === "pool" ? "text-primary-600" : "text-gray-400")} />
-            <h4 className="mt-2 font-semibold text-gray-900">プールモード</h4>
-            <p className="mt-1 text-xs text-gray-500">
-              役割ごとに必要人数を満たす枠を自動選出
-            </p>
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900">プールモード</h4>
+              <p className="mt-1 text-xs text-gray-500">
+                役割ごとに必要人数を満たす枠を自動選出
+              </p>
+            </div>
           </button>
         </div>
       </div>
@@ -606,41 +618,6 @@ function TeamTab({
               メンバー
               <span className="ml-1.5 text-xs text-gray-400">（上から優先度順）</span>
             </p>
-            <div className="relative">
-              <button
-                onClick={() => setShowMemberPicker(!showMemberPicker)}
-                className="btn-secondary"
-              >
-                <Plus className="h-4 w-4" />
-                メンバーを追加
-              </button>
-              {showMemberPicker && (
-                <div className="absolute right-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                  {mockUsers
-                    .filter((u) => !fixedMemberIds.includes(u.id))
-                    .map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => addFixedMember(user.id)}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                          {user.full_name.charAt(0)}
-                        </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-medium truncate">{user.full_name}</p>
-                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                        </div>
-                      </button>
-                    ))}
-                  {mockUsers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
-                    <p className="px-3 py-2 text-sm text-gray-400">
-                      追加できるメンバーがいません
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="rounded-2xl border border-gray-200 divide-y divide-gray-100">
@@ -668,9 +645,6 @@ function TeamTab({
                             <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
                               {index + 1}
                             </span>
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                              {user?.full_name.charAt(0) || "?"}
-                            </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">
                                 {user?.full_name || "Unknown"}
@@ -691,13 +665,52 @@ function TeamTab({
                 </SortableContext>
               </DndContext>
             )}
+
+            {/* メンバー追加ボタン */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMemberPicker(!showMemberPicker)}
+                className="flex w-full items-center gap-1.5 px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                メンバーを追加
+                <ChevronDown className="h-3 w-3 ml-auto" />
+              </button>
+              {showMemberPicker && (
+                <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                  {mockUsers
+                    .filter((u) => !fixedMemberIds.includes(u.id))
+                    .map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => addFixedMember(user.id)}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                          {user.full_name.charAt(0)}
+                        </div>
+                        <div className="text-left min-w-0">
+                          <p className="font-medium truncate">{user.full_name}</p>
+                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  {mockUsers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
+                    <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                      追加できるメンバーがいません
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       ) : (
         /* Pool mode */
         <div>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">役割とメンバー</p>
+            <p className="label">役割とメンバー</p>
           </div>
           <div className="space-y-4">
             <DndContext
@@ -712,7 +725,7 @@ function TeamTab({
                 {localRoles.map((role, roleIndex) => (
                   <SortableRow key={role.id} id={role.id}>
                     {(handle) => (
-                      <div className="rounded-2xl border border-gray-200 p-4">
+                      <div className="text-sm rounded-2xl border border-gray-200 p-4">
                         {/* Role header */}
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
@@ -757,9 +770,6 @@ function TeamTab({
                                           <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-1 text-xs font-semibold text-primary-600 shrink-0">
                                             {memberIndex + 1}
                                           </span>
-                                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                            {user?.full_name.charAt(0) || "?"}
-                                          </div>
                                           <span className="flex-1 text-sm text-gray-700 truncate">
                                             {user?.full_name || "Unknown"}
                                           </span>
@@ -812,7 +822,7 @@ function TeamTab({
                                     </button>
                                   ))}
                                 {mockUsers.filter((u) => !role.memberIds.includes(u.id)).length === 0 && (
-                                  <p className="px-3 py-2 text-sm text-gray-400">
+                                  <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
                                     追加できるメンバーがいません
                                   </p>
                                 )}
@@ -830,26 +840,28 @@ function TeamTab({
             {/* Add role */}
             {showAddRoleForm ? (
               <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
-                <div>
-                  <label className="label">役割名</label>
-                  <input
-                    type="text"
-                    className="input mt-1"
-                    value={newRoleName}
-                    onChange={(e) => setNewRoleName(e.target.value)}
-                    placeholder="例: 面接官"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="label">必要人数</label>
-                  <input
-                    type="number"
-                    className="input mt-1 w-24"
-                    value={newRoleCount}
-                    min={1}
-                    onChange={(e) => setNewRoleCount(parseInt(e.target.value) || 1)}
-                  />
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="label">役割名</label>
+                    <input
+                      type="text"
+                      className="input mt-1"
+                      value={newRoleName}
+                      onChange={(e) => setNewRoleName(e.target.value)}
+                      placeholder="例: 面接官"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="label">必要人数</label>
+                    <input
+                      type="number"
+                      className="input mt-1 w-24"
+                      value={newRoleCount}
+                      min={1}
+                      onChange={(e) => setNewRoleCount(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-1">
                   <button
@@ -858,14 +870,14 @@ function TeamTab({
                       setNewRoleName("");
                       setNewRoleCount(1);
                     }}
-                    className="btn-secondary text-sm"
+                    className="btn btn-secondary"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={handleAddRole}
                     disabled={!newRoleName.trim()}
-                    className="btn-primary text-sm"
+                    className="btn btn-primary"
                   >
                     追加
                   </button>
@@ -885,7 +897,7 @@ function TeamTab({
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSave} className="btn-primary">変更を保存</button>
+        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
       </div>
 
       {saved && (
@@ -1007,7 +1019,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
             placeholder="例: 昼休み"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="label">タイプ</label>
             <select
@@ -1030,7 +1042,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
                   : ""
               )}
             >
-              <span>繰り返しあり</span>
+              <span>{draft.recurring ? "繰り返し" : "1回限り"}</span>
               <div className={cn("toggle-btn-switch",
                 draft.recurring ? "toggle-btn-switch-active" : ""
               )}>
@@ -1041,55 +1053,57 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
             </button>
           </div>
         </div>
-        {draft.recurring ? (
-          <div>
-            <label className="label">曜日（空白 = 毎日）</label>
-            <select
-              className="select mt-1"
-              value={draft.day_of_week ?? ""}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
-                })
-              }
-            >
-              <option value="">毎日</option>
-              {daysOfWeek.map((d, i) => (
-                <option key={i} value={i}>{d}曜日</option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <div>
-            <label className="label">対象日</label>
-            <input
-              type="date"
-              className="input mt-1"
-              value={draft.specific_date ?? ""}
-              onChange={(e) => setDraft({ ...draft, specific_date: e.target.value })}
-            />
-          </div>
-        )}
-        {draft.type === "time-range" && (
-          <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
+          {draft.recurring ? (
             <div>
-              <label className="label">開始時刻</label>
-              <input type="time" className="input mt-1"
-                value={draft.start_time ?? "09:00"}
-                onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
+              <label className="label">曜日</label>
+              <select
+                className="select mt-1"
+                value={draft.day_of_week ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                  })
+                }
+              >
+                <option value="">毎日</option>
+                {daysOfWeek.map((d, i) => (
+                  <option key={i} value={i}>{d}曜日</option>
+                ))}
+              </select>
             </div>
+          ) : (
             <div>
-              <label className="label">終了時刻</label>
-              <input type="time" className="input mt-1"
-                value={draft.end_time ?? "10:00"}
-                onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
+              <label className="label">対象日</label>
+              <input
+                type="date"
+                className="input mt-1"
+                value={draft.specific_date ?? ""}
+                onChange={(e) => setDraft({ ...draft, specific_date: e.target.value })}
+              />
             </div>
-          </div>
-        )}
+          )}
+          {draft.type === "time-range" && (
+            <>
+              <div>
+                <label className="label">開始時刻</label>
+                <input type="time" className="input mt-1"
+                  value={draft.start_time ?? "09:00"}
+                  onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">終了時刻</label>
+                <input type="time" className="input mt-1"
+                  value={draft.end_time ?? "10:00"}
+                  onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
+              </div>
+            </>
+          )}
+        </div>
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.name.trim()} className="btn-primary text-sm">
+          <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary text-sm">
             {saveLabel}
           </button>
         </div>
@@ -1099,10 +1113,10 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">除外ルール</h3>
-          <p className="text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
+          <h3 className="text-lg font-semibold text-gray-900">除外ルール</h3>
+          <p className="mt-1 text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
         </div>
       </div>
 
@@ -1126,7 +1140,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
               ) : (
                 <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
                   <div>
-                    <p className="font-medium text-gray-900">{rule.name}</p>
+                    <p className="text-sm font-medium text-gray-900">{rule.name}</p>
                     <p className="mt-0.5 text-sm text-gray-500">
                       {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
                       {rule.recurring && rule.day_of_week !== undefined && (
@@ -1140,7 +1154,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
                       )}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4">
                     <span className={cn(
                       "rounded-full px-2 py-0.5 text-xs font-medium",
                       rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
@@ -1185,7 +1199,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
       </div>
 
       {saved && (
@@ -1361,8 +1375,8 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
           <label htmlFor={`is-required-${formId}`} className="text-sm text-gray-700">必須項目にする</label>
         </div>
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn-secondary text-sm">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.label.trim()} className="btn-primary text-sm">
+          <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary">
             {saveLabel}
           </button>
         </div>
@@ -1372,10 +1386,10 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">カスタムフォーム項目</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-gray-900">カスタムフォーム項目</h3>
+          <p className="mt-1 text-sm text-gray-500">
             候補者に入力してもらう項目を設定します
           </p>
         </div>
@@ -1383,7 +1397,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
 
       {/* Default fields (always shown) */}
       <div className="mb-4 space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+        <p className="label">
           デフォルト項目（変更不可）
         </p>
         {[
@@ -1395,7 +1409,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
             className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
           >
             <span className="text-sm font-medium text-gray-500">{field.label}</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
                 {fieldTypeLabels[field.type]}
               </span>
@@ -1410,7 +1424,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
       {/* Custom fields */}
       {localFields.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+          <p className="label">
             カスタム項目
           </p>
           <DndContext
@@ -1441,7 +1455,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
                             {handle}
                             <span className="text-sm font-medium text-gray-700">{field.label}</span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-4">
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                               {fieldTypeLabels[field.type] || field.type}
                             </span>
@@ -1504,7 +1518,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
       </div>
 
       {saved && (

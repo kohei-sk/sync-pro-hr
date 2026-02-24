@@ -124,7 +124,7 @@ function ProfileTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <div className="card">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">基本情報</h2>
         <div className="space-y-4">
@@ -143,7 +143,7 @@ function ProfileTab() {
             </div>
             <div>
               <button
-                className="btn-secondary btn-size-s"
+                className="btn btn-secondary btn-size-s"
                 onClick={() => setUploadModalOpen(true)}
               >
                 <ImagePlus className="h-3.5 w-3.5" />
@@ -196,7 +196,7 @@ function ProfileTab() {
           <button
             onClick={handleSaveProfile}
             disabled={savingProfile}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             {savingProfile ? (
               <span className="spinner" />
@@ -238,7 +238,7 @@ function ProfileTab() {
           <button
             onClick={handleSavePassword}
             disabled={savingPassword}
-            className="btn-secondary"
+            className="btn btn-secondary"
           >
             {savingPassword && <span className="spinner" />}
             パスワードを変更
@@ -315,13 +315,13 @@ function AvatarUploadModal({
       size="sm"
       footer={
         <>
-          <button onClick={handleClose} disabled={loading} className="btn-ghost">
+          <button onClick={handleClose} disabled={loading} className="btn btn-ghost">
             キャンセル
           </button>
           <button
             onClick={handleUpload}
             disabled={!preview || loading}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             {loading && <span className="spinner" />}
             アップロード
@@ -346,16 +346,18 @@ function AvatarUploadModal({
         </div>
 
         {/* ドロップエリア */}
-        <div
-          className="upload-area"
+        <button
+          className="add-btn !flex-col mt-5"
           onClick={() => fileInputRef.current?.click()}
         >
-          <ImagePlus className="h-8 w-8 text-gray-400 mb-2" />
+          <div className="p-2">
+            <ImagePlus className="h-8 w-8 text-gray-400 mb-2" />
+          </div>
           <p className="text-sm font-medium text-gray-600">
             クリックして画像を選択
           </p>
-          <p className="mt-1 text-xs text-gray-400">JPG, PNG 最大2MB</p>
-        </div>
+          <p className="text-xs text-gray-400">JPG, PNG 最大2MB</p>
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -489,7 +491,7 @@ function NotificationsTab() {
       </div>
 
       <div className="flex justify-end">
-        <button onClick={handleSave} disabled={saving} className="btn-primary">
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
           {saving ? (
             <span className="spinner" />
           ) : (
@@ -697,8 +699,8 @@ function CalendarTab() {
                   disabled={state.loading}
                   className={cn(
                     state.connected
-                      ? "btn-ghost-danger btn-size-s"
-                      : "btn-secondary btn-size-s"
+                      ? "btn btn-ghost-danger btn-size-s"
+                      : "btn btn-secondary btn-size-s"
                   )}
                 >
                   {state.loading && <><span className="spinner" />接続中</>}
@@ -771,7 +773,7 @@ function CalendarTab() {
           <button
             onClick={handleSaveSyncSettings}
             disabled={savingSyncSettings}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             {savingSyncSettings ? (
               <span className="spinner" />
@@ -902,7 +904,7 @@ function MessagingIntegrationCard() {
                     <button
                       onClick={() => setDisconnectTarget(integration.name)}
                       disabled={state.loading}
-                      className="btn-ghost-danger btn-size-s shrink-0"
+                      className="btn btn-ghost-danger btn-size-s shrink-0"
                     >
                       接続解除
                     </button>
@@ -912,7 +914,7 @@ function MessagingIntegrationCard() {
                     <button
                       onClick={() => handleConnect(integration.name)}
                       disabled={state.loading}
-                      className="btn-secondary btn-size-s"
+                      className="btn btn-secondary btn-size-s"
                     >
                       {state.loading ? (
                         <>
@@ -1053,7 +1055,7 @@ function GeneralTab() {
       </div>
 
       <div className="flex justify-end">
-        <button onClick={handleSave} disabled={saving} className="btn-primary">
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
           {saving ? (
             <span className="spinner" />
           ) : (

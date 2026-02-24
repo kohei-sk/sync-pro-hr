@@ -47,7 +47,7 @@ export default function EventsPage() {
             面接や面談のイベントを管理します
           </p>
         </div>
-        <Link href="/dashboard/events/new" className="btn-primary">
+        <Link href="/dashboard/events/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
           新規イベント作成
         </Link>
@@ -64,7 +64,7 @@ export default function EventsPage() {
           <p className="mt-1 text-sm text-gray-500">
             新しいイベントを作成して面接日程の調整を始めましょう
           </p>
-          <Link href="/dashboard/events/new" className="btn-primary mt-4">
+          <Link href="/dashboard/events/new" className="btn btn-primary mt-4">
             <Plus className="h-4 w-4" />
             新規イベント作成
           </Link>
@@ -95,8 +95,8 @@ export default function EventsPage() {
                         style={{ backgroundColor: event.color || "#0071c1" }}
                       />
                     </div>
-                    <div className="flex gap-2 items-center">
-                      <div className="font-bold">
+                    <div className="flex gap-2 items-center flex-1">
+                      <div className="font-bold text-base">
                         {event.title}
                       </div>
                       <div
@@ -149,10 +149,10 @@ export default function EventsPage() {
                   </span>
                 </div>
 
-                <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
+                <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4">
                   <button
                     onClick={() => handleCopyLink(event.id, event.slug)}
-                    className="btn-emphasis btn-size-s"
+                    className="btn btn-emphasis btn-size-s"
                   >
                     {copiedEventId === event.id ? (
                       <>
@@ -167,18 +167,10 @@ export default function EventsPage() {
                     )}
                   </button>
                   <Link
-                    href={`/j/${event.slug}`}
-                    target="blank"
-                    className="btn-secondary btn-size-s"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    プレビュー
-                  </Link>
-                  <Link
                     href={`/dashboard/events/${event.id}`}
-                    className="btn-ghost btn-size-s ml-auto"
+                    className="btn btn-ghost btn-size-s ml-auto"
                   >
-                    <Edit className="h-3.5 w-3.5" />
+                    <Edit className="h-3 w-3" />
                     編集
                   </Link>
                 </div>

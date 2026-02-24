@@ -8,6 +8,8 @@ import {
   XCircle,
   Bell,
   CheckCheck,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { mockNotifications } from "@/lib/mock-data";
 import { useNotificationStore } from "@/lib/notification-store";
@@ -92,15 +94,6 @@ export default function NotificationsPage() {
             予約の受付・変更・キャンセルをお知らせします
           </p>
         </div>
-        {activeTab === "unread" && unreadNotifications.length > 0 && (
-          <button
-            onClick={markAllAsRead}
-            className="btn-ghost btn-size-s"
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            すべて既読にする
-          </button>
-        )}
       </header>
 
       {/* Tabs: 未読 / 既読 */}
@@ -136,6 +129,34 @@ export default function NotificationsPage() {
             </button>
           );
         })}
+
+        <div className="flex items-center gap-3 ml-auto">
+          {/* All Read Btn */}
+          {activeTab === "unread" && unreadNotifications.length > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="btn btn-ghost btn-size-s ml-auto"
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              すべて既読にする
+            </button>
+          )}
+
+          {/* Filter */}
+          <div className="relative">
+            <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+            <select
+              value={"all"}
+              className="select appearance-none pl-8 pr-8 !py-1 min-w-[160px] text-xs h-[32px]"
+            >
+              <option value="all">すべての通知</option>
+              <option value="1">予約受付</option>
+              <option value="2">予約キャンセル</option>
+              <option value="3">予約変更</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+          </div>
+        </div>
       </div>
 
       {/* Notification list */}
@@ -170,7 +191,7 @@ export default function NotificationsPage() {
                 )}
               >
                 <div
-                  className={"flex items-center gap-4 px-5 py-4"}
+                  className={"flex items-center gap-5 px-5 py-4"}
                 >
                   {/* Icon */}
                   <div

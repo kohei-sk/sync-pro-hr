@@ -146,7 +146,7 @@ export default function NewEventPage() {
 
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
-    { id: "team", label: "チーム設定" },
+    { id: "team", label: "メンバー設定" },
     { id: "exclusions", label: "除外ルール" },
     { id: "confirm", label: "確認" },
   ];
@@ -348,12 +348,12 @@ export default function NewEventPage() {
 
       {/* Step indicator */}
       <div className="mb-8">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3.5">
           {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
+            <div key={s.id} className="flex items-center gap-3.5">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
@@ -365,7 +365,7 @@ export default function NewEventPage() {
               </div>
               <span
                 className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-semibold",
                   i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
                 )}
               >
@@ -375,7 +375,7 @@ export default function NewEventPage() {
                 <div
                   className={cn(
                     "h-px w-8",
-                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-200"
+                    i < currentStepIndex ? "bg-primary-600" : "bg-gray-300"
                   )}
                 />
               )}
@@ -607,7 +607,7 @@ export default function NewEventPage() {
         {step === "team" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              チーム設定
+              メンバー設定
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               面接に参加するメンバーの役割と配分を設定します
@@ -622,42 +622,46 @@ export default function NewEventPage() {
                       setFormData({ ...formData, scheduling_mode: "fixed" })
                     }
                     className={cn(
-                      "rounded-2xl border-2 p-4 text-left transition-all",
+                      "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
                       formData.scheduling_mode === "fixed"
                         ? "border-primary-600 bg-primary-50"
                         : "border-gray-200 hover:border-gray-300"
                     )}
                   >
                     <Lock className="h-5 w-5 text-gray-600" />
-                    <h4 className="mt-2 font-semibold text-gray-900">
-                      固定モード
-                    </h4>
-                    <p className="mt-1 text-xs text-gray-500">
-                      指定メンバー全員が空いている枠のみ表示
-                    </p>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        固定モード
+                      </h4>
+                      <p className="mt-1 text-xs text-gray-500">
+                        指定メンバー全員が空いている枠のみ表示
+                      </p>
+                    </div>
                   </button>
                   <button
                     onClick={() =>
                       setFormData({ ...formData, scheduling_mode: "pool" })
                     }
                     className={cn(
-                      "rounded-2xl border-2 p-4 text-left transition-all",
+                      "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
                       formData.scheduling_mode === "pool"
                         ? "border-primary-600 bg-primary-50"
                         : "border-gray-200 hover:border-gray-300"
                     )}
                   >
                     <Users className="h-5 w-5 text-gray-600" />
-                    <h4 className="mt-2 font-semibold text-gray-900">
-                      プールモード
-                    </h4>
-                    <p className="mt-1 text-xs text-gray-500">
-                      役割ごとに必要人数を満たす枠を自動選出
-                    </p>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        プールモード
+                      </h4>
+                      <p className="mt-1 text-xs text-gray-500">
+                        役割ごとに必要人数を満たす枠を自動選出
+                      </p>
+                    </div>
                   </button>
                 </div>
                 <div className="mt-3 rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600">
                     {formData.scheduling_mode === "fixed"
                       ? "固定モードでは、全メンバーの空き時間が一致する枠のみが候補者に表示されます。少人数の面接に適しています。"
                       : "プールモードでは、役割ごとに必要人数を設定し、条件を満たす枠が自動で選出されます。大人数の面接パネルに適しています。"}
@@ -690,9 +694,6 @@ export default function NewEventPage() {
                                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
                                       {index + 1}
                                     </span>
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                      {user?.full_name.charAt(0) || "?"}
-                                    </div>
                                     <span className="flex-1 text-sm text-gray-700">
                                       {user?.full_name || userId}
                                     </span>
@@ -831,9 +832,6 @@ export default function NewEventPage() {
                                                 <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
                                                   {memberIndex + 1}
                                                 </span>
-                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                                  {user?.full_name.charAt(0) || "?"}
-                                                </div>
                                                 <span className="flex-1 text-sm text-gray-700">
                                                   {user?.full_name || userId}
                                                 </span>
@@ -928,7 +926,7 @@ export default function NewEventPage() {
         {/* Step 3: Exclusion Rules */}
         {step === "exclusions" && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">除外ルール</h2>
+            <h2 className="mb-1 text-lg font-semibold text-gray-900">除外ルール</h2>
             <p className="mt-1 text-sm text-gray-500">
               特定の日時をスケジュール対象外に設定します（省略可能）
             </p>
@@ -985,7 +983,7 @@ export default function NewEventPage() {
                       placeholder="例: 昼休み、全社定例会議"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="label">タイプ</label>
                       <select
@@ -1009,97 +1007,98 @@ export default function NewEventPage() {
                           setExclusionDraft({ ...exclusionDraft, recurring: !exclusionDraft.recurring })
                         }
                         className={cn(
-                          "mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset transition-colors",
+                          "toggle-btn",
                           exclusionDraft.recurring
-                            ? "bg-primary-50 ring-primary-300 text-primary-700"
-                            : "bg-white ring-gray-300 text-gray-600"
+                            ? "toggle-btn-active"
+                            : ""
                         )}
                       >
-                        <span>{exclusionDraft.recurring ? "繰り返しあり" : "1回限り"}</span>
+                        <span>{exclusionDraft.recurring ? "繰り返し" : "1回限り"}</span>
                         <div className={cn(
-                          "relative inline-flex h-5 w-9 rounded-full transition-colors",
-                          exclusionDraft.recurring ? "bg-primary-500" : "bg-gray-300"
+                          "toggle-btn-switch",
+                          exclusionDraft.recurring ? "toggle-btn-switch-active" : ""
                         )}>
                           <span className={cn(
-                            "inline-block h-4 w-4 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
-                            exclusionDraft.recurring ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                            "toggle-btn-switch-handle",
+                            exclusionDraft.recurring ? "toggle-btn-switch-handle-active" : ""
                           )} />
                         </div>
                       </button>
                     </div>
                   </div>
 
-                  {exclusionDraft.recurring ? (
-                    <div>
-                      <label className="label">曜日（空白 = 毎日）</label>
-                      <select
-                        className="select mt-1"
-                        value={exclusionDraft.day_of_week ?? ""}
-                        onChange={(e) =>
-                          setExclusionDraft({
-                            ...exclusionDraft,
-                            day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
-                          })
-                        }
-                      >
-                        <option value="">毎日</option>
-                        {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
-                          <option key={i} value={i}>{d}曜日</option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="label">対象日</label>
-                      <input
-                        type="date"
-                        className="input mt-1"
-                        value={exclusionDraft.specific_date ?? ""}
-                        onChange={(e) =>
-                          setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value })
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {exclusionDraft.type === "time-range" && (
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    {exclusionDraft.recurring ? (
                       <div>
-                        <label className="label">開始時刻</label>
-                        <input
-                          type="time"
-                          className="input mt-1"
-                          value={exclusionDraft.start_time ?? "09:00"}
+                        <label className="label">曜日</label>
+                        <select
+                          className="select mt-1"
+                          value={exclusionDraft.day_of_week ?? ""}
                           onChange={(e) =>
-                            setExclusionDraft({ ...exclusionDraft, start_time: e.target.value })
+                            setExclusionDraft({
+                              ...exclusionDraft,
+                              day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                            })
+                          }
+                        >
+                          <option value="">毎日</option>
+                          {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
+                            <option key={i} value={i}>{d}曜日</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="label">対象日</label>
+                        <input
+                          type="date"
+                          className="input mt-1"
+                          value={exclusionDraft.specific_date ?? ""}
+                          onChange={(e) =>
+                            setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value })
                           }
                         />
                       </div>
-                      <div>
-                        <label className="label">終了時刻</label>
-                        <input
-                          type="time"
-                          className="input mt-1"
-                          value={exclusionDraft.end_time ?? "10:00"}
-                          onChange={(e) =>
-                            setExclusionDraft({ ...exclusionDraft, end_time: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  )}
+                    )}
+                    {exclusionDraft.type === "time-range" && (
+                      <>
+                        <div>
+                          <label className="label">開始時刻</label>
+                          <input
+                            type="time"
+                            className="input mt-1"
+                            value={exclusionDraft.start_time ?? "09:00"}
+                            onChange={(e) =>
+                              setExclusionDraft({ ...exclusionDraft, start_time: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="label">終了時刻</label>
+                          <input
+                            type="time"
+                            className="input mt-1"
+                            value={exclusionDraft.end_time ?? "10:00"}
+                            onChange={(e) =>
+                              setExclusionDraft({ ...exclusionDraft, end_time: e.target.value })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => setShowExclusionForm(false)}
-                      className="btn-secondary text-sm"
+                      className="btn btn-secondary"
                     >
                       キャンセル
                     </button>
                     <button
                       onClick={addExclusionRule}
                       disabled={!exclusionDraft.name.trim()}
-                      className="btn-primary text-sm"
+                      className="btn btn-primary"
                     >
                       追加
                     </button>
@@ -1310,7 +1309,7 @@ export default function NewEventPage() {
           <button
             onClick={handleBack}
             className={cn(
-              "btn-secondary",
+              "btn btn-secondary",
               currentStepIndex === 0 && "invisible"
             )}
           >
@@ -1318,14 +1317,14 @@ export default function NewEventPage() {
             戻る
           </button>
           {step === "confirm" ? (
-            <button onClick={handleCreate} className="btn-primary">
+            <button onClick={handleCreate} className="btn btn-primary">
               イベントを作成
             </button>
           ) : (
             <button
               onClick={handleNext}
               disabled={step === "basic" && !formData.title.trim()}
-              className="btn-primary"
+              className="btn btn-primary"
             >
               次へ
               <ArrowRight className="h-4 w-4" />

@@ -175,8 +175,8 @@ export default function BookingPage() {
               {event.location_type === "online"
                 ? "オンライン"
                 : event.location_type === "in-person"
-                ? "対面"
-                : "電話"}
+                  ? "対面"
+                  : "電話"}
             </span>
           </div>
         </div>
@@ -196,12 +196,12 @@ export default function BookingPage() {
                 <div key={s.id} className="flex items-center gap-2">
                   <div
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium",
+                      "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
                       thisIndex < currentIndex
                         ? "bg-primary-600 text-white"
                         : thisIndex === currentIndex
-                        ? "bg-primary-100 text-primary-700 ring-2 ring-primary-600"
-                        : "bg-gray-100 text-gray-400"
+                          ? "bg-primary-100 text-primary-700 ring-2 ring-primary-600"
+                          : "bg-gray-100 text-gray-400"
                     )}
                   >
                     {i + 1}
@@ -222,7 +222,7 @@ export default function BookingPage() {
                         "h-px w-6",
                         thisIndex < currentIndex
                           ? "bg-primary-600"
-                          : "bg-gray-200"
+                          : "bg-gray-300"
                       )}
                     />
                   )}
@@ -307,8 +307,8 @@ export default function BookingPage() {
                         hasSlots
                           ? "bg-primary-50 text-primary-700 hover:bg-primary-100"
                           : isWeekend
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-400 cursor-not-allowed"
+                            ? "text-gray-300 cursor-not-allowed"
+                            : "text-gray-400 cursor-not-allowed"
                       )}
                     >
                       {day}
@@ -492,7 +492,7 @@ export default function BookingPage() {
                   </div>
                 ))}
 
-                <button type="submit" className="btn-primary w-full mt-6">
+                <button type="submit" className="btn btn-primary w-full mt-6">
                   予約を確定する
                 </button>
               </form>
