@@ -120,9 +120,9 @@ export default function NewEventPage() {
     buffer_after: 15,
     location_type: "online" as "online" | "in-person" | "phone",
     location_detail: "",
-    scheduling_mode: "pool" as "pool" | "fixed",
+    scheduling_mode: "fixed" as "pool" | "fixed",
     color: "#3b82f6",
-    isPublic: false,
+    isPublic: true,
   });
 
   const [roles, setRoles] = useState<NewRole[]>([
