@@ -332,6 +332,11 @@ export const mockBookings: Booking[] = [
       { user_id: "u3", role_id: "r2" },
       { user_id: "u4", role_id: "r2" },
     ],
+    custom_field_values: {
+      cf1: "https://github.com/takahashi-naoki",
+      cf2: "650万円",
+      cf3: "TypeScriptとReactの経験が5年あります。よろしくお願いいたします。",
+    },
     created_at: "2026-02-15T10:00:00Z",
   },
   {

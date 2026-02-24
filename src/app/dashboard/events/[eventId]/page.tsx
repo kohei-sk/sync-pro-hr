@@ -10,8 +10,6 @@ import {
   ShieldOff,
   FileText,
   ExternalLink,
-  Clock,
-  MapPin,
   Plus,
   Trash2,
   Lock,
@@ -149,8 +147,8 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="flex gap-8">
-      {/* Left: Settings */}
+    <div>
+      {/* Settings */}
       <div className="flex-1 min-w-0">
         {/* Header */}
         <header className="header mb-6">
@@ -244,81 +242,26 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* Right: Live Preview */}
-      <div className="hidden w-80 shrink-0 xl:block">
-        <div className="sticky top-0">
-          <h3 className="mb-3 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-            ライブプレビュー
-          </h3>
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="text-center">
-              <div
-                className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: (event.color || "#3b82f6") + "20" }}
-              >
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: event.color }}
-                />
-              </div>
-              <h4 className="mt-3 font-semibold text-gray-900">
-                {event.title}
-              </h4>
-              <div className="mt-2 flex items-center justify-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {event.duration}分
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {event.location_type === "online"
-                    ? "オンライン"
-                    : event.location_type === "in-person"
-                      ? "対面"
-                      : "電話"}
-                </span>
-              </div>
-            </div>
-            <div className="mt-4 space-y-2">
-              {["月", "火", "水"].map((day, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2"
-                >
-                  <span className="text-xs font-medium text-gray-700">
-                    2月{18 + i}日({day})
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {["10:00", "11:00", "14:00", "16:00"]
-                      .slice(0, 3 - i)
-                      .map((time) => (
-                        <span
-                          key={time}
-                          className="rounded-lg bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"
-                        >
-                          {time}
-                        </span>
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 border-t border-gray-100 pt-4">
-              <p className="text-center text-xs text-gray-400">
-                候補者に表示されるプレビュー
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
 // --- Tab Components ---
 
+const EVENT_COLORS = [
+  "#3b82f6",
+  "#8b5cf6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#06b6d4",
+  "#6b7280",
+];
+
 function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
   const [isPublic, setIsPublic] = useState(event.status === "active");
+  const [color, setColor] = useState(event.color || "#0071c1");
 
   return (
     <div className="space-y-5">
@@ -352,6 +295,24 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           rows={3}
           defaultValue={event.description}
         />
+      </div>
+      <div>
+        <label className="label">カラー</label>
+        <div className="mt-2 flex gap-2">
+          {EVENT_COLORS.map((c) => (
+            <button
+              key={c}
+              onClick={() => setColor(c)}
+              className={cn(
+                "h-8 w-8 rounded-full transition-all",
+                color === c
+                  ? "ring-2 ring-offset-2 ring-gray-400"
+                  : "hover:scale-110"
+              )}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
@@ -1366,15 +1327,16 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
             placeholder="入力例を記入（任意）"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id={`is-required-${formId}`}
-            checked={draft.is_required}
-            onChange={(e) => setDraft({ ...draft, is_required: e.target.checked })}
-            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-          />
-          <label htmlFor={`is-required-${formId}`} className="text-sm text-gray-700">必須項目にする</label>
+        <div>
+          <button
+            onClick={() => setDraft({ ...draft, is_required: !draft.is_required })}
+            className={cn("toggle-btn", draft.is_required ? "toggle-btn-active" : "")}
+          >
+            <span>必須項目にする</span>
+            <div className={cn("toggle-btn-switch", draft.is_required ? "toggle-btn-switch-active" : "")}>
+              <span className={cn("toggle-btn-switch-handle", draft.is_required ? "toggle-btn-switch-handle-active" : "")} />
+            </div>
+          </button>
         </div>
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
