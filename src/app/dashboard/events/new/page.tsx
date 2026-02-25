@@ -1320,6 +1320,7 @@ export default function NewEventPage() {
                 {[
                   { label: "お名前", type: "テキスト" },
                   { label: "メールアドレス", type: "メール" },
+                  { label: "電話番号", type: "電話番号" },
                 ].map((f) => (
                   <div key={f.label} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
                     <span className="text-sm font-medium text-gray-500">{f.label}</span>
@@ -1466,58 +1467,29 @@ export default function NewEventPage() {
             <p className="mt-1 text-sm text-gray-500">
               以下の内容でイベントを作成します
             </p>
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-3">
+
+              {/* 基本設定 */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <dl className="space-y-3">
-                  <div className="flex justify-between">
+                <p className="section-label">基本設定</p>
+                <dl className="space-y-2.5">
+                  <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-500">イベント名</dt>
                     <dd className="flex items-center gap-2 text-sm font-medium text-gray-900">
                       <div
-                        className="h-3 w-3 rounded-full"
+                        className="h-3 w-3 rounded-full shrink-0"
                         style={{ backgroundColor: formData.color }}
                       />
                       {formData.title || "未入力"}
                     </dd>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-500">URL</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      /j/{formData.slug || "\u2014"}
+                      /j/{formData.slug || "—"}
                     </dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">所要時間</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      {formData.duration}分
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">バッファ</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      前{formData.buffer_before}分 / 後{formData.buffer_after}分
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">場所</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      {formData.location_type === "online"
-                        ? "オンライン"
-                        : formData.location_type === "in-person"
-                          ? "対面"
-                          : "電話"}
-                      {formData.location_detail &&
-                        ` (${formData.location_detail})`}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">モード</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      {formData.scheduling_mode === "fixed"
-                        ? "固定モード"
-                        : "プールモード"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-500">公開設定</dt>
                     <dd className="flex items-center gap-1.5 text-sm font-medium">
                       {formData.isPublic ? (
@@ -1533,40 +1505,54 @@ export default function NewEventPage() {
                       )}
                     </dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">チームメンバー</dt>
+                </dl>
+              </div>
+
+              {/* 日程・場所 */}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="section-label">日程・場所</p>
+                <dl className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">所要時間</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {formData.duration}分
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">バッファ</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      前{formData.buffer_before}分 / 後{formData.buffer_after}分
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">場所</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {formData.location_type === "online"
+                        ? "オンライン"
+                        : formData.location_type === "in-person"
+                          ? "対面"
+                          : "電話"}
+                      {formData.location_detail &&
+                        ` (${formData.location_detail})`}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">スケジューリング</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       {formData.scheduling_mode === "fixed"
-                        ? `${totalMembers}人`
-                        : `${totalMembers}人（${roles.length}役割）`}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">除外ルール</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      {newExclusionRules.length > 0
-                        ? `${newExclusionRules.length}件`
-                        : "なし"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">フォーム項目</dt>
-                    <dd className="flex items-center gap-1 text-sm font-medium text-gray-900">
-                      <FileText className="h-3.5 w-3.5 text-gray-400" />
-                      デフォルト2件{formFields.length > 0 ? ` + カスタム${formFields.length}件` : ""}
+                        ? "固定モード"
+                        : "プールモード"}
                     </dd>
                   </div>
                 </dl>
               </div>
 
-              {/* Team summary */}
-              {formData.scheduling_mode === "fixed" ? (
-                fixedMemberIds.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-                      チーム構成
-                    </p>
-                    <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+              {/* チーム構成 */}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="section-label">チーム構成</p>
+                {formData.scheduling_mode === "fixed" ? (
+                  fixedMemberIds.length > 0 ? (
+                    <div className="flex items-center justify-between">
                       <div>
                         <span className="text-sm font-medium text-gray-900">メンバー</span>
                         <span className="ml-2 text-xs text-gray-500">{fixedMemberIds.length}人</span>
@@ -1591,18 +1577,15 @@ export default function NewEventPage() {
                         )}
                       </div>
                     </div>
-                  </div>
-                )
-              ) : (
-                roles.length > 0 && (
+                  ) : (
+                    <p className="text-sm text-gray-400">メンバー未設定</p>
+                  )
+                ) : roles.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-                      チーム構成
-                    </p>
                     {roles.map((role) => (
                       <div
                         key={role.id}
-                        className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
+                        className="flex items-center justify-between"
                       >
                         <div>
                           <span className="text-sm font-medium text-gray-900">
@@ -1639,8 +1622,38 @@ export default function NewEventPage() {
                       </div>
                     ))}
                   </div>
-                )
-              )}
+                ) : (
+                  <p className="text-sm text-gray-400">役割未設定</p>
+                )}
+              </div>
+
+              {/* フォーム */}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="section-label">フォーム項目</p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    <span>デフォルト3件（お名前・メールアドレス・電話番号）</span>
+                  </div>
+                  {formFields.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                      <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                      <span>カスタム{formFields.length}件</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 除外ルール */}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="section-label">除外ルール</p>
+                <p className="text-sm text-gray-700">
+                  {newExclusionRules.length > 0
+                    ? `${newExclusionRules.length}件設定`
+                    : "なし"}
+                </p>
+              </div>
+
             </div>
           </div>
         )}

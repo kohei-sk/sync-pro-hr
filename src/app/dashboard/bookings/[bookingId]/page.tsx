@@ -187,14 +187,27 @@ export default function BookingDetailPage() {
 
         {/* Contact */}
         <section className="py-4">
-          <div className="flex items-center gap-2.5 text-sm text-gray-800">
-            <Mail className="h-4 w-4 shrink-0 text-gray-400" />
-            <a
-              href={`mailto:${booking.candidate_email}`}
-              className="text-primary-600 hover:text-primary-700 hover:underline"
-            >
-              {booking.candidate_email}
-            </a>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5 text-sm text-gray-800">
+              <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+              <a
+                href={`mailto:${booking.candidate_email}`}
+                className="text-primary-600 hover:text-primary-700 hover:underline"
+              >
+                {booking.candidate_email}
+              </a>
+            </div>
+            {booking.candidate_phone && (
+              <div className="flex items-center gap-2.5 text-sm text-gray-800">
+                <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                <a
+                  href={`tel:${booking.candidate_phone}`}
+                  className="text-primary-600 hover:text-primary-700 hover:underline"
+                >
+                  {booking.candidate_phone}
+                </a>
+              </div>
+            )}
           </div>
         </section>
 
