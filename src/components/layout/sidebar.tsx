@@ -10,8 +10,7 @@ import {
   Users,
   Settings,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/lib/notification-store";
@@ -28,9 +27,8 @@ export function Sidebar() {
   const pathname = usePathname();
   const { unreadCount } = useNotificationStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
-  const isExpanded = !isCollapsed || isHovered;
+  const isExpanded = !isCollapsed;
 
   return (
     <div
@@ -38,35 +36,37 @@ export function Sidebar() {
         "relative flex h-screen flex-col border-r border-gray-200 bg-white transition-all duration-200",
         isExpanded ? "w-60" : "w-[60px]"
       )}
-      onMouseEnter={() => isCollapsed && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Toggle button */}
-      <button
-        onClick={() => { setIsCollapsed(!isCollapsed); setIsHovered(false); }}
-        className="absolute -right-3 top-5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm hover:bg-gray-50 hover:text-gray-600 transition-colors"
-        aria-label={isCollapsed ? "サイドバーを展開" : "サイドバーを折りたたむ"}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-3.5 w-3.5" />
-        ) : (
-          <ChevronLeft className="h-3.5 w-3.5" />
+      {/* Logo + Hamburger */}
+      <div
+        className={cn(
+          "flex h-14 items-center border-b border-gray-100 overflow-hidden transition-all duration-200",
+          isCollapsed ? "justify-center px-0" : "px-3 gap-2.5"
         )}
-      </button>
-
-      {/* Logo */}
-      <div className="flex h-14 items-center gap-2.5 border-b border-gray-100 px-[14px] overflow-hidden">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500">
+      >
+        <div
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500",
+            isCollapsed && "hidden"
+          )}
+        >
           <Calendar className="h-4.5 w-4.5 text-white" />
         </div>
         <span
           className={cn(
-            "text-base font-bold text-gray-900 whitespace-nowrap transition-all duration-200",
-            isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+            "flex-1 text-base font-bold text-gray-900 whitespace-nowrap",
+            isCollapsed && "hidden"
           )}
         >
           SyncPro HR
         </span>
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          aria-label={isCollapsed ? "サイドバーを展開" : "サイドバーを折りたたむ"}
+        >
+          <Menu className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -82,7 +82,7 @@ export function Sidebar() {
               href={item.href}
               title={!isExpanded ? item.name : undefined}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary-50 text-primary-700"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
