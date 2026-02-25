@@ -82,10 +82,11 @@ export function Sidebar() {
               href={item.href}
               title={!isExpanded ? item.name : undefined}
               className={cn(
-                "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                "relative flex items-center rounded-lg px-2.5 py-2 text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary-50 text-primary-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                isExpanded ? "gap-2.5" : "gap-0 pl-3"
               )}
             >
               <item.icon
@@ -96,8 +97,8 @@ export function Sidebar() {
               />
               <span
                 className={cn(
-                  "flex-1 whitespace-nowrap transition-all duration-200",
-                  isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                  "whitespace-nowrap transition-all duration-200",
+                  isExpanded ? "flex-1 opacity-100" : "flex-none opacity-0 w-0 overflow-hidden"
                 )}
               >
                 {item.name}
@@ -108,7 +109,7 @@ export function Sidebar() {
                 </span>
               )}
               {item.showBadge && unreadCount > 0 && !isExpanded && (
-                <span className="absolute left-7 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary-500 text-[8px] font-bold text-white" />
+                <span className="absolute left-7 top-2 flex h-2 w-2 items-center justify-center rounded-full bg-primary-500 text-[8px] font-bold text-white" />
               )}
             </Link>
           );
