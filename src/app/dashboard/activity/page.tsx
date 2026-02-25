@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { mockNotifications } from "@/lib/mock-data";
 import { useNotificationStore } from "@/lib/notification-store";
+import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import type { NotificationType } from "@/types";
 
@@ -71,6 +72,7 @@ function getRelativeTime(timestamp: string): string {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const toast = useToast();
   const { isRead, markAsRead, markAllAsRead } = useNotificationStore();
   const [activeTab, setActiveTab] = useState<NotificationTab>("unread");
   const [filterType, setFilterType] = useState<"all" | NotificationType>("all");
@@ -135,7 +137,7 @@ export default function NotificationsPage() {
           {/* All Read Btn */}
           {activeTab === "unread" && unreadNotifications.length > 0 && (
             <button
-              onClick={markAllAsRead}
+              onClick={() => { markAllAsRead(); toast.success("すべて既読にしました"); }}
               className="btn btn-ghost btn-size-s ml-auto"
             >
               <CheckCheck className="h-3.5 w-3.5" />

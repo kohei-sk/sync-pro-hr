@@ -6,8 +6,6 @@ import {
   Plus,
   Copy,
   Check,
-  CheckCircle2,
-  ExternalLink,
   Clock,
   MapPin,
   Users,
@@ -15,6 +13,7 @@ import {
 } from "lucide-react";
 import { mockRoles, mockMembers } from "@/lib/mock-data";
 import { getEventTypes, subscribe } from "@/lib/event-store";
+import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
 function useEventTypes() {
@@ -23,19 +22,36 @@ function useEventTypes() {
 
 export default function EventsPage() {
   const eventTypes = useEventTypes();
+  const toast = useToast();
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
-  const [showCopyToast, setShowCopyToast] = useState(false);
 
   function handleCopyLink(id: string, slug: string) {
     const url = `${window.location.origin}/j/${slug}`;
-    navigator.clipboard.writeText(url).then(() => {
+    const doCopy = () => {
       setCopiedEventId(id);
-      setShowCopyToast(true);
-      setTimeout(() => {
-        setCopiedEventId(null);
-        setShowCopyToast(false);
-      }, 2000);
-    });
+      toast.success("リンクをコピーしました");
+      setTimeout(() => setCopiedEventId(null), 2000);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(doCopy).catch(() => {
+        // フォールバック: execCommand
+        const el = document.createElement("textarea");
+        el.value = url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        doCopy();
+      });
+    } else {
+      const el = document.createElement("textarea");
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      doCopy();
+    }
   }
 
   return (
@@ -180,12 +196,6 @@ export default function EventsPage() {
         </div>
       )}
 
-      {showCopyToast && (
-        <div className="toast">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span className="text-sm font-medium text-gray-700">リンクをコピーしました</span>
-        </div>
-      )}
     </div>
   );
 }

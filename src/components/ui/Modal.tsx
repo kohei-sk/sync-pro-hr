@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,8 @@ interface ModalProps {
   size?: "sm" | "md" | "lg";
 }
 
+const EXIT_DURATION = 150;
+
 export function Modal({
   open,
   onClose,
@@ -29,6 +31,22 @@ export function Modal({
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2, 7)}`);
+
+  // isMounted: DOM に残すか / isOpen: アニメーション状態
+  const [isMounted, setIsMounted] = useState(open);
+  const [isOpen, setIsOpen] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setIsMounted(true);
+      // DOM マウント後に class を付与してアニメーション開始
+      requestAnimationFrame(() => setIsOpen(true));
+    } else {
+      setIsOpen(false);
+      const t = setTimeout(() => setIsMounted(false), EXIT_DURATION);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
 
   // ESCキーで閉じる
   useEffect(() => {
@@ -42,7 +60,7 @@ export function Modal({
 
   // 開いたときにフォーカスをパネルに移動
   useEffect(() => {
-    if (open && panelRef.current) {
+    if (isOpen && panelRef.current) {
       // 最初のフォーカス可能な要素にフォーカス
       const focusable = panelRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -53,7 +71,7 @@ export function Modal({
         panelRef.current.focus();
       }
     }
-  }, [open]);
+  }, [isOpen]);
 
   // bodyスクロール防止
   useEffect(() => {
@@ -67,7 +85,7 @@ export function Modal({
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!isMounted) return null;
 
   const sizeClass = {
     sm: "modal-panel-sm",
@@ -76,7 +94,7 @@ export function Modal({
   }[size];
 
   return (
-    <>
+    <div data-modal-state={isOpen ? "open" : "close"}>
       {/* Overlay */}
       <div
         className="modal-overlay"
@@ -124,7 +142,7 @@ export function Modal({
           {footer && <div className="modal-footer">{footer}</div>}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

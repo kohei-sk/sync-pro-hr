@@ -15,7 +15,6 @@ import {
   Lock,
   Globe,
   EyeOff,
-  CheckCircle2,
   Pencil,
   ChevronDown,
   GripVertical,
@@ -47,6 +46,9 @@ import {
   mockUsers,
 } from "@/lib/mock-data";
 import { deleteEventType } from "@/lib/event-store";
+import { useToast } from "@/components/ui/Toast";
+import { ConfirmDialog } from "@/components/ui/Modal";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import type {
   EventRole,
   EventMember,
@@ -114,8 +116,12 @@ function SortableRow({
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const eventId = params.eventId as string;
   const [activeTab, setActiveTab] = useState<TabId>("basic");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const { navigate, pendingHref, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty);
 
   const event = mockEventTypes.find((e) => e.id === eventId);
   const roles = mockRoles.filter((r) => r.event_id === eventId);
@@ -129,10 +135,9 @@ export default function EventDetailPage() {
   );
 
   function handleDelete() {
-    if (window.confirm(`「${event!.title}」を削除してもよろしいですか？`)) {
-      deleteEventType(eventId);
-      router.push("/dashboard/events");
-    }
+    deleteEventType(eventId);
+    toast.success("イベントを削除しました");
+    router.push("/dashboard/events");
   }
 
   if (!event) {
@@ -152,12 +157,12 @@ export default function EventDetailPage() {
       <div className="flex-1 min-w-0">
         {/* Header */}
         <header className="header mb-6">
-          <Link
-            href="/dashboard/events"
+          <button
+            onClick={() => navigate("/dashboard/events")}
             className="header-back-btn"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </button>
           <div className="header-col">
             <div className="heading">
               <div
@@ -197,7 +202,7 @@ export default function EventDetailPage() {
               プレビュー
             </Link>
             <button
-              onClick={handleDelete}
+              onClick={() => setDeleteOpen(true)}
               className="btn btn-danger"
             >
               <Trash2 className="h-4 w-4" />
@@ -228,20 +233,39 @@ export default function EventDetailPage() {
         {/* Tab Content */}
         <div className="card max-w-3xl">
           {activeTab === "basic" && (
-            <BasicTab event={event} />
+            <BasicTab event={event} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "team" && (
-            <TeamTab roles={roles} members={members} mode={event.scheduling_mode} />
+            <TeamTab roles={roles} members={members} mode={event.scheduling_mode} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "exclusions" && (
-            <ExclusionsTab rules={exclusionRules} eventId={eventId} />
+            <ExclusionsTab rules={exclusionRules} eventId={eventId} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "form" && (
-            <FormTab fields={customFields} eventId={eventId} />
+            <FormTab fields={customFields} eventId={eventId} onDirtyChange={setIsDirty} />
           )}
         </div>
       </div>
 
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="イベントを削除しますか？"
+        description={`「${event.title}」を削除します。この操作は取り消せません。`}
+        confirmLabel="削除する"
+        confirmVariant="danger"
+      />
+
+      <ConfirmDialog
+        open={pendingHref !== null}
+        onClose={cancelLeave}
+        onConfirm={confirmLeave}
+        title="変更を破棄しますか？"
+        description="保存されていない変更があります。この画面を離れると変更が失われます。"
+        confirmLabel="破棄して移動"
+        confirmVariant="danger"
+      />
     </div>
   );
 }
@@ -259,11 +283,20 @@ const EVENT_COLORS = [
   "#6b7280",
 ];
 
-function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
+function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; onDirtyChange: (dirty: boolean) => void }) {
+  const toast = useToast();
   const [isPublic, setIsPublic] = useState(event.status === "active");
   const [color, setColor] = useState(
     EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0]
   );
+  const [title, setTitle] = useState(event.title);
+  const [slug, setSlug] = useState(event.slug);
+  const [description, setDescription] = useState(event.description ?? "");
+  const [duration, setDuration] = useState(event.duration);
+  const [bufferBefore, setBufferBefore] = useState(event.buffer_before);
+  const [bufferAfter, setBufferAfter] = useState(event.buffer_after);
+
+  function markDirty() { onDirtyChange(true); }
 
   return (
     <div className="space-y-5">
@@ -277,7 +310,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
       </div>
       <div>
         <label className="label">イベント名</label>
-        <input type="text" className="input mt-1" defaultValue={event.title} />
+        <input type="text" className="input mt-1" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} />
       </div>
       <div>
         <label className="label">URL スラグ</label>
@@ -286,7 +319,8 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           <input
             type="text"
             className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0"
-            defaultValue={event.slug}
+            value={slug}
+            onChange={(e) => { setSlug(e.target.value); markDirty(); }}
           />
         </div>
       </div>
@@ -295,7 +329,8 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
         <textarea
           className="input mt-1"
           rows={3}
-          defaultValue={event.description}
+          value={description}
+          onChange={(e) => { setDescription(e.target.value); markDirty(); }}
         />
       </div>
       <div>
@@ -304,7 +339,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           {EVENT_COLORS.map((c) => (
             <button
               key={c}
-              onClick={() => setColor(c)}
+              onClick={() => { setColor(c); markDirty(); }}
               className={cn(
                 "h-8 w-8 rounded-full transition-all",
                 color === c
@@ -322,9 +357,10 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           <input
             type="number"
             className="input mt-1"
-            defaultValue={event.duration}
+            value={duration}
             min={15}
             step={15}
+            onChange={(e) => { setDuration(parseInt(e.target.value) || 15); markDirty(); }}
           />
         </div>
         <div>
@@ -332,9 +368,10 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           <input
             type="number"
             className="input mt-1"
-            defaultValue={event.buffer_before}
+            value={bufferBefore}
             min={0}
             step={5}
+            onChange={(e) => { setBufferBefore(parseInt(e.target.value) || 0); markDirty(); }}
           />
         </div>
         <div>
@@ -342,9 +379,10 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
           <input
             type="number"
             className="input mt-1"
-            defaultValue={event.buffer_after}
+            value={bufferAfter}
             min={0}
             step={5}
+            onChange={(e) => { setBufferAfter(parseInt(e.target.value) || 0); markDirty(); }}
           />
         </div>
       </div>
@@ -354,7 +392,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
         <label className="label">公開設定</label>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <button
-            onClick={() => setIsPublic(true)}
+            onClick={() => { setIsPublic(true); markDirty(); }}
             className={cn(
               "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
               isPublic
@@ -369,7 +407,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
             </div>
           </button>
           <button
-            onClick={() => setIsPublic(false)}
+            onClick={() => { setIsPublic(false); markDirty(); }}
             className={cn(
               "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
               !isPublic
@@ -387,7 +425,7 @@ function BasicTab({ event }: { event: typeof mockEventTypes[0] }) {
       </div>
 
       <div className="flex justify-end pt-4">
-        <button className="btn btn-primary">変更を保存</button>
+        <button onClick={() => { toast.success("変更を保存しました"); onDirtyChange(false); }} className="btn btn-primary">変更を保存</button>
       </div>
     </div>
   );
@@ -397,13 +435,15 @@ function TeamTab({
   roles,
   members,
   mode: initialMode,
+  onDirtyChange,
 }: {
   roles: EventRole[];
   members: EventMember[];
   mode: string;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
+  const toast = useToast();
   const [mode, setMode] = useState(initialMode);
-  const [saved, setSaved] = useState(false);
 
   // Fixed mode: ordered list of user IDs
   const initialFixedMemberIds = roles
@@ -437,12 +477,14 @@ function TeamTab({
   function addFixedMember(userId: string) {
     if (!fixedMemberIds.includes(userId)) {
       setFixedMemberIds([...fixedMemberIds, userId]);
+      onDirtyChange(true);
     }
     setShowMemberPicker(false);
   }
 
   function removeFixedMember(userId: string) {
     setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
+    onDirtyChange(true);
   }
 
   function handleFixedMemberDragEnd(event: DragEndEvent) {
@@ -526,8 +568,8 @@ function TeamTab({
   }
 
   function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    toast.success("変更を保存しました");
+    onDirtyChange(false);
   }
 
   return (
@@ -539,7 +581,7 @@ function TeamTab({
         <label className="label mt-6">スケジューリングモード</label>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <button
-            onClick={() => setMode("fixed")}
+            onClick={() => { setMode("fixed"); onDirtyChange(true); }}
             className={cn(
               "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
               mode === "fixed"
@@ -556,7 +598,7 @@ function TeamTab({
             </div>
           </button>
           <button
-            onClick={() => setMode("pool")}
+            onClick={() => { setMode("pool"); onDirtyChange(true); }}
             className={cn(
               "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
               mode === "pool"
@@ -864,13 +906,6 @@ function TeamTab({
       <div className="mt-6 flex justify-end">
         <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
       </div>
-
-      {saved && (
-        <div className="toast">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span className="text-sm font-medium text-gray-700">変更を保存しました</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -895,7 +930,8 @@ const EMPTY_EXCLUSION_DRAFT: ExclusionDraft = {
   end_time: "10:00",
 };
 
-function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: string }) {
+function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule[]; eventId: string; onDirtyChange: (dirty: boolean) => void }) {
+  const toast = useToast();
   const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
 
   const [localRules, setLocalRules] = useState<ExclusionRule[]>(rules);
@@ -903,7 +939,6 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
   const [editDraft, setEditDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
-  const [saved, setSaved] = useState(false);
 
   function handleAddSave() {
     if (!addDraft.name.trim()) return;
@@ -921,6 +956,7 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
     setLocalRules([...localRules, newRule]);
     setAddDraft({ ...EMPTY_EXCLUSION_DRAFT });
     setShowAddForm(false);
+    onDirtyChange(true);
   }
 
   function handleEditStart(rule: ExclusionRule) {
@@ -954,15 +990,17 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
       )
     );
     setEditingId(null);
+    onDirtyChange(true);
   }
 
   function handleDelete(ruleId: string) {
     setLocalRules(localRules.filter((r) => r.id !== ruleId));
+    onDirtyChange(true);
   }
 
   function handleSaveAll() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    toast.success("変更を保存しました");
+    onDirtyChange(false);
   }
 
   function renderExclusionForm(
@@ -1166,13 +1204,6 @@ function ExclusionsTab({ rules, eventId }: { rules: ExclusionRule[]; eventId: st
       <div className="mt-6 flex justify-end">
         <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
       </div>
-
-      {saved && (
-        <div className="toast">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span className="text-sm font-medium text-gray-700">変更を保存しました</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -1191,7 +1222,8 @@ const EMPTY_FIELD_DRAFT: FieldDraft = {
   is_required: false,
 };
 
-function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }) {
+function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; eventId: string; onDirtyChange: (dirty: boolean) => void }) {
+  const toast = useToast();
   const fieldTypeLabels: Record<string, string> = {
     text: "テキスト",
     email: "メール",
@@ -1208,7 +1240,6 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
   const [editDraft, setEditDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
-  const [saved, setSaved] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -1244,6 +1275,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
     setLocalFields([...localFields, newField]);
     setAddDraft({ ...EMPTY_FIELD_DRAFT });
     setShowAddForm(false);
+    onDirtyChange(true);
   }
 
   function handleEditStart(field: CustomField) {
@@ -1271,15 +1303,17 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
       )
     );
     setEditingId(null);
+    onDirtyChange(true);
   }
 
   function handleDelete(fieldId: string) {
     setLocalFields(localFields.filter((f) => f.id !== fieldId));
+    onDirtyChange(true);
   }
 
   function handleSaveAll() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    toast.success("変更を保存しました");
+    onDirtyChange(false);
   }
 
   function renderFieldForm(
@@ -1489,13 +1523,6 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
       <div className="mt-6 flex justify-end">
         <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
       </div>
-
-      {saved && (
-        <div className="toast">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span className="text-sm font-medium text-gray-700">変更を保存しました</span>
-        </div>
-      )}
     </div>
   );
 }
