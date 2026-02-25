@@ -218,33 +218,68 @@
 
   /* Modal */
   @keyframes modal-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes modal-fade-out {
-    from { opacity: 1; }
-    to   { opacity: 0; }
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
   }
 
   @keyframes modal-scale-in {
-    from { opacity: 0; transform: scale(0.95) translateY(-8px); }
-    to   { opacity: 1; transform: scale(1)    translateY(0); }
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
 
   @keyframes modal-scale-out {
-    from { opacity: 1; transform: scale(1)    translateY(0); }
-    to   { opacity: 0; transform: scale(0.95) translateY(-8px); }
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(0.95) translateY(-8px);
+    }
   }
 
   .modal-overlay {
     @apply fixed inset-0 bg-gray-900/50 z-40;
   }
 
-  [data-modal-state="open"]  .modal-overlay { animation: modal-fade-in  0.2s ease-out; }
-  [data-modal-state="close"] .modal-overlay { animation: modal-fade-out 0.15s ease-in forwards; }
-  [data-modal-state="open"]  .modal-panel   { animation: modal-scale-in  0.2s ease-out; }
-  [data-modal-state="close"] .modal-panel   { animation: modal-scale-out 0.15s ease-in forwards; }
+  [data-modal-state="open"] .modal-overlay {
+    animation: modal-fade-in 0.2s ease-out;
+  }
+
+  [data-modal-state="close"] .modal-overlay {
+    animation: modal-fade-out 0.15s ease-in forwards;
+  }
+
+  [data-modal-state="open"] .modal-panel {
+    animation: modal-scale-in 0.2s ease-out;
+  }
+
+  [data-modal-state="close"] .modal-panel {
+    animation: modal-scale-out 0.15s ease-in forwards;
+  }
 
   .modal-container {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4;
@@ -267,7 +302,7 @@
   }
 
   .modal-header {
-    @apply flex items-center justify-between px-6 py-5 border-b border-gray-200;
+    @apply flex items-start justify-between px-6 py-5 border-b border-gray-200;
   }
 
   .modal-body {
