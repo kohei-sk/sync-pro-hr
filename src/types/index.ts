@@ -90,6 +90,7 @@ export interface Booking {
   event_id: string;
   candidate_name: string;
   candidate_email: string;
+  candidate_phone?: string;
   start_time: string;
   end_time: string;
   status: BookingStatus;

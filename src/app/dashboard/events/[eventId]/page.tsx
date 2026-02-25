@@ -1369,6 +1369,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
         {[
           { label: "お名前", type: "text", required: true },
           { label: "メールアドレス", type: "email", required: true },
+          { label: "電話番号", type: "tel", required: true },
         ].map((field) => (
           <div
             key={field.label}

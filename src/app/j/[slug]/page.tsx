@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   User,
   Mail,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getEventBySlug } from "@/lib/mock-data";
@@ -32,6 +33,7 @@ export default function BookingPage() {
   const [formValues, setFormValues] = useState<Record<string, string>>({
     candidate_name: "",
     candidate_email: "",
+    candidate_phone: "",
   });
 
   // Use current month as base
@@ -448,6 +450,25 @@ export default function BookingPage() {
                       })
                     }
                     placeholder="you@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="label">
+                    <Phone className="mr-1 inline h-4 w-4" />
+                    電話番号 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="input mt-1"
+                    required
+                    value={formValues.candidate_phone}
+                    onChange={(e) =>
+                      setFormValues({
+                        ...formValues,
+                        candidate_phone: e.target.value,
+                      })
+                    }
+                    placeholder="090-0000-0000"
                   />
                 </div>
 
