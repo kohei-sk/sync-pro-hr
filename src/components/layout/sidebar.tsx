@@ -62,15 +62,15 @@ export function Sidebar() {
         </span>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
           aria-label={isCollapsed ? "サイドバーを展開" : "サイドバーを折りたたむ"}
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-5 w-5" />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 py-3 overflow-hidden">
+      <nav className="flex-1 px-2 py-3 overflow-hidden">
         {baseNavigation.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -82,22 +82,22 @@ export function Sidebar() {
               href={item.href}
               title={!isExpanded ? item.name : undefined}
               className={cn(
-                "relative flex items-center rounded-lg px-2.5 py-2 text-sm font-medium transition-all",
+                "relative flex items-center rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary-50 text-primary-700"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                isExpanded ? "gap-2.5" : "gap-0 pl-3"
+                isExpanded ? "gap-3.5" : "gap-0"
               )}
             >
               <item.icon
                 className={cn(
-                  "h-[18px] w-[18px] shrink-0",
+                  "h-5 w-5 shrink-0",
                   isActive ? "text-primary-600" : "text-gray-400"
                 )}
               />
               <span
                 className={cn(
-                  "whitespace-nowrap transition-all duration-200",
+                  "text-sm whitespace-nowrap transition-all duration-200",
                   isExpanded ? "flex-1 opacity-100" : "flex-none opacity-0 w-0 overflow-hidden"
                 )}
               >
