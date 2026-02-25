@@ -40,17 +40,31 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 // Provider
 // ============================================================
 
+const EXIT_DURATION = 200;
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const exitingIdsRef = useRef<Set<string>>(new Set());
+  const [, forceUpdate] = useState(0);
 
   const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    // Clear auto-dismiss timer
     const timer = timersRef.current.get(id);
     if (timer) {
       clearTimeout(timer);
       timersRef.current.delete(id);
     }
+
+    // Mark as exiting to trigger exit animation
+    exitingIdsRef.current.add(id);
+    forceUpdate((n) => n + 1);
+
+    // Remove from DOM after animation completes
+    setTimeout(() => {
+      exitingIdsRef.current.delete(id);
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, EXIT_DURATION);
   }, []);
 
   const addToast = useCallback(
@@ -78,7 +92,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <ToastStack toasts={toasts} onDismiss={dismiss} />
+      <ToastStack
+        toasts={toasts}
+        exitingIds={exitingIdsRef.current}
+        onDismiss={dismiss}
+      />
     </ToastContext.Provider>
   );
 }
@@ -111,9 +129,11 @@ const toastConfig: Record<
 
 function ToastStack({
   toasts,
+  exitingIds,
   onDismiss,
 }: {
   toasts: ToastItem[];
+  exitingIds: Set<string>;
   onDismiss: (id: string) => void;
 }) {
   if (toasts.length === 0) return null;
@@ -121,7 +141,12 @@ function ToastStack({
   return (
     <div className="toast-stack" role="region" aria-label="通知">
       {toasts.map((toast) => (
-        <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
+        <ToastCard
+          key={toast.id}
+          toast={toast}
+          exiting={exitingIds.has(toast.id)}
+          onDismiss={onDismiss}
+        />
       ))}
     </div>
   );
@@ -129,16 +154,18 @@ function ToastStack({
 
 function ToastCard({
   toast,
+  exiting,
   onDismiss,
 }: {
   toast: ToastItem;
+  exiting: boolean;
   onDismiss: (id: string) => void;
 }) {
   const { icon: Icon, iconClass } = toastConfig[toast.type];
 
   return (
     <div
-      className={cn("toast")}
+      className={cn("toast", exiting ? "animate-slide-out" : "animate-slide-up")}
       role="alert"
       aria-live="polite"
     >

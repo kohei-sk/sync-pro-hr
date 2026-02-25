@@ -39,6 +39,7 @@ import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { cn, generateId } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
+import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/lib/mock-data";
 
 type Step = "basic" | "team" | "exclusions" | "form" | "confirm";
@@ -130,6 +131,7 @@ function SortableRow({
 
 export default function NewEventPage() {
   const router = useRouter();
+  const toast = useToast();
   const [step, setStep] = useState<Step>("basic");
   const [formData, setFormData] = useState({
     title: "",
@@ -224,6 +226,7 @@ export default function NewEventPage() {
       created_at: now,
       updated_at: now,
     });
+    toast.success("イベントを作成しました");
     router.push("/dashboard/events");
   }
 
