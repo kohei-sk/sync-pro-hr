@@ -1304,20 +1304,32 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
             />
           </div>
           <div>
-            <label className="label">タイプ</label>
-            <select
-              className="select mt-1"
-              value={draft.type}
-              onChange={(e) => setDraft({ ...draft, type: e.target.value as FieldType })}
+            <label className="label">必須項目</label>
+            <button
+              onClick={() => setDraft({ ...draft, is_required: !draft.is_required })}
+              className={cn("toggle-btn", draft.is_required ? "toggle-btn-active" : "")}
             >
-              <option value="text">テキスト</option>
-              <option value="email">メール</option>
-              <option value="tel">電話番号</option>
-              <option value="multiline">複数行テキスト</option>
-              <option value="url">URL</option>
-              <option value="file">ファイル</option>
-            </select>
+              <span>必須項目にする</span>
+              <div className={cn("toggle-btn-switch", draft.is_required ? "toggle-btn-switch-active" : "")}>
+                <span className={cn("toggle-btn-switch-handle", draft.is_required ? "toggle-btn-switch-handle-active" : "")} />
+              </div>
+            </button>
           </div>
+        </div>
+        <div>
+          <label className="label">タイプ</label>
+          <select
+            className="select mt-1"
+            value={draft.type}
+            onChange={(e) => setDraft({ ...draft, type: e.target.value as FieldType })}
+          >
+            <option value="text">テキスト</option>
+            <option value="email">メール</option>
+            <option value="tel">電話番号</option>
+            <option value="multiline">複数行テキスト</option>
+            <option value="url">URL</option>
+            <option value="file">ファイル</option>
+          </select>
         </div>
         <div>
           <label className="label">プレースホルダー</label>
@@ -1329,17 +1341,7 @@ function FormTab({ fields, eventId }: { fields: CustomField[]; eventId: string }
             placeholder="入力例を記入（任意）"
           />
         </div>
-        <div>
-          <button
-            onClick={() => setDraft({ ...draft, is_required: !draft.is_required })}
-            className={cn("toggle-btn", draft.is_required ? "toggle-btn-active" : "")}
-          >
-            <span>必須項目にする</span>
-            <div className={cn("toggle-btn-switch", draft.is_required ? "toggle-btn-switch-active" : "")}>
-              <span className={cn("toggle-btn-switch-handle", draft.is_required ? "toggle-btn-switch-handle-active" : "")} />
-            </div>
-          </button>
-        </div>
+
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
           <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary">
