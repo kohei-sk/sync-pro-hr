@@ -33,6 +33,7 @@ export interface EventType {
   status: EventStatus;
   scheduling_mode: SchedulingMode;
   color?: string;
+  reminder_settings?: ReminderSetting[];
   created_at: string;
   updated_at: string;
 }
@@ -97,6 +98,7 @@ export interface Booking {
   assigned_members?: AssignedMember[];
   custom_field_values?: Record<string, string>;
   meeting_url?: string;
+  reminders?: BookingReminder[];
   created_at: string;
 }
 
@@ -157,6 +159,32 @@ export interface ActivityItem {
   description: string;
   timestamp: string;
   metadata?: Record<string, string>;
+}
+
+// --- Reminders ---
+export type ReminderChannel = "email" | "sms" | "both";
+
+export interface ReminderTiming {
+  value: number;
+  unit: "hours" | "days";
+}
+
+export interface ReminderSetting {
+  id: string;
+  channel: ReminderChannel;
+  timing: ReminderTiming;
+  message: string;
+  is_enabled: boolean;
+}
+
+export type ReminderStatus = "pending" | "sent" | "skipped";
+
+export interface BookingReminder {
+  reminder_id: string;
+  channel: ReminderChannel;
+  scheduled_at: string;
+  sent_at?: string;
+  status: ReminderStatus;
 }
 
 // --- Notifications ---

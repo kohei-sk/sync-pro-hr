@@ -16,6 +16,8 @@ import {
   MapPin,
   Users,
   FileText,
+  Bell,
+  MessageSquare,
 } from "lucide-react";
 import {
   getBookingById,
@@ -265,6 +267,65 @@ export default function BookingDetailPage() {
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Users className="h-4 w-4" />
               <span>未割当</span>
+            </div>
+          )}
+        </section>
+
+        {/* Reminders */}
+        <section className="py-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
+            <Bell className="h-3.5 w-3.5" />
+            リマインド
+          </h2>
+          {booking.reminders && booking.reminders.length > 0 ? (
+            <div className="space-y-2">
+              {booking.reminders.map((reminder, idx) => {
+                const isSent = reminder.status === "sent";
+                const isPending = reminder.status === "pending";
+                const channelIcon =
+                  reminder.channel === "email" ? (
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  ) : reminder.channel === "sms" ? (
+                    <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  ) : (
+                    <Bell className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  );
+                const channelLabel =
+                  { email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel];
+                const scheduledDate = new Date(reminder.scheduled_at).toLocaleString("ja-JP", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                return (
+                  <div key={idx} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      {channelIcon}
+                      <span>{channelLabel}</span>
+                      <span className="text-gray-400">/</span>
+                      <span className="text-xs text-gray-500">{scheduledDate}</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "badge",
+                        isSent
+                          ? "badge-green"
+                          : isPending
+                            ? "badge badge-blue"
+                            : "badge-gray"
+                      )}
+                    >
+                      {isSent ? "送信済み" : isPending ? "設定済み" : "スキップ"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Bell className="h-4 w-4" />
+              <span>リマインドなし</span>
             </div>
           )}
         </section>

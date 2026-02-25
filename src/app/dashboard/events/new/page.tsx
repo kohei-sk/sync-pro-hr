@@ -18,6 +18,9 @@ import {
   GripVertical,
   Pencil,
   FileText,
+  Bell,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 import {
   DndContext,
@@ -42,7 +45,7 @@ import { addEventType } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/lib/mock-data";
 
-type Step = "basic" | "team" | "exclusions" | "form" | "confirm";
+type Step = "basic" | "team" | "exclusions" | "form" | "reminder" | "confirm";
 
 type NewExclusionRule = {
   id: string;
@@ -80,6 +83,18 @@ type NewRole = {
   name: string;
   required_count: number;
   memberIds: string[];
+};
+
+type ReminderChannel = "email" | "sms" | "both";
+type ReminderUnit = "hours" | "days";
+
+type NewReminder = {
+  id: string;
+  channel: ReminderChannel;
+  timing_value: number;
+  timing_unit: ReminderUnit;
+  message: string;
+  is_enabled: boolean;
 };
 
 // --- Shared Sortable Row component ---
@@ -183,11 +198,14 @@ export default function NewEventPage() {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [editFieldDraft, setEditFieldDraft] = useState<NewFieldDraft>({ ...EMPTY_FIELD_DRAFT });
 
+  const [reminders, setReminders] = useState<NewReminder[]>([]);
+
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
     { id: "team", label: "メンバー設定" },
     { id: "exclusions", label: "除外ルール" },
     { id: "form", label: "フォーム" },
+    { id: "reminder", label: "リマインド" },
     { id: "confirm", label: "確認" },
   ];
 
@@ -223,6 +241,15 @@ export default function NewEventPage() {
       status: formData.isPublic ? "active" : "draft",
       scheduling_mode: formData.scheduling_mode,
       color: formData.color,
+      reminder_settings: reminders.length > 0
+        ? reminders.map((r) => ({
+            id: r.id,
+            channel: r.channel,
+            timing: { value: r.timing_value, unit: r.timing_unit },
+            message: r.message,
+            is_enabled: r.is_enabled,
+          }))
+        : undefined,
       created_at: now,
       updated_at: now,
     });
@@ -1463,7 +1490,154 @@ export default function NewEventPage() {
           </div>
         )}
 
-        {/* Step 5: Confirmation */}
+        {/* Step 5: Reminder */}
+        {step === "reminder" && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">リマインド設定</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              候補者へのリマインドを設定します（任意）
+            </p>
+            <div className="mt-6 space-y-3">
+              {reminders.length > 0 && (
+                <div className="space-y-3">
+                  {reminders.map((reminder) => (
+                    <div
+                      key={reminder.id}
+                      className="rounded-xl border border-gray-200 p-4 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {reminder.channel === "email" ? (
+                            <Mail className="h-4 w-4 text-primary-500" />
+                          ) : reminder.channel === "sms" ? (
+                            <MessageSquare className="h-4 w-4 text-primary-500" />
+                          ) : (
+                            <Bell className="h-4 w-4 text-primary-500" />
+                          )}
+                          <span className="text-sm font-medium text-gray-700">
+                            {{ email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel]}
+                            &nbsp;/&nbsp;
+                            {reminder.timing_value}{reminder.timing_unit === "hours" ? "時間" : "日"}前
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              setReminders(reminders.map((r) =>
+                                r.id === reminder.id ? { ...r, is_enabled: !r.is_enabled } : r
+                              ))
+                            }
+                            className={cn("toggle-btn", reminder.is_enabled ? "toggle-btn-active" : "")}
+                          >
+                            <span>{reminder.is_enabled ? "有効" : "無効"}</span>
+                            <div className={cn("toggle-btn-switch", reminder.is_enabled ? "toggle-btn-switch-active" : "")}>
+                              <span className={cn("toggle-btn-switch-handle", reminder.is_enabled ? "toggle-btn-switch-handle-active" : "")} />
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => setReminders(reminders.filter((r) => r.id !== reminder.id))}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            title="削除"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="label">送信チャネル</label>
+                          <select
+                            className="select mt-1"
+                            value={reminder.channel}
+                            onChange={(e) =>
+                              setReminders(reminders.map((r) =>
+                                r.id === reminder.id ? { ...r, channel: e.target.value as ReminderChannel } : r
+                              ))
+                            }
+                          >
+                            <option value="email">メール</option>
+                            <option value="sms">SMS</option>
+                            <option value="both">メール + SMS</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label">タイミング（数値）</label>
+                          <input
+                            type="number"
+                            className="input mt-1"
+                            min={1}
+                            value={reminder.timing_value}
+                            onChange={(e) =>
+                              setReminders(reminders.map((r) =>
+                                r.id === reminder.id ? { ...r, timing_value: parseInt(e.target.value) || 1 } : r
+                              ))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="label">単位</label>
+                          <select
+                            className="select mt-1"
+                            value={reminder.timing_unit}
+                            onChange={(e) =>
+                              setReminders(reminders.map((r) =>
+                                r.id === reminder.id ? { ...r, timing_unit: e.target.value as ReminderUnit } : r
+                              ))
+                            }
+                          >
+                            <option value="hours">時間前</option>
+                            <option value="days">日前</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="label">メッセージ内容</label>
+                        <textarea
+                          className="input mt-1 min-h-[80px] resize-y"
+                          placeholder="候補者に送るメッセージを入力してください。&#10;{{date}}、{{location}} でスロット情報を挿入できます。"
+                          value={reminder.message}
+                          onChange={(e) =>
+                            setReminders(reminders.map((r) =>
+                              r.id === reminder.id ? { ...r, message: e.target.value } : r
+                            ))
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={() =>
+                  setReminders([
+                    ...reminders,
+                    {
+                      id: generateId(),
+                      channel: "email",
+                      timing_value: 24,
+                      timing_unit: "hours",
+                      message: "",
+                      is_enabled: true,
+                    },
+                  ])
+                }
+                className="add-btn"
+              >
+                <Plus className="h-4 w-4" />
+                リマインドを追加
+              </button>
+
+              {reminders.length === 0 && (
+                <p className="text-center text-xs text-gray-400">
+                  リマインドはオプションです。後から設定することもできます。
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Confirmation */}
         {step === "confirm" && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
@@ -1657,6 +1831,34 @@ export default function NewEventPage() {
                     ? `${newExclusionRules.length}件設定`
                     : "なし"}
                 </p>
+              </div>
+
+              {/* リマインド */}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="section-label">リマインド</p>
+                {reminders.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {reminders.map((r) => (
+                      <div key={r.id} className="flex items-center gap-1.5 text-sm text-gray-700">
+                        {r.channel === "email" ? (
+                          <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        ) : r.channel === "sms" ? (
+                          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        ) : (
+                          <Bell className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        )}
+                        <span>
+                          {{ email: "メール", sms: "SMS", both: "メール + SMS" }[r.channel]}
+                          &nbsp;/&nbsp;
+                          {r.timing_value}{r.timing_unit === "hours" ? "時間" : "日"}前
+                          {!r.is_enabled && <span className="ml-1 text-gray-400">（無効）</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700">なし</p>
+                )}
               </div>
 
             </div>
