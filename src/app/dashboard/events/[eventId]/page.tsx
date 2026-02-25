@@ -1613,15 +1613,6 @@ function ReminderTab({
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => updateReminder(reminder.id, { is_enabled: !reminder.is_enabled })}
-                  className={cn("toggle-btn", reminder.is_enabled ? "toggle-btn-active" : "")}
-                >
-                  <span>{reminder.is_enabled ? "有効" : "無効"}</span>
-                  <div className={cn("toggle-btn-switch", reminder.is_enabled ? "toggle-btn-switch-active" : "")}>
-                    <span className={cn("toggle-btn-switch-handle", reminder.is_enabled ? "toggle-btn-switch-handle-active" : "")} />
-                  </div>
-                </button>
-                <button
                   onClick={() => removeReminder(reminder.id)}
                   className="text-gray-400 hover:text-red-500 transition-colors"
                   title="削除"

@@ -272,12 +272,12 @@ export default function BookingDetailPage() {
         </section>
 
         {/* Reminders */}
-        <section className="py-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
-            <Bell className="h-3.5 w-3.5" />
-            リマインド
-          </h2>
-          {booking.reminders && booking.reminders.length > 0 ? (
+        {booking.reminders && booking.reminders.length > 0 && (
+          <section className="py-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
+              <Bell className="h-3.5 w-3.5" />
+              リマインド
+            </h2>
             <div className="space-y-2">
               {booking.reminders.map((reminder, idx) => {
                 const isSent = reminder.status === "sent";
@@ -322,13 +322,8 @@ export default function BookingDetailPage() {
                 );
               })}
             </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Bell className="h-4 w-4" />
-              <span>リマインドなし</span>
-            </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Form Answers */}
         {eventCustomFields.length > 0 && booking.custom_field_values && (

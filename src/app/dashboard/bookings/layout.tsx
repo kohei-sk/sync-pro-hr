@@ -261,9 +261,6 @@ export default function BookingsLayout({
                                     {hasSms && (
                                       <MessageSquare className={cn("h-3 w-3", iconClass)} title={allSent ? "SMS送信済み" : "SMS設定済み"} />
                                     )}
-                                    <span className={cn("text-[10px]", allSent ? "text-green-500" : "text-primary-400")}>
-                                      {allSent ? "送信済み" : "設定済み"}
-                                    </span>
                                   </>
                                 );
                               })()}
