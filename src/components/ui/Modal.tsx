@@ -173,7 +173,7 @@ export function ConfirmDialog({
             disabled={loading}
             className={cn(
               "btn",
-              confirmVariant === "danger" ? "btn-ghost-danger" : "btn-primary"
+              confirmVariant === "danger" ? "btn-danger" : "btn-primary"
             )}
           >
             {loading && <span className="spinner" />}

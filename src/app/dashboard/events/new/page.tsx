@@ -1411,32 +1411,34 @@ export default function NewEventPage() {
                       <input type="text" className="input mt-1" value={fieldDraft.label} onChange={(e) => setFieldDraft({ ...fieldDraft, label: e.target.value })} placeholder="例: 希望年収" />
                     </div>
                     <div>
-                      <label className="label">タイプ</label>
-                      <select className="select mt-1" value={fieldDraft.type} onChange={(e) => setFieldDraft({ ...fieldDraft, type: e.target.value as FieldType })}>
-                        <option value="text">テキスト</option>
-                        <option value="email">メール</option>
-                        <option value="tel">電話番号</option>
-                        <option value="multiline">複数行テキスト</option>
-                        <option value="url">URL</option>
-                        <option value="file">ファイル</option>
-                      </select>
+                      <label className="label">必須項目</label>
+                      <button
+                        onClick={() => setFieldDraft({ ...fieldDraft, is_required: !fieldDraft.is_required })}
+                        className={cn("toggle-btn", fieldDraft.is_required ? "toggle-btn-active" : "")}
+                      >
+                        <span>必須項目にする</span>
+                        <div className={cn("toggle-btn-switch", fieldDraft.is_required ? "toggle-btn-switch-active" : "")}>
+                          <span className={cn("toggle-btn-switch-handle", fieldDraft.is_required ? "toggle-btn-switch-handle-active" : "")} />
+                        </div>
+                      </button>
                     </div>
+                  </div>
+                  <div>
+                    <label className="label">タイプ</label>
+                    <select className="select mt-1" value={fieldDraft.type} onChange={(e) => setFieldDraft({ ...fieldDraft, type: e.target.value as FieldType })}>
+                      <option value="text">テキスト</option>
+                      <option value="email">メール</option>
+                      <option value="tel">電話番号</option>
+                      <option value="multiline">複数行テキスト</option>
+                      <option value="url">URL</option>
+                      <option value="file">ファイル</option>
+                    </select>
                   </div>
                   <div>
                     <label className="label">プレースホルダー</label>
                     <input type="text" className="input mt-1" value={fieldDraft.placeholder} onChange={(e) => setFieldDraft({ ...fieldDraft, placeholder: e.target.value })} placeholder="入力例を記入（任意）" />
                   </div>
-                  <div>
-                    <button
-                      onClick={() => setFieldDraft({ ...fieldDraft, is_required: !fieldDraft.is_required })}
-                      className={cn("toggle-btn", fieldDraft.is_required ? "toggle-btn-active" : "")}
-                    >
-                      <span>必須項目にする</span>
-                      <div className={cn("toggle-btn-switch", fieldDraft.is_required ? "toggle-btn-switch-active" : "")}>
-                        <span className={cn("toggle-btn-switch-handle", fieldDraft.is_required ? "toggle-btn-switch-handle-active" : "")} />
-                      </div>
-                    </button>
-                  </div>
+
                   <div className="flex justify-end gap-2 pt-1">
                     <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-secondary">キャンセル</button>
                     <button onClick={addFormField} disabled={!fieldDraft.label.trim()} className="btn btn-primary">追加</button>
