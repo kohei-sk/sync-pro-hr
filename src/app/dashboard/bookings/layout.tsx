@@ -12,8 +12,6 @@ import {
   AlertCircle,
   XCircle,
   ChevronDown,
-  Mail,
-  MessageSquare,
 } from "lucide-react";
 import { mockBookings, mockEventTypes } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -245,27 +243,6 @@ export default function BookingsLayout({
                               {event?.title}
                             </p>
                           </div>
-                          {/* Reminder badges */}
-                          {booking.reminders && booking.reminders.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1">
-                              {(() => {
-                                const hasEmail = booking.reminders!.some((r) => r.channel === "email" || r.channel === "both");
-                                const hasSms = booking.reminders!.some((r) => r.channel === "sms" || r.channel === "both");
-                                const allSent = booking.reminders!.every((r) => r.status === "sent");
-                                const iconClass = allSent ? "text-green-500" : "text-primary-400";
-                                return (
-                                  <>
-                                    {hasEmail && (
-                                      <Mail className={cn("h-3 w-3", iconClass)} title={allSent ? "メール送信済み" : "メール設定済み"} />
-                                    )}
-                                    {hasSms && (
-                                      <MessageSquare className={cn("h-3 w-3", iconClass)} title={allSent ? "SMS送信済み" : "SMS設定済み"} />
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          )}
                         </div>
 
                         {/* Date/Time */}
