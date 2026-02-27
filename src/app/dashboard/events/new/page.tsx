@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -221,6 +221,11 @@ export default function NewEventPage() {
       setStep(steps[prevIndex].id);
     }
   }
+
+  // ステップ切替時にスクロール位置をリセット
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo(0, 0);
+  }, [step]);
 
   function handleCreate() {
     const now = new Date().toISOString();
@@ -501,7 +506,7 @@ export default function NewEventPage() {
       </div>
 
       {/* Step content */}
-      <div className="max-w-3xl">
+      <div className="max-w-3xl pb-24">
         {/* Step 1: Basic Settings + Team */}
         {step === "basic" && (
           <div className="space-y-4">
@@ -1837,8 +1842,11 @@ export default function NewEventPage() {
           </div>
         )}
 
-        {/* Navigation buttons */}
-        <div className="mt-6 flex items-center justify-between">
+      </div>
+
+      {/* Float Area: Navigation buttons */}
+      <div className="float-area">
+        <div className="max-w-3xl flex items-center justify-between">
           <button
             onClick={handleBack}
             className={cn(

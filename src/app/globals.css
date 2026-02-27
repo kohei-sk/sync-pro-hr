@@ -283,6 +283,12 @@
     @apply flex items-center justify-end gap-2 px-6 py-5 border-t border-gray-200;
   }
 
+  /* フォーム画面の固定ナビゲーションエリア（SmartHR Float Area） */
+  .float-area {
+    @apply sticky bottom-0 z-10 -mx-8 px-8 py-4 bg-white border-t border-gray-200;
+    box-shadow: 0 -4px 12px -4px rgb(0 0 0 / 0.08);
+  }
+
   /* Dropdown */
   .dropdown-wrapper {
     @apply relative inline-block;
