@@ -45,7 +45,7 @@ import { addEventType } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/lib/mock-data";
 
-type Step = "basic" | "team" | "exclusions" | "form" | "reminder" | "confirm";
+type Step = "basic" | "options" | "confirm";
 
 type NewExclusionRule = {
   id: string;
@@ -201,11 +201,8 @@ export default function NewEventPage() {
   const [reminders, setReminders] = useState<NewReminder[]>([]);
 
   const steps: { id: Step; label: string }[] = [
-    { id: "basic", label: "基本設定" },
-    { id: "team", label: "メンバー設定" },
-    { id: "exclusions", label: "除外ルール" },
-    { id: "form", label: "フォーム" },
-    { id: "reminder", label: "リマインド" },
+    { id: "basic",   label: "基本設定" },
+    { id: "options", label: "オプション" },
     { id: "confirm", label: "確認" },
   ];
 
@@ -504,11 +501,12 @@ export default function NewEventPage() {
       </div>
 
       {/* Step content */}
-      <div className="card max-w-3xl">
-        {/* Step 1: Basic Settings */}
+      <div className="max-w-3xl">
+        {/* Step 1: Basic Settings + Team */}
         {step === "basic" && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">基本設定</h2>
+          <div className="space-y-4">
+            <div className="card">
+            <h2 className="step-section-title">基本設定</h2>
             <p className="mt-1 text-sm text-gray-500">
               イベントの基本情報を入力してください
             </p>
@@ -719,15 +717,9 @@ export default function NewEventPage() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Step 2: Team Settings */}
-        {step === "team" && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              メンバー設定
-            </h2>
+            </div>
+            <div className="card">
+            <h2 className="step-section-title">メンバー設定</h2>
             <p className="mt-1 text-sm text-gray-500">
               面接に参加するメンバーの役割と配分を設定します
             </p>
@@ -1039,13 +1031,15 @@ export default function NewEventPage() {
                 </div>
               )}
             </div>
+            </div>
           </div>
         )}
 
-        {/* Step 3: Exclusion Rules */}
-        {step === "exclusions" && (
-          <div>
-            <h2 className="mb-1 text-lg font-semibold text-gray-900">除外ルール</h2>
+        {/* Step 2: Options (Exclusions + Form + Reminder) */}
+        {step === "options" && (
+          <div className="space-y-4">
+            <div className="card">
+            <h2 className="step-section-title">除外ルール</h2>
             <p className="mt-1 text-sm text-gray-500">
               特定の日時をスケジュール対象外に設定します（省略可能）
             </p>
@@ -1333,13 +1327,9 @@ export default function NewEventPage() {
                 </p>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Step 4: Form Fields */}
-        {step === "form" && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">フォーム設定</h2>
+            </div>
+            <div className="card">
+            <h2 className="step-section-title">フォーム設定</h2>
             <p className="mt-1 text-sm text-gray-500">
               候補者に入力してもらう追加項目を設定します（省略可能）
             </p>
@@ -1487,13 +1477,9 @@ export default function NewEventPage() {
                 </p>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Step 5: Reminder */}
-        {step === "reminder" && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">リマインド設定</h2>
+            </div>
+            <div className="card">
+            <h2 className="step-section-title">リマインド設定</h2>
             <p className="mt-1 text-sm text-gray-500">
               候補者へのリマインドを設定します（任意）
             </p>
@@ -1621,15 +1607,14 @@ export default function NewEventPage() {
                 </p>
               )}
             </div>
+            </div>
           </div>
         )}
 
-        {/* Step 6: Confirmation */}
+        {/* Step 3: Confirmation */}
         {step === "confirm" && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              設定内容の確認
-            </h2>
+          <div className="card">
+            <h2 className="step-section-title">設定内容の確認</h2>
             <p className="mt-1 text-sm text-gray-500">
               以下の内容でイベントを作成します
             </p>
@@ -1853,7 +1838,7 @@ export default function NewEventPage() {
         )}
 
         {/* Navigation buttons */}
-        <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+        <div className="mt-6 flex items-center justify-between">
           <button
             onClick={handleBack}
             className={cn(
