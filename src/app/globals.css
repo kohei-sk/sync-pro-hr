@@ -102,6 +102,11 @@
     @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3;
   }
 
+  /* ステップカード内のセクション見出し */
+  .step-section-title {
+    @apply text-lg font-semibold text-gray-900 mb-4;
+  }
+
   .header {
     @apply flex gap-4 items-center justify-between;
   }
@@ -172,7 +177,7 @@
 
   /* Toast notifications */
   .toast {
-    @apply flex items-center gap-3 rounded-lg bg-white px-4 py-3 shadow-lg ring-1 ring-gray-200/80 animate-slide-up;
+    @apply flex items-center gap-3 rounded-lg bg-white px-3 py-3 shadow-lg ring-1 ring-gray-200/80 animate-slide-up;
   }
 
   .toast-stack {
@@ -311,6 +316,11 @@
 
   .modal-footer {
     @apply flex items-center justify-end gap-2 px-6 py-5 border-t border-gray-200;
+  }
+
+  /* フォーム画面の固定ナビゲーションエリア（SmartHR Float Area） */
+  .float-area {
+    @apply sticky bottom-0 z-10 box-content -mx-4 px-4 py-4 bg-white rounded-lg shadow-lg ring-1 ring-gray-200/80;
   }
 
   /* Dropdown */

@@ -9,6 +9,8 @@ import type {
   Booking,
   ActivityItem,
   Notification,
+  ReminderSetting,
+  BookingReminder,
 } from "@/types";
 
 // --- Mock Users ---
@@ -75,6 +77,38 @@ export const mockUsers: User[] = [
   },
 ];
 
+// --- Mock Reminder Settings ---
+const mockReminderSettings: Record<string, ReminderSetting[]> = {
+  evt1: [
+    {
+      id: "rs1",
+      channel: "email",
+      timing: { value: 24, unit: "hours" },
+      message:
+        "明日、エンジニア一次面接のご予約があります。\n\nご確認のほど、よろしくお願いいたします。\n\n日時：{{date}}\n場所：{{location}}",
+      is_enabled: true,
+    },
+    {
+      id: "rs2",
+      channel: "sms",
+      timing: { value: 1, unit: "hours" },
+      message: "【SyncPro HR】1時間後に面接があります。準備をお忘れなく。",
+      is_enabled: true,
+    },
+  ],
+  evt2: [
+    {
+      id: "rs3",
+      channel: "email",
+      timing: { value: 48, unit: "hours" },
+      message:
+        "エンジニア最終面接のリマインドをお送りします。\n\n日時：{{date}}\n場所：{{location}}\n\nご不明点がございましたらお気軽にご連絡ください。",
+      is_enabled: true,
+    },
+  ],
+  evt4: [],
+};
+
 // --- Mock Event Types ---
 export const mockEventTypes: EventType[] = [
   {
@@ -91,6 +125,7 @@ export const mockEventTypes: EventType[] = [
     status: "active",
     scheduling_mode: "pool",
     color: "#3b82f6",
+    reminder_settings: mockReminderSettings["evt1"],
     created_at: "2026-01-15T00:00:00Z",
     updated_at: "2026-02-10T00:00:00Z",
   },
@@ -108,6 +143,7 @@ export const mockEventTypes: EventType[] = [
     status: "active",
     scheduling_mode: "fixed",
     color: "#8b5cf6",
+    reminder_settings: mockReminderSettings["evt2"],
     created_at: "2026-01-20T00:00:00Z",
     updated_at: "2026-02-10T00:00:00Z",
   },
@@ -316,6 +352,64 @@ function generateMockCalendarEvents(): CalendarEvent[] {
 
 export const mockCalendarEvents: CalendarEvent[] = generateMockCalendarEvents();
 
+// --- Mock Booking Reminders ---
+const b1Reminders: BookingReminder[] = [
+  {
+    reminder_id: "rs1",
+    channel: "email",
+    scheduled_at: "2026-02-19T10:00:00Z",
+    sent_at: "2026-02-19T10:00:05Z",
+    status: "sent",
+  },
+  {
+    reminder_id: "rs2",
+    channel: "sms",
+    scheduled_at: "2026-02-20T01:00:00Z",
+    sent_at: "2026-02-20T01:00:03Z",
+    status: "sent",
+  },
+];
+
+const b2Reminders: BookingReminder[] = [
+  {
+    reminder_id: "rs1",
+    channel: "email",
+    scheduled_at: "2026-02-20T14:00:00Z",
+    status: "pending",
+  },
+  {
+    reminder_id: "rs2",
+    channel: "sms",
+    scheduled_at: "2026-02-21T13:00:00Z",
+    status: "pending",
+  },
+];
+
+const b4Reminders: BookingReminder[] = [
+  {
+    reminder_id: "rs3",
+    channel: "email",
+    scheduled_at: "2026-02-17T13:00:00Z",
+    sent_at: "2026-02-17T13:00:02Z",
+    status: "sent",
+  },
+];
+
+const b7Reminders: BookingReminder[] = [
+  {
+    reminder_id: "rs1",
+    channel: "email",
+    scheduled_at: "2026-02-24T11:00:00Z",
+    status: "pending",
+  },
+  {
+    reminder_id: "rs2",
+    channel: "sms",
+    scheduled_at: "2026-02-25T10:00:00Z",
+    status: "pending",
+  },
+];
+
 // --- Mock Bookings (expanded) ---
 export const mockBookings: Booking[] = [
   {
@@ -338,6 +432,7 @@ export const mockBookings: Booking[] = [
       cf2: "650万円",
       cf3: "TypeScriptとReactの経験が5年あります。よろしくお願いいたします。",
     },
+    reminders: b1Reminders,
     created_at: "2026-02-15T10:00:00Z",
   },
   {
@@ -354,6 +449,7 @@ export const mockBookings: Booking[] = [
       { user_id: "u3", role_id: "r2" },
       { user_id: "u5", role_id: "r2" },
     ],
+    reminders: b2Reminders,
     created_at: "2026-02-15T12:00:00Z",
   },
   {
@@ -381,6 +477,7 @@ export const mockBookings: Booking[] = [
       { user_id: "u2", role_id: "r3" },
       { user_id: "u3", role_id: "r3" },
     ],
+    reminders: b4Reminders,
     created_at: "2026-02-14T15:00:00Z",
   },
   {
@@ -424,6 +521,7 @@ export const mockBookings: Booking[] = [
       { user_id: "u3", role_id: "r2" },
       { user_id: "u4", role_id: "r2" },
     ],
+    reminders: b7Reminders,
     created_at: "2026-02-17T16:00:00Z",
   },
 ];

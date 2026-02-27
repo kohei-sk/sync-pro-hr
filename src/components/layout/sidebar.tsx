@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Calendar,
   Bell,
@@ -25,8 +25,14 @@ const baseNavigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { unreadCount } = useNotificationStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  function handleLogout() {
+    document.cookie = "auth_token=; path=/; max-age=0";
+    router.push("/login");
+  }
 
   const isExpanded = !isCollapsed;
 
@@ -136,7 +142,11 @@ export function Sidebar() {
             </p>
           </div>
           {isExpanded && (
-            <button className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 shrink-0">
+            <button
+              onClick={handleLogout}
+              title="ログアウト"
+              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 shrink-0"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           )}

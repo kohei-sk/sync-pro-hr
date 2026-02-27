@@ -18,6 +18,9 @@ import {
   Pencil,
   ChevronDown,
   GripVertical,
+  Bell,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 import {
   DndContext,
@@ -55,15 +58,18 @@ import type {
   ExclusionRule,
   CustomField,
   FieldType,
+  ReminderSetting,
+  ReminderChannel,
 } from "@/types";
 
-type TabId = "basic" | "team" | "exclusions" | "form";
+type TabId = "basic" | "team" | "exclusions" | "form" | "reminder";
 
 const tabs: { id: TabId; label: string; icon: typeof Settings }[] = [
   { id: "basic", label: "基本設定", icon: Settings },
   { id: "team", label: "メンバー", icon: Users },
   { id: "exclusions", label: "除外ルール", icon: ShieldOff },
   { id: "form", label: "フォーム", icon: FileText },
+  { id: "reminder", label: "リマインド", icon: Bell },
 ];
 
 // --- Shared Sortable Row component ---
@@ -243,6 +249,9 @@ export default function EventDetailPage() {
           )}
           {activeTab === "form" && (
             <FormTab fields={customFields} eventId={eventId} onDirtyChange={setIsDirty} />
+          )}
+          {activeTab === "reminder" && (
+            <ReminderTab reminders={event.reminder_settings ?? []} onDirtyChange={setIsDirty} />
           )}
         </div>
       </div>
@@ -684,7 +693,7 @@ function TeamTab({
                 <ChevronDown className="h-3 w-3 ml-auto" />
               </button>
               {showMemberPicker && (
-                <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
                   {mockUsers
                     .filter((u) => !fixedMemberIds.includes(u.id))
                     .map((user) => (
@@ -1522,6 +1531,168 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
 
       <div className="mt-6 flex justify-end">
         <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
+      </div>
+    </div>
+  );
+}
+
+// --- Reminder Tab ---
+
+function ReminderTab({
+  reminders: initialReminders,
+  onDirtyChange,
+}: {
+  reminders: ReminderSetting[];
+  onDirtyChange: (dirty: boolean) => void;
+}) {
+  const toast = useToast();
+  const [reminders, setReminders] = useState<ReminderSetting[]>(initialReminders);
+
+  function genId() {
+    return `rs-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  function addReminder() {
+    setReminders([
+      ...reminders,
+      {
+        id: genId(),
+        channel: "email",
+        timing: { value: 24, unit: "hours" },
+        message: "",
+        is_enabled: true,
+      },
+    ]);
+    onDirtyChange(true);
+  }
+
+  function removeReminder(id: string) {
+    setReminders(reminders.filter((r) => r.id !== id));
+    onDirtyChange(true);
+  }
+
+  function updateReminder(id: string, updates: Partial<ReminderSetting>) {
+    setReminders(reminders.map((r) => r.id === id ? { ...r, ...updates } : r));
+    onDirtyChange(true);
+  }
+
+  function handleSave() {
+    toast.success("リマインド設定を保存しました");
+    onDirtyChange(false);
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900">リマインド設定</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          候補者へのリマインドメール・SMSを設定します
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {reminders.map((reminder) => (
+          <div
+            key={reminder.id}
+            className="rounded-xl border border-gray-200 p-4 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {reminder.channel === "email" ? (
+                  <Mail className="h-4 w-4 text-primary-500" />
+                ) : reminder.channel === "sms" ? (
+                  <MessageSquare className="h-4 w-4 text-primary-500" />
+                ) : (
+                  <Bell className="h-4 w-4 text-primary-500" />
+                )}
+                <span className="text-sm font-medium text-gray-700">
+                  {{ email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel]}
+                  &nbsp;/&nbsp;
+                  {reminder.timing.value}{reminder.timing.unit === "hours" ? "時間" : "日"}前
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => removeReminder(reminder.id)}
+                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  title="削除"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="label">送信チャネル</label>
+                <select
+                  className="select mt-1"
+                  value={reminder.channel}
+                  onChange={(e) => updateReminder(reminder.id, { channel: e.target.value as ReminderChannel })}
+                >
+                  <option value="email">メール</option>
+                  <option value="sms">SMS</option>
+                  <option value="both">メール + SMS</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">タイミング（数値）</label>
+                <input
+                  type="number"
+                  className="input mt-1"
+                  min={1}
+                  value={reminder.timing.value}
+                  onChange={(e) =>
+                    updateReminder(reminder.id, {
+                      timing: { ...reminder.timing, value: parseInt(e.target.value) || 1 },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="label">単位</label>
+                <select
+                  className="select mt-1"
+                  value={reminder.timing.unit}
+                  onChange={(e) =>
+                    updateReminder(reminder.id, {
+                      timing: { ...reminder.timing, unit: e.target.value as "hours" | "days" },
+                    })
+                  }
+                >
+                  <option value="hours">時間前</option>
+                  <option value="days">日前</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="label">メッセージ内容</label>
+              <textarea
+                className="input mt-1 min-h-[80px] resize-y"
+                placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
+                value={reminder.message}
+                onChange={(e) => updateReminder(reminder.id, { message: e.target.value })}
+              />
+            </div>
+          </div>
+        ))}
+
+        <button onClick={addReminder} className="add-btn">
+          <Plus className="h-4 w-4" />
+          リマインドを追加
+        </button>
+
+        {reminders.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+            <Bell className="mx-auto h-8 w-8 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-500">
+              リマインドはまだ設定されていません
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
       </div>
     </div>
   );
