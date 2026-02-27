@@ -693,7 +693,7 @@ function TeamTab({
                 <ChevronDown className="h-3 w-3 ml-auto" />
               </button>
               {showMemberPicker && (
-                <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
                   {mockUsers
                     .filter((u) => !fixedMemberIds.includes(u.id))
                     .map((user) => (
