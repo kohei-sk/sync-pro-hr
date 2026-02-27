@@ -88,7 +88,7 @@ export function Sidebar() {
               href={item.href}
               title={!isExpanded ? item.name : undefined}
               className={cn(
-                "relative flex items-center rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all",
+                "relative flex items-center rounded-lg px-[12px] py-2.5 text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary-50 text-primary-700"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
