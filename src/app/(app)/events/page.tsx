@@ -63,7 +63,7 @@ export default function EventsPage() {
             面接や面談のイベントを管理します
           </p>
         </div>
-        <Link href="/dashboard/events/new" className="btn btn-primary">
+        <Link href="/events/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
           新規イベント作成
         </Link>
@@ -80,7 +80,7 @@ export default function EventsPage() {
           <p className="mt-1 text-sm text-gray-500">
             新しいイベントを作成して面接日程の調整を始めましょう
           </p>
-          <Link href="/dashboard/events/new" className="btn btn-primary mt-4">
+          <Link href="/events/new" className="btn btn-primary mt-4">
             <Plus className="h-4 w-4" />
             新規イベント作成
           </Link>
@@ -183,7 +183,7 @@ export default function EventsPage() {
                     )}
                   </button>
                   <Link
-                    href={`/dashboard/events/${event.id}`}
+                    href={`/events/${event.id}`}
                     className="btn btn-ghost btn-size-s ml-auto"
                   >
                     <Edit className="h-3 w-3" />

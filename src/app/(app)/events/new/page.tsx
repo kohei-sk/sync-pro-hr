@@ -256,7 +256,7 @@ export default function NewEventPage() {
       updated_at: now,
     });
     toast.success("イベントを作成しました");
-    router.push("/dashboard/events");
+    router.push("/events");
   }
 
   function generateSlug(title: string): string {
@@ -452,7 +452,7 @@ export default function NewEventPage() {
       {/* Header */}
       <header className="header mb-8">
         <Link
-          href="/dashboard/events"
+          href="/events"
           className="flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600"
         >
           <ArrowLeft className="h-5 w-5" />

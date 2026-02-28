@@ -16,11 +16,11 @@ import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/lib/notification-store";
 
 const baseNavigation = [
-  { name: "イベント", href: "/dashboard/events", icon: CalendarPlus },
-  { name: "予約一覧", href: "/dashboard/bookings", icon: Calendar },
-  { name: "通知", href: "/dashboard/activity", icon: Bell, showBadge: true },
-  { name: "チームメンバー", href: "/dashboard/team", icon: Users },
-  { name: "設定", href: "/dashboard/settings", icon: Settings },
+  { name: "イベント", href: "/events", icon: CalendarPlus },
+  { name: "予約一覧", href: "/bookings", icon: Calendar },
+  { name: "通知", href: "/activity", icon: Bell, showBadge: true },
+  { name: "チームメンバー", href: "/team", icon: Users },
+  { name: "設定", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

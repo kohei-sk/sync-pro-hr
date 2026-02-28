@@ -66,7 +66,7 @@ export default function BookingsLayout({
 
   // Detect the selected booking from the URL path
   const selectedId =
-    pathname.startsWith("/dashboard/bookings/")
+    pathname.startsWith("/bookings/")
       ? pathname.split("/").pop() ?? null
       : null;
 
@@ -209,7 +209,7 @@ export default function BookingsLayout({
                   return (
                     <li key={booking.id}>
                       <Link
-                        href={`/dashboard/bookings/${booking.id}`}
+                        href={`/bookings/${booking.id}`}
                         className={cn(
                           "flex items-center gap-3 border-l-2 p-4 transition-colors",
                           isSelected
