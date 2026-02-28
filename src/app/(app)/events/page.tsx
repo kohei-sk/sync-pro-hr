@@ -353,16 +353,22 @@ function EventDrawerContent({ event }: { event: EventType }) {
               );
               return (
                 <div key={role.id}>
-                  <p className="text-xs font-semibold text-gray-600 mb-2">
-                    {role.name}
-                    <span className="ml-1 font-normal text-gray-400">
-                      （{role.required_count}人）
-                    </span>
-                  </p>
+                  {event.scheduling_mode !== "fixed" &&
+                    <p className="text-xs font-semibold text-gray-600 mb-2">
+                      {role.name}
+                      <span className="ml-1 font-normal text-gray-400">
+                        （{role.required_count}人）
+                      </span>
+                    </p>
+                  }
                   {roleMembers.length === 0 ? (
-                    <p className="text-xs text-gray-400 pl-2">未割当</p>
+                    <p className="text-xs text-gray-400 pl-3">役割未設定</p>
                   ) : (
-                    <ul className="pl-2 inline-flex flex-wrap gap-x-4 gap-y-2">
+                    <ul
+                      className={cn(
+                        "inline-flex flex-wrap gap-x-4 gap-y-2",
+                        event.scheduling_mode !== "fixed" && "pl-3"
+                      )}>
                       {roleMembers.map((member) => {
                         const user = mockUsers.find(
                           (u) => u.id === member.user_id
@@ -419,26 +425,41 @@ function EventDrawerContent({ event }: { event: EventType }) {
 
       {/* フォーム */}
       <DrawerSection title="フォーム">
-        {customFields.length === 0 ? (
-          <p className="text-sm text-gray-300">フォーム未設定</p>
-        ) : (
-          <ul className="space-y-2">
-            {customFields.map((field) => (
-              <li
-                key={field.id}
-                className="text-sm"
-              >
-                <p className="flex items-center gap-1">
-                  {field.label}
-                  {field.is_required && ("（必須）")}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {FIELD_TYPE_LABELS[field.type]}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">
+              デフォルト項目
+            </p>
+            <p className="text-sm pl-3">
+              お名前・メールアドレス・電話番号
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">
+              カスタム項目
+            </p>
+            {customFields.length > 0 ? (
+              <ul className="space-y-2 pl-3">
+                {customFields.map((field) => (
+                  <li
+                    key={field.id}
+                    className="text-sm"
+                  >
+                    <p className="flex items-center gap-1">
+                      {field.label}
+                      {field.is_required && ("（必須）")}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {FIELD_TYPE_LABELS[field.type]}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-300 pl-3">カスタム項目未設定</p>
+            )}
+          </div>
+        </div>
       </DrawerSection>
 
       {/* リマインド */}
@@ -448,20 +469,22 @@ function EventDrawerContent({ event }: { event: EventType }) {
         ) : (
           <ul className="space-y-2">
             {event.reminder_settings.map((r) => (
-              <li
-                key={r.id}
-                className="text-sm flex items-center"
-              >
-                {{ email: "メール", sms: "SMS", both: "メール + SMS" }[
-                  r.channel
-                ]}
-                <p className="text-xs text-gray-400 ml-2">
-                  {r.timing.value}
-                  {r.timing.unit === "hours" ? "時間" : "日"}前
-                </p>
-                {!r.is_enabled && (
-                  <span className="badge badge-gray ml-auto">無効</span>
-                )}
+              <li key={r.id}>
+                <div className="text-sm flex items-center">
+                  {{ email: "メール", sms: "SMS", both: "メール + SMS" }[
+                    r.channel
+                  ]}
+                  <p className="text-xs ml-2">
+                    {"（"}
+                    {r.timing.value}
+                    {r.timing.unit === "hours" ? "時間" : "日"}前
+                    {!r.is_enabled && (
+                      "無効"
+                    )}
+                    {"）"}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{r.message}</p>
               </li>
             ))}
           </ul>
