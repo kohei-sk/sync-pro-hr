@@ -105,7 +105,7 @@ export function Drawer({
           <div className="drawer-header">
             <h2
               id={titleId.current}
-              className="text-lg font-semibold text-gray-900"
+              className="text-xl font-semibold text-gray-900"
             >
               {title}
             </h2>
@@ -114,7 +114,7 @@ export function Drawer({
               className="ml-4 shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
               aria-label="閉じる"
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 

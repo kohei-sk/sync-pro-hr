@@ -42,14 +42,19 @@ function useEventTypes() {
 
 function DrawerSection({
   title,
+  subTitle,
   children,
 }: {
   title: string;
+  subTitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <h3 className="section-label">{title}</h3>
+    <div className="pt-4">
+      <h3 className="section-label">
+        {title}
+        {subTitle ? <span className="section-sub-label">（{subTitle}）</span> : ""}
+      </h3>
       {children}
     </div>
   );
@@ -102,46 +107,59 @@ function EventCard({
         }
       }}
     >
-      {/* 左カラーバー */}
-      <div
-        className="w-1 shrink-0"
-        style={{ backgroundColor: event.color || "#0071c1" }}
-      />
 
       {/* メインコンテンツ */}
-      <div className="flex-1 min-w-0 px-5 py-4">
-        {/* タイトル行 */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-sm text-gray-900 leading-snug">
-            {event.title}
-          </span>
-          <span
-            className={cn(
-              "badge",
-              event.status === "active"
-                ? "badge-green"
-                : event.status === "draft"
-                  ? "badge-gray"
-                  : "badge-red"
-            )}
+      <div className="flex flex-1 min-w-0 px-5 py-4 w-full">
+        <div className="flex flex-1 items-center gap-4">
+          {/* カラー */}
+          <div
+            className="flex h-7 w-7 min-w-7 items-center justify-center rounded-lg"
+            style={{
+              backgroundColor: (event.color || "#0071c1") + "14",
+            }}
           >
-            {event.status === "active"
-              ? "公開中"
-              : event.status === "draft"
-                ? "非公開"
-                : "アーカイブ"}
-          </span>
+            <div
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: event.color || "#0071c1" }}
+            />
+          </div>
+          <div className="flex flex-col">
+            <div>
+              {/* タイトル行 */}
+              <div className="inline-flex items-center gap-2">
+                <span className="font-bold text-sm leading-relaxed">
+                  {event.title}
+                </span>
+                <span
+                  className={cn(
+                    "badge",
+                    event.status === "active"
+                      ? "badge-green"
+                      : event.status === "draft"
+                        ? "badge-gray"
+                        : "badge-red"
+                  )}
+                >
+                  {event.status === "active"
+                    ? "公開中"
+                    : event.status === "draft"
+                      ? "非公開"
+                      : "アーカイブ"}
+                </span>
+              </div>
+            </div>
+
+            {/* 説明 */}
+            {event.description && (
+              <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+                {event.description}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* 説明 */}
-        {event.description && (
-          <p className="mt-1 text-xs text-gray-500 leading-relaxed line-clamp-1">
-            {event.description}
-          </p>
-        )}
-
         {/* メタデータ行 */}
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-400">
+        <div className="flex flex-wrap items-center gap-3 min-w-[293px] text-xs text-gray-400 border-l border-r border-gray-100 px-6 mx-6">
           <span className="flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
             {event.duration}分
@@ -157,14 +175,27 @@ function EventCard({
           <span className="flex items-center gap-1">
             <Users className="h-3.5 w-3.5" />
             {memberCount}人
+            <span className="badge badge-neutral">
+              {event.scheduling_mode === "fixed"
+                ? "固定"
+                : "プール"}
+            </span>
           </span>
         </div>
 
         {/* アクション行 (クリックの伝播を停止) */}
         <div
-          className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3"
+          className="flex items-center gap-3"
           onClick={(e) => e.stopPropagation()}
         >
+          <Link
+            href={`/events/${event.id}`}
+            className="btn btn-ghost btn-size-s ml-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Edit className="h-3 w-3" />
+            編集
+          </Link>
           <button
             onClick={onCopyLink}
             className="btn btn-emphasis btn-size-s"
@@ -181,14 +212,6 @@ function EventCard({
               </>
             )}
           </button>
-          <Link
-            href={`/events/${event.id}`}
-            className="btn btn-ghost btn-size-s ml-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Edit className="h-3 w-3" />
-            編集
-          </Link>
         </div>
       </div>
     </div>
@@ -227,76 +250,101 @@ function EventDrawerContent({ event }: { event: EventType }) {
   );
 
   return (
-    <div className="space-y-6">
-      {/* 基本設定 */}
-      <DrawerSection title="基本設定">
-        <dl className="space-y-2.5">
-          <DrawerRow label="ステータス">
-            <span
-              className={cn(
-                "badge",
-                event.status === "active"
-                  ? "badge-green"
+    <div className="space-y-4 divide-y divide-gray-100">
+      {/* ボディーヘッダー */}
+      <div className="flex flex-1 items-center gap-4">
+        {/* カラー */}
+        <div
+          className="flex h-8 w-8 min-w-8 items-center justify-center rounded-lg"
+          style={{
+            backgroundColor: (event.color || "#0071c1") + "14",
+          }}
+        >
+          <div
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: event.color || "#0071c1" }}
+          />
+        </div>
+        <div className="flex flex-col">
+          <div>
+            {/* タイトル行 */}
+            <div className="inline-flex items-center gap-2">
+              <span className="font-bold text-base leading-relaxed">
+                {event.title}
+              </span>
+              <span
+                className={cn(
+                  "badge",
+                  event.status === "active"
+                    ? "badge-green"
+                    : event.status === "draft"
+                      ? "badge-gray"
+                      : "badge-red"
+                )}
+              >
+                {event.status === "active"
+                  ? "公開中"
                   : event.status === "draft"
-                    ? "badge-gray"
-                    : "badge-red"
-              )}
-            >
-              {event.status === "active"
-                ? "公開中"
-                : event.status === "draft"
-                  ? "非公開"
-                  : "アーカイブ"}
-            </span>
-          </DrawerRow>
-          <DrawerRow label="所要時間">
+                    ? "非公開"
+                    : "アーカイブ"}
+              </span>
+            </div>
+          </div>
+
+          {/* 説明 */}
+          {event.description && (
+            <p className="mt-1 text-sm text-gray-500 leading-relaxed">
+              {event.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 時間・場所 */}
+      <div className="pt-4 space-y-2">
+        <dl className="flex items-center gap-2.5 text-sm">
+          <dt><Clock className="h-4 w-4 shrink-0 text-gray-400" /></dt>
+          <dd>
             {event.duration}分
             {(event.buffer_before > 0 || event.buffer_after > 0) && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-400 pl-2">
                 （前 {event.buffer_before}分 / 後 {event.buffer_after}分）
               </span>
             )}
-          </DrawerRow>
-          <DrawerRow label="場所">
-            <span className="flex items-center gap-1.5">
-              {event.location_type === "online" ? (
-                <Video className="h-3.5 w-3.5 text-gray-400" />
-              ) : event.location_type === "phone" ? (
-                <Phone className="h-3.5 w-3.5 text-gray-400" />
-              ) : (
-                <MapPin className="h-3.5 w-3.5 text-gray-400" />
-              )}
-              {event.location_type === "online"
-                ? "オンライン"
-                : event.location_type === "in-person"
-                  ? "対面"
-                  : "電話"}
-            </span>
+          </dd>
+        </dl>
+        <dl className="flex items-center gap-2.5 text-sm">
+          <dt>
+            {event.location_type === "online" ? (
+              <Video className="h-45 w-4 text-gray-400" />
+            ) : event.location_type === "phone" ? (
+              <Phone className="h-4 w-4 text-gray-400" />
+            ) : (
+              <MapPin className="h-4 w-4 text-gray-400" />
+            )}
+          </dt>
+          <dd>
+            {event.location_type === "online"
+              ? "オンライン"
+              : event.location_type === "in-person"
+                ? "対面"
+                : "電話"}
             {event.location_detail && (
-              <span className="w-full text-xs text-gray-500">
+              <span className="text-xs text-gray-400 pl-2">
                 {event.location_detail}
               </span>
             )}
-          </DrawerRow>
-          <DrawerRow label="スケジューリング">
-            {event.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}
-          </DrawerRow>
-          <DrawerRow label="説明">
-            {event.description ? (
-              <span className="leading-relaxed whitespace-pre-wrap">
-                {event.description}
-              </span>
-            ) : (
-              <span className="text-gray-400">説明なし</span>
-            )}
-          </DrawerRow>
+          </dd>
         </dl>
-      </DrawerSection>
+      </div>
 
       {/* メンバー */}
-      <DrawerSection title="メンバー">
+      <DrawerSection
+        title="メンバー"
+        subTitle={event.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}
+      >
         {eventRoles.length === 0 ? (
-          <p className="text-sm text-gray-400">メンバー未設定</p>
+          <p className="text-sm text-gray-300">メンバー未設定</p>
         ) : (
           <div className="space-y-4">
             {eventRoles.map((role) => {
@@ -308,13 +356,13 @@ function EventDrawerContent({ event }: { event: EventType }) {
                   <p className="text-xs font-semibold text-gray-600 mb-2">
                     {role.name}
                     <span className="ml-1 font-normal text-gray-400">
-                      （必要: {role.required_count}人）
+                      （{role.required_count}人）
                     </span>
                   </p>
                   {roleMembers.length === 0 ? (
                     <p className="text-xs text-gray-400 pl-2">未割当</p>
                   ) : (
-                    <ul className="space-y-1.5 pl-2">
+                    <ul className="pl-2 inline-flex flex-wrap gap-x-4 gap-y-2">
                       {roleMembers.map((member) => {
                         const user = mockUsers.find(
                           (u) => u.id === member.user_id
@@ -322,12 +370,12 @@ function EventDrawerContent({ event }: { event: EventType }) {
                         return (
                           <li
                             key={member.id}
-                            className="flex items-center gap-2"
+                            className="flex flex-wrap items-center gap-2"
                           >
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
                               {user?.full_name.charAt(0) ?? "?"}
                             </div>
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm whitespace-nowrap">
                               {user?.full_name ?? "Unknown"}
                             </span>
                           </li>
@@ -345,27 +393,24 @@ function EventDrawerContent({ event }: { event: EventType }) {
       {/* 除外ルール */}
       <DrawerSection title="除外ルール">
         {exclusionRules.length === 0 ? (
-          <p className="text-sm text-gray-400">除外ルール未設定</p>
+          <p className="text-sm text-gray-300">除外ルール未設定</p>
         ) : (
           <ul className="space-y-2">
             {exclusionRules.map((rule) => (
               <li
                 key={rule.id}
-                className="flex items-start gap-2 text-sm text-gray-700"
+                className="text-sm"
               >
-                <Ban className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-medium">{rule.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {EXCLUSION_TYPE_LABELS[rule.type]}
-                    {rule.day_of_week !== undefined &&
-                      `　${DAY_NAMES[rule.day_of_week]}曜日`}
-                    {rule.start_time &&
-                      rule.end_time &&
-                      `　${rule.start_time} – ${rule.end_time}`}
-                    {rule.recurring && "　（繰り返し）"}
-                  </p>
-                </div>
+                <p>{rule.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {EXCLUSION_TYPE_LABELS[rule.type]}
+                  {rule.day_of_week !== undefined &&
+                    `　${DAY_NAMES[rule.day_of_week]}曜日`}
+                  {rule.start_time &&
+                    rule.end_time &&
+                    `　${rule.start_time} – ${rule.end_time}`}
+                  {rule.recurring && "　（繰り返し）"}
+                </p>
               </li>
             ))}
           </ul>
@@ -375,26 +420,21 @@ function EventDrawerContent({ event }: { event: EventType }) {
       {/* フォーム */}
       <DrawerSection title="フォーム">
         {customFields.length === 0 ? (
-          <p className="text-sm text-gray-400">フォーム未設定</p>
+          <p className="text-sm text-gray-300">フォーム未設定</p>
         ) : (
           <ul className="space-y-2">
             {customFields.map((field) => (
               <li
                 key={field.id}
-                className="flex items-start gap-2 text-sm text-gray-700"
+                className="text-sm"
               >
-                <FileText className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-medium">
-                    {field.label}
-                    {field.is_required && (
-                      <span className="ml-1 text-red-500 text-xs">必須</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {FIELD_TYPE_LABELS[field.type]}
-                  </p>
-                </div>
+                <p className="flex items-center gap-1">
+                  {field.label}
+                  {field.is_required && ("（必須）")}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {FIELD_TYPE_LABELS[field.type]}
+                </p>
               </li>
             ))}
           </ul>
@@ -404,26 +444,21 @@ function EventDrawerContent({ event }: { event: EventType }) {
       {/* リマインド */}
       <DrawerSection title="リマインド">
         {!event.reminder_settings || event.reminder_settings.length === 0 ? (
-          <p className="text-sm text-gray-400">リマインド未設定</p>
+          <p className="text-sm text-gray-300">リマインド未設定</p>
         ) : (
           <ul className="space-y-2">
             {event.reminder_settings.map((r) => (
               <li
                 key={r.id}
-                className="flex items-center gap-2 text-sm text-gray-700"
+                className="text-sm flex items-center"
               >
-                {r.channel === "sms" ? (
-                  <MessageSquare className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                ) : (
-                  <Mail className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                )}
-                <span>
-                  {{ email: "メール", sms: "SMS", both: "メール + SMS" }[
-                    r.channel
-                  ]}
-                  　{r.timing.value}
+                {{ email: "メール", sms: "SMS", both: "メール + SMS" }[
+                  r.channel
+                ]}
+                <p className="text-xs text-gray-400 ml-2">
+                  {r.timing.value}
                   {r.timing.unit === "hours" ? "時間" : "日"}前
-                </span>
+                </p>
                 {!r.is_enabled && (
                   <span className="badge badge-gray ml-auto">無効</span>
                 )}
@@ -451,26 +486,26 @@ function DrawerFooter({
 }) {
   return (
     <>
-      <button onClick={onCopy} className="btn btn-emphasis btn-size-s">
+      <Link
+        href={`/events/${event.id}`}
+        className="btn btn-secondary"
+      >
+        <Edit className="h-4 w-4" />
+        編集
+      </Link>
+      <button onClick={onCopy} className="btn btn-primary">
         {isCopied ? (
           <>
-            <Check className="h-3 w-3" />
+            <Check className="h-4 w-4" />
             コピーしました
           </>
         ) : (
           <>
-            <Copy className="h-3 w-3" />
+            <Copy className="h-4 w-4" />
             リンクをコピー
           </>
         )}
       </button>
-      <Link
-        href={`/events/${event.id}`}
-        className="btn btn-secondary btn-size-s"
-      >
-        <Edit className="h-3 w-3" />
-        編集
-      </Link>
     </>
   );
 }
@@ -588,7 +623,7 @@ function EventsContent() {
       <Drawer
         open={selectedEvent !== null}
         onClose={closeDrawer}
-        title={selectedEvent?.title ?? ""}
+        title="イベント詳細"
         footer={
           selectedEvent ? (
             <DrawerFooter

@@ -93,13 +93,21 @@
     @apply badge bg-purple-50 text-purple-600;
   }
 
+  .badge-neutral {
+    @apply badge bg-gray-50 text-gray-400;
+  }
+
   .add-btn {
     @apply flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors;
   }
 
   /* 設定確認画面などのセクションラベル */
   .section-label {
-    @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3;
+    @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4;
+  }
+
+  .section-sub-label {
+    @apply text-xs font-normal uppercase tracking-wider text-gray-400 mb-3;
   }
 
   /* ステップカード内のセクション見出し */
@@ -315,7 +323,7 @@
   }
 
   .modal-footer {
-    @apply flex items-center justify-end gap-2 px-6 py-5 border-t border-gray-200;
+    @apply flex items-center justify-end gap-3 px-6 py-5 border-t border-gray-200;
   }
 
   /* フォーム画面の固定ナビゲーションエリア（SmartHR Float Area） */
@@ -394,7 +402,7 @@
   }
 
   .drawer-panel {
-    @apply flex flex-col bg-white shadow-xl ring-1 ring-gray-200 w-full max-w-md h-full;
+    @apply flex flex-col bg-white shadow-xl ring-1 ring-gray-200 w-full max-w-lg h-full;
   }
 
   .drawer-header {
@@ -406,7 +414,7 @@
   }
 
   .drawer-footer {
-    @apply flex items-center justify-between gap-2 px-6 py-5 border-t border-gray-200 shrink-0;
+    @apply flex items-center justify-end gap-3 px-6 py-5 border-t border-gray-200 shrink-0;
   }
 
   /* Upload area */
