@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const PROTECTED_PATHS = [
+  "/events",
+  "/bookings",
+  "/activity",
+  "/team",
+  "/settings",
+];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect all dashboard routes
-  if (pathname.startsWith("/dashboard")) {
+  // Protect app routes
+  const isProtected = PROTECTED_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+
+  if (isProtected) {
     const authToken = request.cookies.get("auth_token");
     if (!authToken) {
       const loginUrl = new URL("/login", request.url);
@@ -13,12 +25,12 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // If already logged in and visiting /login, redirect to dashboard
+  // If already logged in and visiting /login, redirect to events
   if (pathname === "/login") {
     const authToken = request.cookies.get("auth_token");
     if (authToken) {
-      const dashboardUrl = new URL("/dashboard", request.url);
-      return NextResponse.redirect(dashboardUrl);
+      const eventsUrl = new URL("/events", request.url);
+      return NextResponse.redirect(eventsUrl);
     }
   }
 
@@ -26,5 +38,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: [
+    "/events/:path*",
+    "/bookings/:path*",
+    "/activity/:path*",
+    "/team/:path*",
+    "/settings/:path*",
+    "/login",
+  ],
 };

@@ -26,7 +26,7 @@ export default function LoginPage() {
     // Mock authentication: accept any non-empty credentials
     await new Promise((r) => setTimeout(r, 800));
     document.cookie = "auth_token=mock; path=/; max-age=86400";
-    router.push("/dashboard");
+    router.push("/events");
   }
 
   async function handleGoogleLogin() {
@@ -35,7 +35,7 @@ export default function LoginPage() {
     // Mock Google SSO: same flow
     await new Promise((r) => setTimeout(r, 800));
     document.cookie = "auth_token=mock; path=/; max-age=86400";
-    router.push("/dashboard");
+    router.push("/events");
   }
 
   return (

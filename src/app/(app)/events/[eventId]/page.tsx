@@ -143,14 +143,14 @@ export default function EventDetailPage() {
   function handleDelete() {
     deleteEventType(eventId);
     toast.success("イベントを削除しました");
-    router.push("/dashboard/events");
+    router.push("/events");
   }
 
   if (!event) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">イベントが見つかりません</p>
-        <Link href="/dashboard/events" className="btn btn-primary mt-4 inline-block">
+        <Link href="/events" className="btn btn-primary mt-4 inline-block">
           イベント一覧に戻る
         </Link>
       </div>
@@ -164,7 +164,7 @@ export default function EventDetailPage() {
         {/* Header */}
         <header className="header mb-6">
           <button
-            onClick={() => navigate("/dashboard/events")}
+            onClick={() => navigate("/events")}
             className="header-back-btn"
           >
             <ArrowLeft className="h-5 w-5" />

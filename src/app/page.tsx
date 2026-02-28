@@ -22,12 +22,12 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard"
+              href="/events"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
               ログイン
             </Link>
-            <Link href="/dashboard" className="btn btn-primary">
+            <Link href="/events" className="btn btn-primary">
               無料で始める
             </Link>
           </div>
@@ -46,7 +46,7 @@ export default function Home() {
           採用チームの生産性を飛躍的に向上させます。
         </p>
         <div className="mt-10 flex items-center justify-center gap-4">
-          <Link href="/dashboard" className="btn btn-primary text-base">
+          <Link href="/events" className="btn btn-primary text-base">
             ダッシュボードへ
             <ArrowRight className="h-4 w-4" />
           </Link>
@@ -150,7 +150,7 @@ export default function Home() {
           面倒な日程調整メールのやり取りから解放されます。
         </p>
         <div className="mt-8">
-          <Link href="/dashboard" className="btn btn-primary text-base">
+          <Link href="/events" className="btn btn-primary text-base">
             無料で始める
             <ArrowRight className="h-4 w-4" />
           </Link>

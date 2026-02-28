@@ -105,7 +105,7 @@ export default function NewEventPage() {
           </dl>
         </div>
         <div className="mt-6 flex gap-3">
-          <Link href="/dashboard/bookings" className="btn btn-secondary">
+          <Link href="/bookings" className="btn btn-secondary">
             予約一覧を見る
           </Link>
           <button
@@ -134,7 +134,7 @@ export default function NewEventPage() {
       {/* Header */}
       <div className="mb-8 flex items-center gap-4">
         <Link
-          href="/dashboard"
+          href="/events"
           className="flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -209,7 +209,7 @@ export default function NewEventPage() {
                   先にイベントタイプを作成して公開してください
                 </p>
                 <Link
-                  href="/dashboard/events/new"
+                  href="/events/new"
                   className="btn btn-primary mt-4"
                 >
                   イベントタイプを作成

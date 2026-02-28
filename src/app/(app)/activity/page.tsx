@@ -84,7 +84,7 @@ export default function NotificationsPage() {
 
   function handleNotificationClick(notificationId: string, bookingId: string) {
     markAsRead(notificationId);
-    router.push(`/dashboard/bookings/${bookingId}`);
+    router.push(`/bookings/${bookingId}`);
   }
 
   return (
