@@ -322,18 +322,6 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
         <input type="text" className="input mt-1" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} />
       </div>
       <div>
-        <label className="label">URL スラグ</label>
-        <div className="mt-1 flex items-center rounded-2xl bg-gray-50 ring-1 ring-gray-300">
-          <span className="pl-4 text-sm text-gray-500">/j/</span>
-          <input
-            type="text"
-            className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0"
-            value={slug}
-            onChange={(e) => { setSlug(e.target.value); markDirty(); }}
-          />
-        </div>
-      </div>
-      <div>
         <label className="label">説明</label>
         <textarea
           className="input mt-1"
@@ -430,6 +418,19 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
               <p className="mt-1 text-xs text-gray-500">下書き状態で保存します</p>
             </div>
           </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="label">URL スラグ</label>
+        <div className="input pr-0 mt-1 flex items-center">
+          <span className="text-sm text-gray-500">/j/</span>
+          <input
+            type="text"
+            className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0 rounded-lg"
+            value={slug}
+            onChange={(e) => { setSlug(e.target.value); markDirty(); }}
+          />
         </div>
       </div>
 
@@ -855,7 +856,7 @@ function TeamTab({
 
             {/* Add role */}
             {showAddRoleForm ? (
-              <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+              <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <label className="label">役割名</label>
@@ -886,7 +887,7 @@ function TeamTab({
                       setNewRoleName("");
                       setNewRoleCount(1);
                     }}
-                    className="btn btn-secondary"
+                    className="btn btn-ghost"
                   >
                     キャンセル
                   </button>
@@ -1020,7 +1021,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
     saveLabel = "保存"
   ) {
     return (
-      <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+      <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
         <div>
           <label className="label">ルール名</label>
           <input
@@ -1054,7 +1055,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
                   : ""
               )}
             >
-              <span>{draft.recurring ? "繰り返し" : "1回限り"}</span>
+              <span>繰り返す</span>
               <div className={cn("toggle-btn-switch",
                 draft.recurring ? "toggle-btn-switch-active" : ""
               )}>
@@ -1114,8 +1115,8 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
           )}
         </div>
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary text-sm">
+          <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
+          <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary">
             {saveLabel}
           </button>
         </div>
@@ -1132,82 +1133,75 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
         </div>
       </div>
 
-      {localRules.length === 0 && !showAddForm ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-          <ShieldOff className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-500">除外ルールはまだ設定されていません</p>
-        </div>
-      ) : (
-        <div className="mt-3 space-y-3">
-          {localRules.map((rule) => (
-            <div key={rule.id}>
-              {editingId === rule.id ? (
-                renderExclusionForm(
-                  editDraft,
-                  setEditDraft,
-                  () => handleEditSave(rule.id),
-                  () => setEditingId(null),
-                  "保存"
-                )
-              ) : (
-                <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{rule.name}</p>
-                    <p className="mt-0.5 text-sm text-gray-500">
-                      {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
-                      {rule.recurring && rule.day_of_week !== undefined && (
-                        <span> · 毎週{daysOfWeek[rule.day_of_week]}曜日</span>
-                      )}
-                      {rule.recurring && rule.day_of_week === undefined && (
-                        <span> · 毎日</span>
-                      )}
-                      {!rule.recurring && rule.specific_date && (
-                        <span> · {rule.specific_date}</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={cn(
-                      "rounded-full px-2 py-0.5 text-xs font-medium",
-                      rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
-                    )}>
-                      {rule.recurring ? "繰り返し" : "1回限り"}
-                    </span>
-                    <button
-                      onClick={() => handleEditStart(rule)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                      title="編集"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(rule.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
-                      title="削除"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+      <div className="mt-3 space-y-3">
+        {localRules.map((rule) => (
+          <div key={rule.id}>
+            {editingId === rule.id ? (
+              renderExclusionForm(
+                editDraft,
+                setEditDraft,
+                () => handleEditSave(rule.id),
+                () => setEditingId(null),
+                "保存"
+              )
+            ) : (
+              <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{rule.name}</p>
+                  <p className="mt-0.5 text-sm text-gray-500">
+                    {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
+                    {rule.recurring && rule.day_of_week !== undefined && (
+                      <span> · 毎週{daysOfWeek[rule.day_of_week]}曜日</span>
+                    )}
+                    {rule.recurring && rule.day_of_week === undefined && (
+                      <span> · 毎日</span>
+                    )}
+                    {!rule.recurring && rule.specific_date && (
+                      <span> · {rule.specific_date}</span>
+                    )}
+                  </p>
                 </div>
-              )}
-            </div>
-          ))}
+                <div className="flex items-center gap-4">
+                  <span className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-medium",
+                    rule.recurring ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"
+                  )}>
+                    {rule.recurring ? "繰り返し" : "1回限り"}
+                  </span>
+                  <button
+                    onClick={() => handleEditStart(rule)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="編集"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(rule.id)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    title="削除"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-          {showAddForm && renderExclusionForm(
-            addDraft,
-            setAddDraft,
-            handleAddSave,
-            () => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); },
-            "追加"
-          )}
+      {showAddForm && renderExclusionForm(
+        addDraft,
+        setAddDraft,
+        handleAddSave,
+        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); },
+        "追加"
+      )}
 
-          {!showAddForm && (
-            <button onClick={() => setShowAddForm(true)} className="add-btn">
-              <Plus className="h-4 w-4" />
-              ルールを追加
-            </button>
-          )}
-        </div>
+      {!showAddForm && (
+        <button onClick={() => setShowAddForm(true)} className="mt-3 add-btn">
+          <Plus className="h-4 w-4" />
+          ルールを追加
+        </button>
       )}
 
       <div className="mt-6 flex justify-end">
@@ -1334,9 +1328,9 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
     saveLabel = "保存"
   ) {
     return (
-      <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
+      <div className="mt-2 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+        <div className="flex gap-3">
+          <div className="flex-1">
             <label className="label">ラベル名</label>
             <input
               type="text"
@@ -1346,7 +1340,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
               placeholder="例: 希望年収"
             />
           </div>
-          <div>
+          <div className="w-[220px]">
             <label className="label">必須項目</label>
             <button
               onClick={() => setDraft({ ...draft, is_required: !draft.is_required })}
@@ -1386,7 +1380,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn btn-secondary text-sm">キャンセル</button>
+          <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
           <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary">
             {saveLabel}
           </button>
@@ -1399,7 +1393,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">カスタムフォーム項目</h3>
+          <h3 className="text-lg font-semibold text-gray-900">フォーム項目</h3>
           <p className="mt-1 text-sm text-gray-500">
             候補者に入力してもらう項目を設定します
           </p>
@@ -1434,11 +1428,12 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
       </div>
 
       {/* Custom fields */}
-      {localFields.length > 0 && (
-        <div className="space-y-2">
-          <p className="label">
-            カスタム項目
-          </p>
+
+      <div className="space-y-2">
+        <p className="label">
+          カスタム項目
+        </p>
+        {localFields.length > 0 && (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -1500,33 +1495,25 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
               ))}
             </SortableContext>
           </DndContext>
+        )}
+      </div>
 
-          {/* Add form */}
-          {showAddForm && renderFieldForm(
-            addDraft,
-            setAddDraft,
-            handleAddField,
-            () => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); },
-            "new",
-            "追加"
-          )}
 
-          {!showAddForm && (
-            <button onClick={() => setShowAddForm(true)} className="add-btn">
-              <Plus className="h-4 w-4" />
-              項目を追加
-            </button>
-          )}
-        </div>
+      {/* Add form */}
+      {showAddForm && renderFieldForm(
+        addDraft,
+        setAddDraft,
+        handleAddField,
+        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); },
+        "new",
+        "追加"
       )}
 
-      {localFields.length === 0 && !showAddForm && (
-        <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-          <FileText className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-500">
-            カスタム項目はまだ追加されていません
-          </p>
-        </div>
+      {!showAddForm && (
+        <button onClick={() => setShowAddForm(true)} className="add-btn mt-2">
+          <Plus className="h-4 w-4" />
+          項目を追加
+        </button>
       )}
 
       <div className="mt-6 flex justify-end">
@@ -1667,7 +1654,7 @@ function ReminderTab({
             <div>
               <label className="label">メッセージ内容</label>
               <textarea
-                className="input mt-1 min-h-[80px] resize-y"
+                className="input mt-1"
                 placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
                 value={reminder.message}
                 onChange={(e) => updateReminder(reminder.id, { message: e.target.value })}
@@ -1680,15 +1667,6 @@ function ReminderTab({
           <Plus className="h-4 w-4" />
           リマインドを追加
         </button>
-
-        {reminders.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-            <Bell className="mx-auto h-8 w-8 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-500">
-              リマインドはまだ設定されていません
-            </p>
-          </div>
-        )}
       </div>
 
       <div className="mt-6 flex justify-end">

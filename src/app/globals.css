@@ -57,6 +57,10 @@
     @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 transition-shadow h-[42px];
   }
 
+  textarea.input {
+    @apply min-h-[100px];
+  }
+
   .select {
     @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 bg-white;
   }
@@ -99,6 +103,10 @@
 
   .add-btn {
     @apply flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors;
+  }
+
+  .bg-hilight {
+    @apply bg-[#f4f9ff];
   }
 
   /* 設定確認画面などのセクションラベル */

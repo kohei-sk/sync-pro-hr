@@ -533,21 +533,6 @@ export default function NewEventPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">URL スラグ</label>
-                  <div className="mt-1 flex items-center rounded-2xl bg-gray-50 ring-1 ring-gray-300">
-                    <span className="pl-4 text-sm text-gray-500">/j/</span>
-                    <input
-                      type="text"
-                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0"
-                      value={formData.slug}
-                      onChange={(e) =>
-                        setFormData({ ...formData, slug: e.target.value })
-                      }
-                      placeholder="engineer-first"
-                    />
-                  </div>
-                </div>
-                <div>
                   <label className="label">説明</label>
                   <textarea
                     className="input mt-1"
@@ -719,6 +704,21 @@ export default function NewEventPage() {
                         <p className="text-xs text-gray-500">下書き状態で保存します</p>
                       </div>
                     </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">URL スラグ</label>
+                  <div className="input pr-0 mt-1 flex items-center">
+                    <span className="text-sm text-gray-500">/j/</span>
+                    <input
+                      type="text"
+                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0 rounded-lg"
+                      value={formData.slug}
+                      onChange={(e) =>
+                        setFormData({ ...formData, slug: e.target.value })
+                      }
+                      placeholder="engineer-first"
+                    />
                   </div>
                 </div>
               </div>
@@ -1056,7 +1056,7 @@ export default function NewEventPage() {
                       <div key={rule.id}>
                         {editingExclusionId === rule.id ? (
                           /* Edit form for this rule */
-                          <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                             <p className="text-sm font-semibold text-gray-900">除外ルールを編集</p>
                             <div>
                               <label className="label">ルール名</label>
@@ -1133,7 +1133,7 @@ export default function NewEventPage() {
                               )}
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
-                              <button onClick={() => setEditingExclusionId(null)} className="btn btn-secondary">キャンセル</button>
+                              <button onClick={() => setEditingExclusionId(null)} className="btn btn-ghost">キャンセル</button>
                               <button onClick={() => saveEditExclusionRule(rule.id)} disabled={!editExclusionDraft.name.trim()} className="btn btn-primary">保存</button>
                             </div>
                           </div>
@@ -1183,7 +1183,7 @@ export default function NewEventPage() {
 
                 {/* Add form */}
                 {showExclusionForm ? (
-                  <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                     <p className="text-sm font-semibold text-gray-900">新しい除外ルール</p>
                     <div>
                       <label className="label">ルール名</label>
@@ -1225,7 +1225,7 @@ export default function NewEventPage() {
                               : ""
                           )}
                         >
-                          <span>{exclusionDraft.recurring ? "繰り返し" : "1回限り"}</span>
+                          <span>繰り返す</span>
                           <div className={cn(
                             "toggle-btn-switch",
                             exclusionDraft.recurring ? "toggle-btn-switch-active" : ""
@@ -1303,7 +1303,7 @@ export default function NewEventPage() {
                     <div className="flex justify-end gap-2 pt-1">
                       <button
                         onClick={() => setShowExclusionForm(false)}
-                        className="btn btn-secondary"
+                        className="btn btn-ghost"
                       >
                         キャンセル
                       </button>
@@ -1364,7 +1364,7 @@ export default function NewEventPage() {
                     {formFields.map((field) => (
                       <div key={field.id}>
                         {editingFieldId === field.id ? (
-                          <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="label">ラベル名</label>
@@ -1398,7 +1398,7 @@ export default function NewEventPage() {
                               </button>
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
-                              <button onClick={() => setEditingFieldId(null)} className="btn btn-secondary">キャンセル</button>
+                              <button onClick={() => setEditingFieldId(null)} className="btn btn-ghost">キャンセル</button>
                               <button onClick={() => saveEditFormField(field.id)} disabled={!editFieldDraft.label.trim()} className="btn btn-primary">保存</button>
                             </div>
                           </div>
@@ -1428,14 +1428,14 @@ export default function NewEventPage() {
 
                 {/* Add field form */}
                 {showFieldForm ? (
-                  <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                     <p className="text-sm font-semibold text-gray-900">新しい項目</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
                         <label className="label">ラベル名</label>
                         <input type="text" className="input mt-1" value={fieldDraft.label} onChange={(e) => setFieldDraft({ ...fieldDraft, label: e.target.value })} placeholder="例: 希望年収" />
                       </div>
-                      <div>
+                      <div className="w-[220px]">
                         <label className="label">必須項目</label>
                         <button
                           onClick={() => setFieldDraft({ ...fieldDraft, is_required: !fieldDraft.is_required })}
@@ -1465,7 +1465,7 @@ export default function NewEventPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-1">
-                      <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-secondary">キャンセル</button>
+                      <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-ghost">キャンセル</button>
                       <button onClick={addFormField} disabled={!fieldDraft.label.trim()} className="btn btn-primary">追加</button>
                     </div>
                   </div>
@@ -1571,7 +1571,7 @@ export default function NewEventPage() {
                         <div>
                           <label className="label">メッセージ内容</label>
                           <textarea
-                            className="input mt-1 min-h-[80px] resize-y"
+                            className="input mt-1 resize-y"
                             placeholder="候補者に送るメッセージを入力してください。&#10;{{date}}、{{location}} でスロット情報を挿入できます。"
                             value={reminder.message}
                             onChange={(e) =>
