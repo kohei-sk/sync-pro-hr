@@ -1358,10 +1358,10 @@ export default function NewEventPage() {
                 </div>
 
                 {/* Custom fields */}
-                {formFields.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="label">カスタム項目</p>
-                    {formFields.map((field) => (
+                <div className="space-y-2">
+                  <p className="label">カスタム項目</p>
+                  {formFields.length > 0 && (
+                    formFields.map((field) => (
                       <div key={field.id}>
                         {editingFieldId === field.id ? (
                           <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
@@ -1422,9 +1422,9 @@ export default function NewEventPage() {
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
 
                 {/* Add field form */}
                 {showFieldForm ? (
