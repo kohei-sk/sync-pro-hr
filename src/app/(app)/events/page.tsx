@@ -112,7 +112,7 @@ function EventCard({
     >
 
       {/* メインコンテンツ */}
-      <div className="flex flex-1 min-w-0 px-5 py-4 w-full">
+      <div className="flex flex-1 min-w-0 px-5 py-4 w-full flex-wrap">
         <div className="flex flex-1 items-center gap-4">
           {/* カラー */}
           <div
@@ -162,7 +162,7 @@ function EventCard({
         </div>
 
         {/* メタデータ行 */}
-        <div className="flex flex-wrap items-center gap-3 min-w-[293px] text-xs text-gray-400 border-l border-r border-gray-100 px-6 mx-6">
+        <div className="flex flex-wrap items-center gap-3 min-w-[306px] text-xs text-gray-400 px-8">
           <span className="flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
             {event.duration}分
@@ -191,14 +191,14 @@ function EventCard({
           className="flex items-center gap-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <Link
+          {/* <Link
             href={`/events/${event.id}`}
             className="btn btn-ghost btn-size-s ml-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Edit className="h-3 w-3" />
             編集
-          </Link>
+          </Link> */}
           <button
             onClick={onCopyLink}
             className="btn btn-emphasis btn-size-s"

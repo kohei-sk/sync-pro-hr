@@ -1664,10 +1664,10 @@ function ReminderTab({
           />
         </div>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="btn btn-ghost btn-size-s">
+          <button onClick={onCancel} className="btn btn-ghost">
             キャンセル
           </button>
-          <button onClick={onSave} className="btn btn-primary btn-size-s">
+          <button onClick={onSave} className="btn btn-primary">
             {saveLabel}
           </button>
         </div>
