@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -63,6 +63,14 @@ export default function BookingsLayout({
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterEvent, setFilterEvent] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // タブ切替時にスクロール位置をリセット
+  useEffect(() => {
+    document.querySelector('#booking-list-scroll-top')?.scrollTo({
+      top: 0,
+      left: 0,
+    });
+  }, [filterStatus]);
 
   // Detect the selected booking from the URL path
   const selectedId =
@@ -187,7 +195,7 @@ export default function BookingsLayout({
       <div className="flex flex-1 overflow-hidden rounded-xl ring-1 ring-gray-200/60">
         {/* Left panel: list */}
         <div className="flex w-[360px] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white">
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" id="booking-list-scroll-top">
             {filteredBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <Calendar className="mx-auto mb-3 h-10 w-10 text-gray-300" />

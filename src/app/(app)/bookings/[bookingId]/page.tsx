@@ -131,7 +131,7 @@ export default function BookingDetailPage() {
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
             <div className="inline-flex items-center gap-2">
-              <h1 className="font-bold text-base leading-relaxed">
+              <h1 className="font-semibold text-base leading-relaxed">
                 {booking.candidate_name}
               </h1>
               <span className={statusInfo.className}>
@@ -220,7 +220,7 @@ export default function BookingDetailPage() {
           <div className="flex items-start gap-2.5">
             <LocationIcon className="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
             <div>
-              <p className="text-sm text-gray-800">
+              <p className="text-sm">
                 {event?.location_detail || locCfg.label}
               </p>
               {booking.meeting_url && (
@@ -331,7 +331,7 @@ export default function BookingDetailPage() {
                 return (
                   <div key={field.id}>
                     <dt className="text-xs text-gray-400 mb-0.5">{field.label}</dt>
-                    <dd className="text-sm text-gray-800 break-all">
+                    <dd className="text-sm break-all">
                       {field.type === "url" ? (
                         <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 hover:underline">
                           {value}

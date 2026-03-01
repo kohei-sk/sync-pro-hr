@@ -87,7 +87,7 @@ export default function Home() {
           ].map((feature, i) => (
             <div key={i} className="card">
               <feature.icon className="h-10 w-10 text-primary-600" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+              <h3 className="mt-4 text-lg font-bold text-gray-900">
                 {feature.title}
               </h3>
               <p className="mt-2 text-sm text-gray-600">
@@ -129,7 +129,7 @@ export default function Home() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-2xl font-bold text-primary-600">
                   {item.step}
                 </div>
-                <h3 className="mt-6 text-lg font-semibold text-gray-900">
+                <h3 className="mt-6 text-lg font-bold text-gray-900">
                   {item.title}
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">

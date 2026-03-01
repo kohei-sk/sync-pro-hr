@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-[#f8f9fa] text-[#212529] antialiased;
+    @apply bg-[#f8f9fa] text-[#2d3237] antialiased;
     font-feature-settings: "palt";
   }
 }
@@ -54,7 +54,7 @@
   }
 
   .input {
-    @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 transition-shadow h-[42px];
+    @apply block w-full rounded-lg border-0 py-2.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 transition-shadow h-[42px];
   }
 
   textarea.input {
@@ -62,11 +62,11 @@
   }
 
   .select {
-    @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 bg-white;
+    @apply block w-full rounded-lg border-0 py-2.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 bg-white;
   }
 
   .label {
-    @apply block text-sm font-medium leading-6 text-[#212529];
+    @apply block text-xs font-semibold leading-6 text-gray-600;
   }
 
   .badge {
@@ -136,7 +136,7 @@
   }
 
   .header-title {
-    @apply text-2xl font-bold text-gray-900;
+    @apply text-2xl font-bold;
   }
 
   .header-sub-title {
@@ -353,7 +353,7 @@
   }
 
   .dropdown-item {
-    @apply flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
+    @apply flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
   }
 
   .dropdown-item-danger {

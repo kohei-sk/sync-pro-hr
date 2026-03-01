@@ -130,7 +130,7 @@ function EventCard({
             <div>
               {/* タイトル行 */}
               <div className="inline-flex items-center gap-2">
-                <span className="font-bold text-sm leading-relaxed">
+                <span className="font-semibold text-sm leading-relaxed">
                   {event.title}
                 </span>
                 <span
@@ -272,7 +272,7 @@ function EventDrawerContent({ event }: { event: EventType }) {
           <div>
             {/* タイトル行 */}
             <div className="inline-flex items-center gap-2">
-              <span className="font-bold text-base leading-relaxed">
+              <span className="font-semibold text-base leading-relaxed">
                 {event.title}
               </span>
               <span
@@ -656,7 +656,7 @@ function EventsContent() {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
               <Plus className="h-6 w-6 text-gray-400" />
             </div>
-            <h3 className="mt-4 text-sm font-semibold text-gray-900">
+            <h3 className="mt-4 text-sm font-semibold">
               イベントがありません
             </h3>
             <p className="mt-1 text-sm text-gray-500">

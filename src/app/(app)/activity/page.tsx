@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarCheck,
@@ -81,6 +81,14 @@ export default function NotificationsPage() {
   const readNotifications = mockNotifications.filter((n) => isRead(n.id));
   const displayedNotifications = (activeTab === "unread" ? unreadNotifications : readNotifications)
     .filter((n) => filterType === "all" || n.type === filterType);
+
+  // タブ切替時にスクロール位置をリセット
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({
+      top: 114,
+      left: 0,
+    });
+  }, [activeTab]);
 
   function handleNotificationClick(notificationId: string, bookingId: string) {
     markAsRead(notificationId);
@@ -219,7 +227,7 @@ export default function NotificationsPage() {
                     <p
                       className={cn(
                         "text-sm leading-relaxed",
-                        read ? "text-gray-500" : "font-medium"
+                        read ? "text-gray-500" : "font-semibold"
                       )}
                     >
                       {notification.candidate_name}

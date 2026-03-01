@@ -104,7 +104,7 @@ export default function BookingPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="card text-center">
-          <p className="text-lg font-medium text-gray-900">
+          <p className="text-lg font-medium">
             イベントが見つかりません
           </p>
           <p className="mt-1 text-sm text-gray-500">
@@ -161,7 +161,7 @@ export default function BookingPage() {
               style={{ color: event.color || "#3b82f6" }}
             />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">
+          <h1 className="mt-4 text-2xl font-bold">
             {event.title}
           </h1>
           {event.description && (
@@ -251,7 +251,7 @@ export default function BookingPage() {
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
-                <h2 className="text-base font-semibold text-gray-900">
+                <h2 className="text-base font-semibold">
                   {monthLabel}
                 </h2>
                 <button
@@ -335,7 +335,7 @@ export default function BookingPage() {
                 <ArrowLeft className="h-4 w-4" />
                 日付を変更
               </button>
-              <h2 className="text-base font-semibold text-gray-900">
+              <h2 className="text-base font-semibold">
                 {new Date(selectedDate + "T00:00:00").toLocaleDateString(
                   "ja-JP",
                   {
@@ -526,12 +526,12 @@ export default function BookingPage() {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                 <CheckCircle2 className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="mt-4 text-xl font-bold text-gray-900">
+              <h2 className="mt-4 text-xl font-bold">
                 予約が確定しました
               </h2>
               <p className="mt-2 text-sm text-gray-500">
                 確認メールを{" "}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium">
                   {formValues.candidate_email}
                 </span>{" "}
                 に送信しました
@@ -540,13 +540,13 @@ export default function BookingPage() {
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-gray-500">イベント</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dd className="font-medium">
                       {event.title}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-gray-500">日時</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dd className="font-medium">
                       {new Date(selectedSlot.start).toLocaleDateString(
                         "ja-JP",
                         {
@@ -563,7 +563,7 @@ export default function BookingPage() {
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-gray-500">場所</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dd className="font-medium">
                       {event.location_detail || "—"}
                     </dd>
                   </div>

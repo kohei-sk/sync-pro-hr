@@ -19,6 +19,7 @@ import {
   CircleX,
   Filter,
   ChevronDown,
+  CalendarSync,
 } from "lucide-react";
 import {
   mockUsers,
@@ -212,28 +213,28 @@ export default function TeamPage() {
         <div className="rounded-xl p-6 flex items-center gap-5 bg-green-100/60">
           <CheckCircle2 className="h-5.5 w-5.5 text-green-600" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">{connectedCount}</p>
+            <p className="text-2xl font-semibold">{connectedCount}</p>
             <p className="text-xs text-gray-500">カレンダー接続済み</p>
           </div>
         </div>
         <div className="rounded-xl p-6 flex items-center gap-5 bg-red-100/40">
           <AlertTriangle className="h-5.5 w-5.5 text-red-600" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">{errorCount}</p>
+            <p className="text-2xl font-semibold">{errorCount}</p>
             <p className="text-xs text-gray-500">エラー</p>
           </div>
         </div>
         <div className="rounded-xl p-6 flex items-center gap-5 bg-purple-100/50">
           <Clock className="h-5.5 w-5.5 text-purple-600" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">{invitedCount}</p>
+            <p className="text-2xl font-semibold">{invitedCount}</p>
             <p className="text-xs text-gray-500">招待中</p>
           </div>
         </div>
         <div className="rounded-xl p-6 flex items-center gap-5 bg-gray-200/50">
           <CircleX className="h-5.5 w-5.5 text-gray-600" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">{notConnectedCount}</p>
+            <p className="text-2xl font-semibold">{notConnectedCount}</p>
             <p className="text-xs text-gray-500">カレンダー接続なし</p>
           </div>
         </div>
@@ -307,7 +308,7 @@ export default function TeamPage() {
                 {/* Avatar */}
                 <div
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
                     isInvited
                       ? "bg-purple-100 text-purple-700"
                       : "bg-primary-100 text-primary-700"
@@ -319,15 +320,15 @@ export default function TeamPage() {
                 {/* Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <h3 className="text-sm font-semibold">
                       {user.full_name}
                     </h3>
                     {user.role === "admin" && !isInvited && (
                       <span className="badge badge-blue">管理者</span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-                    <Mail className="h-3 w-3" />
+                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                    <Mail className="h-3 w-3 text-gray-400" />
                     {user.email}
                   </div>
                 </div>
@@ -337,49 +338,51 @@ export default function TeamPage() {
                   {isInvited ? (
                     <>
                       <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-300">—</p>
-                        <p className="text-xs text-gray-400">イベント</p>
+                        <p className="text-sm font-semibold text-gray-300">0</p>
+                        <p className="text-xs text-gray-300">イベント</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-300">—</p>
-                        <p className="text-xs text-gray-400">予定面接</p>
+                        <p className="text-sm font-semibold text-gray-300">0</p>
+                        <p className="text-xs text-gray-300">予定面接</p>
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-700">
                           {stats.eventCount}
                         </p>
-                        <p className="text-xs text-gray-500">イベント</p>
+                        <p className="text-xs text-gray-400">イベント</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-700">
                           {stats.upcomingBookings}
                         </p>
-                        <p className="text-xs text-gray-500">予定面接</p>
+                        <p className="text-xs text-gray-400">予定面接</p>
                       </div>
                     </>
                   )}
                 </div>
 
                 {/* Status Badge */}
-                {isInvited ? (
-                  <div className="badge badge-purple">
-                    <Clock className="h-3 w-3" />
-                    招待中
-                  </div>
-                ) : (
-                  <div
-                    className={cn(
-                      "badge",
-                      calStatus.className
-                    )}
-                  >
-                    <CalStatusIcon className="h-3 w-3" />
-                    {calStatus.label}
-                  </div>
-                )}
+                <div className="w-[70px] flex justify-center">
+                  {isInvited ? (
+                    <div className="badge badge-purple">
+                      <Clock className="h-3 w-3" />
+                      招待中
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "badge",
+                        calStatus.className
+                      )}
+                    >
+                      <CalStatusIcon className="h-3 w-3" />
+                      {calStatus.label}
+                    </div>
+                  )}
+                </div>
 
                 {/* Actions — カードクリックへの伝播を防ぐ */}
                 <div
@@ -457,9 +460,9 @@ export default function TeamPage() {
               {/* Sync info bar */}
               {
                 syncTimeStr && !isInvited && (
-                  <div className="flex items-center gap-1.5 border-t border-gray-100 bg-gray-50/50 px-4 py-2 text-xs text-gray-400">
-                    <Calendar className="h-3 w-3" />
-                    最終同期: {syncTimeStr}
+                  <div className="flex items-center gap-1.5 border-t border-gray-100 px-4 py-2 text-xs text-gray-400">
+                    <CalendarSync className="h-3 w-3" />
+                    {syncTimeStr}
                   </div>
                 )
               }
@@ -528,7 +531,7 @@ export default function TeamPage() {
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-md font-bold",
                   detailUser.status === "invited"
                     ? "bg-purple-100 text-purple-700"
                     : "bg-primary-100 text-primary-700"
@@ -537,20 +540,23 @@ export default function TeamPage() {
                 {detailUser.full_name.charAt(0)}
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{detailUser.full_name}</p>
-                <p className="text-sm text-gray-500">{detailUser.email}</p>
+                <p className="font-semibold">{detailUser.full_name}</p>
+                <p className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
+                  <Mail className="w-3 h-3" />
+                  {detailUser.email}
+                </p>
               </div>
             </div>
             <dl className="space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
               <div className="flex justify-between">
                 <dt className="text-gray-500">権限</dt>
-                <dd className="font-medium text-gray-900">
+                <dd className="font-medium">
                   {detailUser.role === "admin" ? "管理者" : "メンバー"}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">ステータス</dt>
-                <dd className="font-medium text-gray-900">
+                <dd className="font-medium">
                   {detailUser.status === "invited" ? "招待中" : "参加済み"}
                 </dd>
               </div>
@@ -558,28 +564,28 @@ export default function TeamPage() {
                 <>
                   <div className="flex justify-between">
                     <dt className="text-gray-500">カレンダー</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dd className="font-medium">
                       {calendarStatusConfig[detailUser.calendar_status || "not_connected"].label}
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-gray-500">最終同期</dt>
-                    <dd className="font-medium text-gray-900">
-                      {detailUser.last_synced_at
-                        ? formatSyncTime(detailUser.last_synced_at)
-                        : "未同期"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
                     <dt className="text-gray-500">担当イベント</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dd className="font-medium">
                       {getUserStats(detailUser.id).eventCount}件
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-gray-500">予定面接</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dd className="font-medium">
                       {getUserStats(detailUser.id).upcomingBookings}件
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">最終同期</dt>
+                    <dd className="font-medium">
+                      {detailUser.last_synced_at
+                        ? formatSyncTime(detailUser.last_synced_at)
+                        : "未同期"}
                     </dd>
                   </div>
                 </>
@@ -617,8 +623,8 @@ export default function TeamPage() {
       >
         {permissionUser && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              <strong>{permissionUser.full_name}</strong> の権限を変更します。
+            <p className="text-sm">
+              <strong className="text-gray-500">{permissionUser.full_name}</strong> の権限を変更します。
             </p>
             <div>
               <label className="label">権限</label>
@@ -760,6 +766,7 @@ function InviteMemberModal({
 function formatSyncTime(timestamp: string): string {
   const date = new Date(timestamp);
   return date.toLocaleDateString("ja-JP", {
+    year: 'numeric',
     month: "short",
     day: "numeric",
     hour: "2-digit",

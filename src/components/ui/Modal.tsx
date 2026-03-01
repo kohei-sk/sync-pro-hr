@@ -118,7 +118,7 @@ export function Modal({
             <div>
               <h2
                 id={titleId.current}
-                className="text-xl font-semibold text-gray-900"
+                className="text-xl font-bold"
               >
                 {title}
               </h2>
@@ -200,7 +200,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm text-gray-600">{description}</p>
+      <p className="text-sm">{description}</p>
     </Modal>
   );
 }

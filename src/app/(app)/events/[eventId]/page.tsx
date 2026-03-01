@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,6 +21,7 @@ import {
   Bell,
   Mail,
   MessageSquare,
+  Eye,
 } from "lucide-react";
 import {
   DndContext,
@@ -140,6 +141,14 @@ export default function EventDetailPage() {
     (f) => f.event_id === eventId
   );
 
+  // タブ切替時にスクロール位置をリセット
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({
+      top: 114,
+      left: 0,
+    });
+  }, [activeTab]);
+
   function handleDelete() {
     deleteEventType(eventId);
     toast.success("イベントを削除しました");
@@ -204,7 +213,7 @@ export default function EventDetailPage() {
               target="blank"
               className="btn btn-secondary"
             >
-              <ExternalLink className="h-4 w-4" />
+              <Eye className="h-4 w-4" />
               プレビュー
             </Link>
             <button
@@ -218,22 +227,24 @@ export default function EventDetailPage() {
         </header>
 
         {/* Tabs */}
-        <div className="tab mb-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "tab-item",
-                activeTab === tab.id
-                  ? "tab-item-active"
-                  : ""
-              )}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          ))}
+        <div className="sticky-wrap mb-6">
+          <div className="tab">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "tab-item",
+                  activeTab === tab.id
+                    ? "tab-item-active"
+                    : ""
+                )}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Tab Content */}
@@ -311,7 +322,7 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
     <div className="space-y-5">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">基本設定</h3>
+          <h3 className="text-lg font-bold">基本設定</h3>
           <p className="mt-1 text-sm text-gray-500">
             イベントの基本情報を設定します
           </p>
@@ -427,7 +438,7 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
           <span className="text-sm text-gray-500">/j/</span>
           <input
             type="text"
-            className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0 rounded-lg"
+            className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm focus:ring-0 rounded-lg"
             value={slug}
             onChange={(e) => { setSlug(e.target.value); markDirty(); }}
           />
@@ -586,7 +597,7 @@ function TeamTab({
     <div>
       {/* Mode selector */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">メンバー</h3>
+        <h3 className="text-lg font-bold">メンバー</h3>
         <p className="text-sm text-gray-500 mt-1">スケジューリングモードとメンバーを設定します</p>
         <label className="label mt-6">スケジューリングモード</label>
         <div className="mt-2 grid grid-cols-2 gap-3">
@@ -601,7 +612,7 @@ function TeamTab({
           >
             <Lock className={cn("h-5 w-5", mode === "fixed" ? "text-primary-600" : "text-gray-400")} />
             <div>
-              <h4 className="text-sm font-semibold text-gray-900">固定モード</h4>
+              <h4 className="text-sm font-semibold">固定モード</h4>
               <p className="mt-1 text-xs text-gray-500">
                 指定メンバー全員が空いている枠のみ表示
               </p>
@@ -618,7 +629,7 @@ function TeamTab({
           >
             <Users className={cn("h-5 w-5", mode === "pool" ? "text-primary-600" : "text-gray-400")} />
             <div>
-              <h4 className="text-sm font-semibold text-gray-900">プールモード</h4>
+              <h4 className="text-sm font-semibold">プールモード</h4>
               <p className="mt-1 text-xs text-gray-500">
                 役割ごとに必要人数を満たす枠を自動選出
               </p>
@@ -631,9 +642,9 @@ function TeamTab({
       {mode === "fixed" ? (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">
+            <p className="label">
               メンバー
-              <span className="ml-1.5 text-xs text-gray-400">（上から優先度順）</span>
+              <span className="font-normal ml-1.5 text-xs text-gray-400">（上から優先度順）</span>
             </p>
           </div>
 
@@ -663,7 +674,7 @@ function TeamTab({
                               {index + 1}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium truncate">
                                 {user?.full_name || "Unknown"}
                               </p>
                               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
@@ -750,7 +761,7 @@ function TeamTab({
                             <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-1.5 text-xs font-semibold text-gray-600 shrink-0">
                               {roleIndex + 1}
                             </span>
-                            <span className="font-medium text-gray-900">{role.name}</span>
+                            <span className="font-medium">{role.name}</span>
                             <span className="text-sm text-gray-500">(必要人数: {role.required_count}人)</span>
                           </div>
                           <button
@@ -1128,7 +1139,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">除外ルール</h3>
+          <h3 className="text-lg font-bold">除外ルール</h3>
           <p className="mt-1 text-sm text-gray-500">特定の日時をスケジュール対象外にします</p>
         </div>
       </div>
@@ -1147,7 +1158,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
             ) : (
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{rule.name}</p>
+                  <p className="text-sm font-medium">{rule.name}</p>
                   <p className="mt-0.5 text-sm text-gray-500">
                     {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
                     {rule.recurring && rule.day_of_week !== undefined && (
@@ -1393,7 +1404,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">フォーム項目</h3>
+          <h3 className="text-lg font-bold">フォーム項目</h3>
           <p className="mt-1 text-sm text-gray-500">
             候補者に入力してもらう項目を設定します
           </p>
@@ -1571,7 +1582,7 @@ function ReminderTab({
   return (
     <div>
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">リマインド設定</h3>
+        <h3 className="text-lg font-bold">リマインド設定</h3>
         <p className="mt-1 text-sm text-gray-500">
           候補者へのリマインドメール・SMSを設定します
         </p>
@@ -1584,7 +1595,7 @@ function ReminderTab({
             className="rounded-xl border border-gray-200 p-4 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold">
                 リマインド
               </p>
               <div className="flex items-center gap-2">

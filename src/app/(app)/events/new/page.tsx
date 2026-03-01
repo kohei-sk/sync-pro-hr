@@ -505,7 +505,7 @@ export default function NewEventPage() {
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
+                  i <= currentStepIndex ? "text-[#212529]" : "text-gray-400"
                 )}
               >
                 {s.label}
@@ -730,7 +730,7 @@ export default function NewEventPage() {
                     <span className="text-sm text-gray-500">/j/</span>
                     <input
                       type="text"
-                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0 rounded-lg"
+                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm focus:ring-0 rounded-lg"
                       value={formData.slug}
                       onChange={(e) =>
                         setFormData({ ...formData, slug: e.target.value })
@@ -764,7 +764,7 @@ export default function NewEventPage() {
                     >
                       <Lock className="h-5 w-5 text-gray-600" />
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900">
+                        <h4 className="text-sm font-semibold">
                           固定モード
                         </h4>
                         <p className="mt-1 text-xs text-gray-500">
@@ -785,7 +785,7 @@ export default function NewEventPage() {
                     >
                       <Users className="h-5 w-5 text-gray-600" />
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900">
+                        <h4 className="text-sm font-semibold">
                           プールモード
                         </h4>
                         <p className="mt-1 text-xs text-gray-500">
@@ -1075,7 +1075,7 @@ export default function NewEventPage() {
                         {editingExclusionId === rule.id ? (
                           /* Edit form for this rule */
                           <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-                            <p className="text-sm font-semibold text-gray-900">除外ルールを編集</p>
+                            <p className="text-sm font-semibold">除外ルールを編集</p>
                             <div>
                               <label className="label">ルール名</label>
                               <input
@@ -1158,7 +1158,7 @@ export default function NewEventPage() {
                         ) : (
                           <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{rule.name}</p>
+                              <p className="text-sm font-medium">{rule.name}</p>
                               <p className="mt-0.5 text-xs text-gray-500">
                                 {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
                                 {rule.recurring && rule.day_of_week !== undefined
@@ -1202,7 +1202,7 @@ export default function NewEventPage() {
                 {/* Add form */}
                 {showExclusionForm ? (
                   <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-                    <p className="text-sm font-semibold text-gray-900">新しい除外ルール</p>
+                    <p className="text-sm font-semibold">新しい除外ルール</p>
                     <div>
                       <label className="label">ルール名</label>
                       <input
@@ -1447,7 +1447,7 @@ export default function NewEventPage() {
                 {/* Add field form */}
                 {showFieldForm ? (
                   <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-                    <p className="text-sm font-semibold text-gray-900">新しい項目</p>
+                    <p className="text-sm font-semibold">新しい項目</p>
                     <div className="flex gap-3">
                       <div className="flex-1">
                         <label className="label">ラベル名</label>
@@ -1515,7 +1515,7 @@ export default function NewEventPage() {
                         className="rounded-xl border border-gray-200 p-4 space-y-3"
                       >
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-gray-900">リマインド</p>
+                          <p className="text-sm font-semibold">リマインド</p>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => setReminders(reminders.filter((r) => r.id !== reminder.id))}
@@ -1642,7 +1642,7 @@ export default function NewEventPage() {
                       />
                       {/* タイトル行 */}
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm leading-relaxed">
+                        <span className="font-semibold text-sm leading-relaxed">
                           {formData.title}
                         </span>
                         {formData.isPublic ? (
