@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   User,
   Bell,
@@ -14,6 +14,7 @@ import {
   ImagePlus,
   MessageSquare,
   ExternalLink,
+  Link,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -43,7 +44,7 @@ interface MessagingIntegrationState {
 const tabs: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "profile", label: "プロフィール", icon: User },
   { id: "notifications", label: "通知設定", icon: Bell },
-  { id: "calendar", label: "連携設定", icon: Calendar },
+  { id: "calendar", label: "連携設定", icon: Link },
   { id: "general", label: "一般設定", icon: Globe },
 ];
 
@@ -53,6 +54,14 @@ const tabs: { id: Tab; label: string; icon: typeof User }[] = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
+
+  // タブ切替時にスクロール位置をリセット
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({
+      top: 114,
+      left: 0,
+    });
+  }, [activeTab]);
 
   return (
     <div>
@@ -66,20 +75,22 @@ export default function SettingsPage() {
       </header>
 
       {/* Tabs */}
-      <div className="tab mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "tab-item",
-              activeTab === tab.id ? "tab-item-active" : ""
-            )}
-          >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        ))}
+      <div className="sticky-wrap mb-6">
+        <div className="tab">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "tab-item",
+                activeTab === tab.id ? "tab-item-active" : ""
+              )}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -126,7 +137,7 @@ function ProfileTab() {
   return (
     <div className="flex flex-col gap-6">
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">基本情報</h2>
+        <h2 className="text-md font-semibold mb-4">基本情報</h2>
         <div className="space-y-4">
           {/* Avatar */}
           <div className="flex items-center gap-4">
@@ -210,12 +221,7 @@ function ProfileTab() {
 
       {/* Password Section */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-gray-400" />
-            セキュリティ
-          </div>
-        </h2>
+        <h2 className="text-md font-semibold mb-4">セキュリティ</h2>
         <div className="space-y-4">
           <div>
             <label className="label">現在のパスワード</label>
@@ -445,7 +451,7 @@ function NotificationsTab() {
     <div className="space-y-4">
       {/* メール通知 */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">メール通知</h2>
+        <h2 className="text-md font-semibold mb-4">メール通知</h2>
 
         <div className="space-y-3">
           {emailNotifications.map((n) => (
@@ -454,15 +460,12 @@ function NotificationsTab() {
         </div>
 
         {/* Reminder Time */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-gray-400" />
-            <label className="label !mb-0">リマインダー送信タイミング</label>
-          </div>
+        <div className="mt-4">
+          <label className="label mb-1">送信タイミング</label>
           <select
             value={reminderTime}
             onChange={(e) => setReminderTime(e.target.value)}
-            className="select mt-1 max-w-xs"
+            className="select max-w-xs"
           >
             <option value="15">15分前</option>
             <option value="30">30分前</option>
@@ -475,11 +478,8 @@ function NotificationsTab() {
 
       {/* メッセージ通知 */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-1">
-          <MessageSquare className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-900">メッセージ通知</h2>
-        </div>
-        <p className="text-xs text-gray-500 mb-4">
+        <h2 className="textmdm font-semibold">メッセージ通知</h2>
+        <p className="text-xs text-gray-500 mb-4 mt-1">
           連携設定は「カレンダー連携」タブから設定できます
         </p>
 
@@ -518,7 +518,7 @@ function NotificationToggleRow({
   return (
     <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
       <div>
-        <p className="text-sm font-medium text-gray-900">{label}</p>
+        <p className="text-sm font-medium">{label}</p>
         <p className="text-xs text-gray-500 mt-0.5">{description}</p>
       </div>
       <button
@@ -648,10 +648,10 @@ function CalendarTab() {
     <div className="space-y-4">
       {/* カレンダー連携 */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-1">
+        <h2 className="text-md font-semibold">
           カレンダー連携
         </h2>
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-gray-500 mb-4 mt-1">
           カレンダーを接続して面接官の空き時間を自動取得します
         </p>
 
@@ -674,7 +674,7 @@ function CalendarTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <h3 className="text-sm font-semibold">
                       {integration.name}
                     </h3>
                     {state.connected && (
@@ -724,11 +724,11 @@ function CalendarTab() {
 
       {/* 同期設定 */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">同期設定</h2>
+        <h2 className="text-md font-semibold mb-4">同期設定</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
             <div>
-              <p className="text-sm font-medium text-gray-900">自動同期</p>
+              <p className="text-sm font-medium">自動同期</p>
               <p className="text-xs text-gray-500 mt-0.5">
                 カレンダーの変更を自動的に反映します
               </p>
@@ -858,11 +858,8 @@ function MessagingIntegrationCard() {
   return (
     <>
       <div className="card">
-        <div className="flex items-center gap-2 mb-1">
-          <MessageSquare className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-900">メッセージングツール連携</h2>
-        </div>
-        <p className="text-xs text-gray-500 mb-4">
+        <h2 className="text-md font-semibold">ツール連携</h2>
+        <p className="text-xs text-gray-500 mb-4 mt-1">
           SlackやChatworkに予約通知を送信できます
         </p>
 
@@ -886,7 +883,7 @@ function MessagingIntegrationCard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-gray-900">
+                      <h3 className="text-sm font-semibold">
                         {integration.name}
                       </h3>
                       {state.connected && (
@@ -980,12 +977,7 @@ function GeneralTab() {
     <div className="space-y-4">
       {/* Working Hours */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-400" />
-            営業時間
-          </div>
-        </h2>
+        <h2 className="text-md font-semibold mb-4">営業時間</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">開始時間</label>
@@ -1013,12 +1005,7 @@ function GeneralTab() {
 
       {/* Booking Link */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          <div className="flex items-center gap-2">
-            <Link2 className="h-4 w-4 text-gray-400" />
-            予約リンク設定
-          </div>
-        </h2>
+        <h2 className="text-md font-semibold mb-4">予約リンク設定</h2>
         <div>
           <label className="label">ベースURL</label>
           <input
@@ -1035,12 +1022,7 @@ function GeneralTab() {
 
       {/* Language */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-gray-400" />
-            言語・地域
-          </div>
-        </h2>
+        <h2 className="text-md font-semibold mb-4">言語・地域</h2>
         <div>
           <label className="label">表示言語</label>
           <select

@@ -69,7 +69,7 @@ export default function NewEventPage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
           <CheckCircle2 className="h-8 w-8 text-green-600" />
         </div>
-        <h1 className="mt-6 text-xl font-bold text-gray-900">
+        <h1 className="mt-6 text-xl font-bold">
           イベントを作成しました
         </h1>
         <p className="mt-2 text-sm text-gray-500">
@@ -80,25 +80,25 @@ export default function NewEventPage() {
           <dl className="space-y-2">
             <div className="flex justify-between gap-8">
               <dt className="text-gray-500">イベントタイプ</dt>
-              <dd className="font-medium text-gray-900">
+              <dd className="font-medium">
                 {selectedEventType.title}
               </dd>
             </div>
             <div className="flex justify-between gap-8">
               <dt className="text-gray-500">候補者</dt>
-              <dd className="font-medium text-gray-900">
+              <dd className="font-medium">
                 {formData.candidate_name}
               </dd>
             </div>
             <div className="flex justify-between gap-8">
               <dt className="text-gray-500">メール</dt>
-              <dd className="font-medium text-gray-900">
+              <dd className="font-medium">
                 {formData.candidate_email}
               </dd>
             </div>
             <div className="flex justify-between gap-8">
               <dt className="text-gray-500">日時</dt>
-              <dd className="font-medium text-gray-900">
+              <dd className="font-medium">
                 {formData.date} {formData.time}
               </dd>
             </div>
@@ -140,7 +140,7 @@ export default function NewEventPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold">
             イベント作成
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
@@ -169,7 +169,7 @@ export default function NewEventPage() {
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
+                  i <= currentStepIndex ? "text-[#212529]" : "text-gray-400"
                 )}
               >
                 {s.label}
@@ -192,7 +192,7 @@ export default function NewEventPage() {
         {/* Step 1: Select Event Type */}
         {step === "select" && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-bold">
               イベントタイプを選択
             </h2>
             <p className="mt-1 text-sm text-gray-500">
@@ -202,7 +202,7 @@ export default function NewEventPage() {
             {activeEventTypes.length === 0 ? (
               <div className="mt-6 rounded-2xl border-2 border-dashed border-gray-300 p-8 text-center">
                 <Folder className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="mt-3 text-sm font-medium text-gray-900">
+                <p className="mt-3 text-sm font-medium">
                   公開中のイベントタイプがありません
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
@@ -244,7 +244,7 @@ export default function NewEventPage() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold">
                           {event.title}
                         </h3>
                         {event.description && (
@@ -296,7 +296,7 @@ export default function NewEventPage() {
         {/* Step 2: Candidate Details */}
         {step === "details" && selectedEventType && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">候補者情報</h2>
+            <h2 className="text-lg font-bold">候補者情報</h2>
             <p className="mt-1 text-sm text-gray-500">
               面接・面談の候補者情報と希望日時を入力してください
             </p>
@@ -317,7 +317,7 @@ export default function NewEventPage() {
                 />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium">
                   {selectedEventType.title}
                 </p>
                 <p className="text-xs text-gray-500">
@@ -398,7 +398,7 @@ export default function NewEventPage() {
         {/* Step 3: Confirmation */}
         {step === "confirm" && selectedEventType && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-bold">
               内容を確認
             </h2>
             <p className="mt-1 text-sm text-gray-500">
@@ -409,19 +409,19 @@ export default function NewEventPage() {
                 <dl className="space-y-3">
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">イベントタイプ</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dd className="text-sm font-medium">
                       {selectedEventType.title}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">所要時間</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dd className="text-sm font-medium">
                       {selectedEventType.duration}分
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">場所</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dd className="text-sm font-medium">
                       {locationLabel(selectedEventType.location_type)}
                       {selectedEventType.location_detail &&
                         ` (${selectedEventType.location_detail})`}
@@ -430,19 +430,19 @@ export default function NewEventPage() {
                   <div className="border-t border-gray-200 pt-3" />
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">候補者名</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dd className="text-sm font-medium">
                       {formData.candidate_name || "未入力"}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">メール</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dd className="text-sm font-medium">
                       {formData.candidate_email || "未入力"}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-500">希望日時</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                    <dd className="text-sm font-medium">
                       {formData.date && formData.time
                         ? `${formData.date} ${formData.time}`
                         : "未入力"}

@@ -170,7 +170,7 @@ function ToastCard({
       aria-live="polite"
     >
       <Icon className={cn("h-4 w-4 shrink-0", iconClass)} />
-      <span className="text-sm font-medium text-gray-700 flex-1">
+      <span className="text-sm font-medium flex-1">
         {toast.message}
       </span>
       <button

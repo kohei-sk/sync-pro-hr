@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-[#f8f9fa] text-[#212529] antialiased;
+    @apply bg-[#f8f9fa] text-[#2d3237] antialiased;
     font-feature-settings: "palt";
   }
 }
@@ -54,15 +54,19 @@
   }
 
   .input {
-    @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 transition-shadow h-[42px];
+    @apply block w-full rounded-lg border-0 py-2.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 transition-shadow h-[42px];
+  }
+
+  textarea.input {
+    @apply min-h-[100px];
   }
 
   .select {
-    @apply block w-full rounded-lg border-0 py-2.5 px-3 text-[#212529] shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 bg-white;
+    @apply block w-full rounded-lg border-0 py-2.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 bg-white;
   }
 
   .label {
-    @apply block text-sm font-medium leading-6 text-[#212529];
+    @apply block text-xs font-semibold leading-6 text-gray-600;
   }
 
   .badge {
@@ -101,6 +105,10 @@
     @apply flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors;
   }
 
+  .bg-hilight {
+    @apply bg-[#f4f9ff];
+  }
+
   /* 設定確認画面などのセクションラベル */
   .section-label {
     @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4;
@@ -128,7 +136,7 @@
   }
 
   .header-title {
-    @apply text-2xl font-bold text-gray-900;
+    @apply text-2xl font-bold;
   }
 
   .header-sub-title {
@@ -137,6 +145,10 @@
 
   .header-back-btn {
     @apply flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600;
+  }
+
+  .sticky-wrap {
+    @apply sticky -top-8 -mx-8 px-8 backdrop-blur-[18px] z-30;
   }
 
   .tab {
@@ -341,7 +353,7 @@
   }
 
   .dropdown-item {
-    @apply flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
+    @apply flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
   }
 
   .dropdown-item-danger {

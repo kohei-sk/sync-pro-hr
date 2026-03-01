@@ -21,6 +21,7 @@ import {
   Bell,
   Mail,
   MessageSquare,
+  Clock,
 } from "lucide-react";
 import {
   DndContext,
@@ -44,6 +45,7 @@ import { cn, generateId } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/lib/mock-data";
+import type { ExclusionRule, CustomField } from "@/types";
 
 type Step = "basic" | "options" | "confirm";
 
@@ -95,6 +97,22 @@ type NewReminder = {
   timing_unit: ReminderUnit;
   message: string;
   is_enabled: boolean;
+};
+
+const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
+
+const EXCLUSION_TYPE_LABELS: Record<ExclusionRule["type"], string> = {
+  "all-day": "終日",
+  "time-range": "時間帯",
+};
+
+const FIELD_TYPE_LABELS: Record<CustomField["type"], string> = {
+  text: "テキスト",
+  email: "メール",
+  tel: "電話番号",
+  multiline: "複数行テキスト",
+  url: "URL",
+  file: "ファイル",
 };
 
 // --- Shared Sortable Row component ---
@@ -487,7 +505,7 @@ export default function NewEventPage() {
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  i <= currentStepIndex ? "text-gray-900" : "text-gray-400"
+                  i <= currentStepIndex ? "text-[#212529]" : "text-gray-400"
                 )}
               >
                 {s.label}
@@ -531,21 +549,6 @@ export default function NewEventPage() {
                     }}
                     placeholder="例: エンジニア一次面接"
                   />
-                </div>
-                <div>
-                  <label className="label">URL スラグ</label>
-                  <div className="mt-1 flex items-center rounded-2xl bg-gray-50 ring-1 ring-gray-300">
-                    <span className="pl-4 text-sm text-gray-500">/j/</span>
-                    <input
-                      type="text"
-                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm text-gray-900 focus:ring-0"
-                      value={formData.slug}
-                      onChange={(e) =>
-                        setFormData({ ...formData, slug: e.target.value })
-                      }
-                      placeholder="engineer-first"
-                    />
-                  </div>
                 </div>
                 <div>
                   <label className="label">説明</label>
@@ -721,6 +724,21 @@ export default function NewEventPage() {
                     </button>
                   </div>
                 </div>
+                <div>
+                  <label className="label">URL スラグ</label>
+                  <div className="input pr-0 mt-1 flex items-center">
+                    <span className="text-sm text-gray-500">/j/</span>
+                    <input
+                      type="text"
+                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm focus:ring-0 rounded-lg"
+                      value={formData.slug}
+                      onChange={(e) =>
+                        setFormData({ ...formData, slug: e.target.value })
+                      }
+                      placeholder="engineer-first"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <div className="card">
@@ -746,7 +764,7 @@ export default function NewEventPage() {
                     >
                       <Lock className="h-5 w-5 text-gray-600" />
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900">
+                        <h4 className="text-sm font-semibold">
                           固定モード
                         </h4>
                         <p className="mt-1 text-xs text-gray-500">
@@ -767,7 +785,7 @@ export default function NewEventPage() {
                     >
                       <Users className="h-5 w-5 text-gray-600" />
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900">
+                        <h4 className="text-sm font-semibold">
                           プールモード
                         </h4>
                         <p className="mt-1 text-xs text-gray-500">
@@ -1056,8 +1074,8 @@ export default function NewEventPage() {
                       <div key={rule.id}>
                         {editingExclusionId === rule.id ? (
                           /* Edit form for this rule */
-                          <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
-                            <p className="text-sm font-semibold text-gray-900">除外ルールを編集</p>
+                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                            <p className="text-sm font-semibold">除外ルールを編集</p>
                             <div>
                               <label className="label">ルール名</label>
                               <input
@@ -1133,14 +1151,14 @@ export default function NewEventPage() {
                               )}
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
-                              <button onClick={() => setEditingExclusionId(null)} className="btn btn-secondary">キャンセル</button>
+                              <button onClick={() => setEditingExclusionId(null)} className="btn btn-ghost">キャンセル</button>
                               <button onClick={() => saveEditExclusionRule(rule.id)} disabled={!editExclusionDraft.name.trim()} className="btn btn-primary">保存</button>
                             </div>
                           </div>
                         ) : (
                           <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{rule.name}</p>
+                              <p className="text-sm font-medium">{rule.name}</p>
                               <p className="mt-0.5 text-xs text-gray-500">
                                 {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
                                 {rule.recurring && rule.day_of_week !== undefined
@@ -1183,8 +1201,8 @@ export default function NewEventPage() {
 
                 {/* Add form */}
                 {showExclusionForm ? (
-                  <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 space-y-3">
-                    <p className="text-sm font-semibold text-gray-900">新しい除外ルール</p>
+                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                    <p className="text-sm font-semibold">新しい除外ルール</p>
                     <div>
                       <label className="label">ルール名</label>
                       <input
@@ -1225,7 +1243,7 @@ export default function NewEventPage() {
                               : ""
                           )}
                         >
-                          <span>{exclusionDraft.recurring ? "繰り返し" : "1回限り"}</span>
+                          <span>繰り返す</span>
                           <div className={cn(
                             "toggle-btn-switch",
                             exclusionDraft.recurring ? "toggle-btn-switch-active" : ""
@@ -1303,7 +1321,7 @@ export default function NewEventPage() {
                     <div className="flex justify-end gap-2 pt-1">
                       <button
                         onClick={() => setShowExclusionForm(false)}
-                        className="btn btn-secondary"
+                        className="btn btn-ghost"
                       >
                         キャンセル
                       </button>
@@ -1358,13 +1376,13 @@ export default function NewEventPage() {
                 </div>
 
                 {/* Custom fields */}
-                {formFields.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="label">カスタム項目</p>
-                    {formFields.map((field) => (
+                <div className="space-y-2">
+                  <p className="label">カスタム項目</p>
+                  {formFields.length > 0 && (
+                    formFields.map((field) => (
                       <div key={field.id}>
                         {editingFieldId === field.id ? (
-                          <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
+                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="label">ラベル名</label>
@@ -1398,7 +1416,7 @@ export default function NewEventPage() {
                               </button>
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
-                              <button onClick={() => setEditingFieldId(null)} className="btn btn-secondary">キャンセル</button>
+                              <button onClick={() => setEditingFieldId(null)} className="btn btn-ghost">キャンセル</button>
                               <button onClick={() => saveEditFormField(field.id)} disabled={!editFieldDraft.label.trim()} className="btn btn-primary">保存</button>
                             </div>
                           </div>
@@ -1422,20 +1440,20 @@ export default function NewEventPage() {
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
 
                 {/* Add field form */}
                 {showFieldForm ? (
-                  <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 space-y-3">
-                    <p className="text-sm font-semibold text-gray-900">新しい項目</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
+                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                    <p className="text-sm font-semibold">新しい項目</p>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
                         <label className="label">ラベル名</label>
                         <input type="text" className="input mt-1" value={fieldDraft.label} onChange={(e) => setFieldDraft({ ...fieldDraft, label: e.target.value })} placeholder="例: 希望年収" />
                       </div>
-                      <div>
+                      <div className="w-[220px]">
                         <label className="label">必須項目</label>
                         <button
                           onClick={() => setFieldDraft({ ...fieldDraft, is_required: !fieldDraft.is_required })}
@@ -1465,7 +1483,7 @@ export default function NewEventPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-1">
-                      <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-secondary">キャンセル</button>
+                      <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-ghost">キャンセル</button>
                       <button onClick={addFormField} disabled={!fieldDraft.label.trim()} className="btn btn-primary">追加</button>
                     </div>
                   </div>
@@ -1497,20 +1515,7 @@ export default function NewEventPage() {
                         className="rounded-xl border border-gray-200 p-4 space-y-3"
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {reminder.channel === "email" ? (
-                              <Mail className="h-4 w-4 text-primary-500" />
-                            ) : reminder.channel === "sms" ? (
-                              <MessageSquare className="h-4 w-4 text-primary-500" />
-                            ) : (
-                              <Bell className="h-4 w-4 text-primary-500" />
-                            )}
-                            <span className="text-sm font-medium text-gray-700">
-                              {{ email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel]}
-                              &nbsp;/&nbsp;
-                              {reminder.timing_value}{reminder.timing_unit === "hours" ? "時間" : "日"}前
-                            </span>
-                          </div>
+                          <p className="text-sm font-semibold">リマインド</p>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => setReminders(reminders.filter((r) => r.id !== reminder.id))}
@@ -1571,7 +1576,7 @@ export default function NewEventPage() {
                         <div>
                           <label className="label">メッセージ内容</label>
                           <textarea
-                            className="input mt-1 min-h-[80px] resize-y"
+                            className="input mt-1 resize-y"
                             placeholder="候補者に送るメッセージを入力してください。&#10;{{date}}、{{location}} でスロット情報を挿入できます。"
                             value={reminder.message}
                             onChange={(e) =>
@@ -1623,221 +1628,242 @@ export default function NewEventPage() {
             <p className="mt-1 text-sm text-gray-500">
               以下の内容でイベントを作成します
             </p>
-            <div className="mt-6 space-y-3">
+            <div className="mt-6 space-y-4">
 
-              {/* 基本設定 */}
+              {/* ボディーヘッダー */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="section-label">基本設定</p>
-                <dl className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">イベント名</dt>
-                    <dd className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                <div className="flex flex-1 items-center gap-4">
+                  <div className="flex flex-col">
+                    <div className="flex gap-2 items-center">
+                      {/* カラー */}
                       <div
-                        className="h-3 w-3 rounded-full shrink-0"
-                        style={{ backgroundColor: formData.color }}
+                        className="h-2 w-2 min-w-2 rounded-full"
+                        style={{ backgroundColor: formData.color || "#0071c1" }}
                       />
-                      {formData.title || "未入力"}
-                    </dd>
+                      {/* タイトル行 */}
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm leading-relaxed">
+                          {formData.title}
+                        </span>
+                        {formData.isPublic ? (
+                          <span className="badge badge-green">公開</span>
+                        ) : (
+                          <span className="badge badge-gray">非公開（下書き）</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 説明 */}
+                    {formData.description && (
+                      <p className="mt-1 text-sm text-gray-500 leading-relaxed">
+                        {formData.description}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">URL</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      /j/{formData.slug || "—"}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">公開設定</dt>
-                    <dd className="flex items-center gap-1.5 text-sm font-medium">
-                      {formData.isPublic ? (
-                        <>
-                          <Globe className="h-3.5 w-3.5 text-green-600" />
-                          <span className="text-green-700">公開</span>
-                        </>
-                      ) : (
-                        <>
-                          <EyeOff className="h-3.5 w-3.5 text-gray-500" />
-                          <span className="text-gray-600">非公開（下書き）</span>
-                        </>
-                      )}
-                    </dd>
-                  </div>
-                </dl>
+                </div>
               </div>
 
-              {/* 日程・場所 */}
+              {/* 時間・場所 */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="section-label">日程・場所</p>
-                <dl className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">所要時間</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                <div className="space-y-2">
+                  <dl className="flex items-center gap-2.5 text-sm">
+                    <dt><Clock className="h-4 w-4 shrink-0 text-gray-400" /></dt>
+                    <dd>
                       {formData.duration}分
+                      {(formData.buffer_before > 0 || formData.buffer_after > 0) && (
+                        <span className="text-xs text-gray-400 pl-2">
+                          （前 {formData.buffer_before}分 / 後 {formData.buffer_after}分）
+                        </span>
+                      )}
                     </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">バッファ</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      前{formData.buffer_before}分 / 後{formData.buffer_after}分
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">場所</dt>
-                    <dd className="text-sm font-medium text-gray-900">
+                  </dl>
+                  <dl className="flex items-center gap-2.5 text-sm">
+                    <dt>
+                      {formData.location_type === "online" ? (
+                        <Video className="h-45 w-4 text-gray-400" />
+                      ) : formData.location_type === "phone" ? (
+                        <Phone className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                      )}
+                    </dt>
+                    <dd>
                       {formData.location_type === "online"
                         ? "オンライン"
                         : formData.location_type === "in-person"
                           ? "対面"
                           : "電話"}
-                      {formData.location_detail &&
-                        ` (${formData.location_detail})`}
+                      {formData.location_detail && (
+                        <span className="text-xs text-gray-400 pl-2">
+                          {formData.location_detail}
+                        </span>
+                      )}
                     </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">スケジューリング</dt>
-                    <dd className="text-sm font-medium text-gray-900">
-                      {formData.scheduling_mode === "fixed"
-                        ? "固定モード"
-                        : "プールモード"}
-                    </dd>
-                  </div>
-                </dl>
+                  </dl>
+                </div>
               </div>
 
-              {/* チーム構成 */}
+              {/* メンバー */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="section-label">チーム構成</p>
+                <h3 className="section-label">
+                  メンバー
+                  <span className="section-sub-label">（{formData.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}）</span>
+                </h3>
                 {formData.scheduling_mode === "fixed" ? (
                   fixedMemberIds.length > 0 ? (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-medium text-gray-900">メンバー</span>
-                        <span className="ml-2 text-xs text-gray-500">{fixedMemberIds.length}人</span>
-                      </div>
-                      <div className="flex -space-x-1">
-                        {fixedMemberIds.slice(0, 4).map((userId) => {
-                          const user = mockUsers.find((u) => u.id === userId);
-                          return (
-                            <div
-                              key={userId}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 ring-2 ring-white"
-                              title={user?.full_name}
-                            >
-                              {user?.full_name.charAt(0) || "?"}
+                    <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
+                      {fixedMemberIds.slice(0, 4).map((userId) => {
+                        const user = mockUsers.find((u) => u.id === userId);
+                        return (
+                          <li
+                            key={userId}
+                            className="flex flex-wrap items-center gap-2"
+                            title={user?.full_name}
+                          >
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                              {user?.full_name.charAt(0) ?? "?"}
                             </div>
-                          );
-                        })}
-                        {fixedMemberIds.length > 4 && (
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 ring-2 ring-white">
-                            +{fixedMemberIds.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                            <span className="text-sm whitespace-nowrap">
+                              {user?.full_name ?? "Unknown"}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   ) : (
-                    <p className="text-sm text-gray-400">メンバー未設定</p>
+                    <p className="text-sm text-gray-300">メンバー未設定</p>
                   )
                 ) : roles.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {roles.map((role) => (
                       <div
                         key={role.id}
-                        className="flex items-center justify-between"
                       >
-                        <div>
-                          <span className="text-sm font-medium text-gray-900">
-                            {role.name || "（未入力）"}
-                          </span>
-                          <span className="ml-2 text-xs text-gray-500">
-                            必要人数: {role.required_count}人
+                        <div className="text-xs font-semibold text-gray-600 mb-2">
+                          {role.name || "未入力"}
+                          <span className="ml-1 font-normal text-gray-400">
+                            （{role.required_count}人）
                           </span>
                         </div>
-                        <div className="flex -space-x-1">
+                        <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                           {role.memberIds.slice(0, 4).map((userId) => {
                             const user = mockUsers.find((u) => u.id === userId);
                             return (
-                              <div
+                              <li
                                 key={userId}
-                                className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 ring-2 ring-white"
+                                className="flex flex-wrap items-center gap-2"
                                 title={user?.full_name}
                               >
-                                {user?.full_name.charAt(0) || "?"}
-                              </div>
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                  {user?.full_name.charAt(0) ?? "?"}
+                                </div>
+                                <span className="text-sm whitespace-nowrap">
+                                  {user?.full_name ?? "Unknown"}
+                                </span>
+                              </li>
                             );
                           })}
-                          {role.memberIds.length > 4 && (
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 ring-2 ring-white">
-                              +{role.memberIds.length - 4}
-                            </div>
-                          )}
                           {role.memberIds.length === 0 && (
-                            <span className="text-xs text-gray-400">
-                              メンバーなし
-                            </span>
+                            <p className="text-sm text-gray-300">メンバー未設定</p>
                           )}
-                        </div>
+                        </ul>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">役割未設定</p>
+                  <p className="text-sm text-gray-300 pl-3">役割未設定</p>
                 )}
               </div>
 
-              {/* フォーム */}
+              {/* フォーム項目 */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="section-label">フォーム項目</p>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                    <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                    <span>デフォルト3件（お名前・メールアドレス・電話番号）</span>
+                <h3 className="section-label">フォーム項目</h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
+                      デフォルト項目
+                    </p>
+                    <p className="text-sm">
+                      お名前・メールアドレス・電話番号
+                    </p>
                   </div>
-                  {formFields.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                      <span>カスタム{formFields.length}件</span>
-                    </div>
-                  )}
+                  <div className="flex items-start gap-4">
+                    <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
+                      カスタム項目
+                    </p>
+                    {formFields.length > 0 ? (
+                      <ul className="space-y-2">
+                        {formFields.map((field) => (
+                          <li
+                            key={field.id}
+                            className="text-sm"
+                          >
+                            <p className="flex items-center gap-1">
+                              {field.label}
+                              {field.is_required && ("（必須）")}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {FIELD_TYPE_LABELS[field.type]}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-300">カスタム項目未設定</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* 除外ルール */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="section-label">除外ルール</p>
-                <p className="text-sm text-gray-700">
-                  {newExclusionRules.length > 0
-                    ? `${newExclusionRules.length}件設定`
-                    : "なし"}
-                </p>
+                <h3 className="section-label">除外ルール</h3>
+                {newExclusionRules.length === 0 ? (
+                  <p className="text-sm text-gray-300">除外ルール未設定</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {newExclusionRules.map((rule) => (
+                      <li
+                        key={rule.id}
+                        className="text-sm"
+                      >
+                        <p>{rule.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {EXCLUSION_TYPE_LABELS[rule.type]}
+                          {rule.day_of_week !== undefined &&
+                            `　${DAY_NAMES[rule.day_of_week]}曜日`}
+                          {rule.start_time &&
+                            rule.end_time &&
+                            `　${rule.start_time} – ${rule.end_time}`}
+                          {rule.recurring && "　（繰り返し）"}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* リマインド */}
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="section-label">リマインド</p>
+                <h3 className="section-label">リマインド</h3>
                 {reminders.length > 0 ? (
-                  <div className="space-y-1.5">
+                  <ul className="space-y-2">
                     {reminders.map((r) => (
-                      <div key={r.id} className="flex items-center gap-1.5 text-sm text-gray-700">
-                        {r.channel === "email" ? (
-                          <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                        ) : r.channel === "sms" ? (
-                          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                        ) : (
-                          <Bell className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                        )}
-                        <span>
+                      <li key={r.id}>
+                        <div className="text-sm flex items-center">
                           {{ email: "メール", sms: "SMS", both: "メール + SMS" }[r.channel]}
-                          &nbsp;/&nbsp;
-                          {r.timing_value}{r.timing_unit === "hours" ? "時間" : "日"}前
-                          {!r.is_enabled && <span className="ml-1 text-gray-400">（無効）</span>}
-                        </span>
-                      </div>
+                          <p className="text-xs ml-2">
+                            （{r.timing_value}{r.timing_unit === "hours" ? "時間" : "日"}前）
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{r.message}</p>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 ) : (
-                  <p className="text-sm text-gray-700">なし</p>
+                  <p className="text-sm text-gray-300">リマインド未設定</p>
                 )}
               </div>
-
             </div>
           </div>
         )}

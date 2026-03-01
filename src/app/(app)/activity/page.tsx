@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarCheck,
@@ -82,6 +82,14 @@ export default function NotificationsPage() {
   const displayedNotifications = (activeTab === "unread" ? unreadNotifications : readNotifications)
     .filter((n) => filterType === "all" || n.type === filterType);
 
+  // タブ切替時にスクロール位置をリセット
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({
+      top: 114,
+      left: 0,
+    });
+  }, [activeTab]);
+
   function handleNotificationClick(notificationId: string, bookingId: string) {
     markAsRead(notificationId);
     router.push(`/bookings/${bookingId}`);
@@ -100,65 +108,67 @@ export default function NotificationsPage() {
       </header>
 
       {/* Tabs: 未読 / 既読 */}
-      <div className="tab mb-6">
-        {(["unread", "read"] as NotificationTab[]).map((tab) => {
-          const count =
-            tab === "unread"
-              ? unreadNotifications.length
-              : readNotifications.length;
-          const label = tab === "unread" ? "未読" : "既読";
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "tab-item",
-                activeTab === tab
-                  ? "tab-item-active"
-                  : ""
-              )}
-            >
-              {label}
-              <span
+      <div className="sticky-wrap mb-6">
+        <div className="tab">
+          {(["unread", "read"] as NotificationTab[]).map((tab) => {
+            const count =
+              tab === "unread"
+                ? unreadNotifications.length
+                : readNotifications.length;
+            const label = tab === "unread" ? "未読" : "既読";
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
                 className={cn(
-                  "tab-badge",
+                  "tab-item",
                   activeTab === tab
-                    ? "tab-bade-active"
+                    ? "tab-item-active"
                     : ""
                 )}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+                {label}
+                <span
+                  className={cn(
+                    "tab-badge",
+                    activeTab === tab
+                      ? "tab-bade-active"
+                      : ""
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
 
-        <div className="flex items-center gap-3 ml-auto">
-          {/* All Read Btn */}
-          {activeTab === "unread" && unreadNotifications.length > 0 && (
-            <button
-              onClick={() => { markAllAsRead(); toast.success("すべて既読にしました"); }}
-              className="btn btn-ghost btn-size-s ml-auto"
-            >
-              <CheckCheck className="h-3.5 w-3.5" />
-              すべて既読にする
-            </button>
-          )}
+          <div className="flex items-center gap-3 ml-auto">
+            {/* All Read Btn */}
+            {activeTab === "unread" && unreadNotifications.length > 0 && (
+              <button
+                onClick={() => { markAllAsRead(); toast.success("すべて既読にしました"); }}
+                className="btn btn-ghost btn-size-s ml-auto"
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                すべて既読にする
+              </button>
+            )}
 
-          {/* Filter */}
-          <div className="relative">
-            <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as "all" | NotificationType)}
-              className="select appearance-none pl-8 pr-8 !py-1 min-w-[160px] text-xs h-[32px]"
-            >
-              <option value="all">すべての通知</option>
-              <option value="booking_received">予約受付</option>
-              <option value="booking_cancelled">予約キャンセル</option>
-              <option value="booking_changed">予約変更</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+            {/* Filter */}
+            <div className="relative">
+              <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as "all" | NotificationType)}
+                className="select appearance-none pl-8 pr-8 !py-1 min-w-[160px] text-xs h-[32px]"
+              >
+                <option value="all">すべての通知</option>
+                <option value="booking_received">予約受付</option>
+                <option value="booking_cancelled">予約キャンセル</option>
+                <option value="booking_changed">予約変更</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
         </div>
       </div>
@@ -210,9 +220,6 @@ export default function NotificationsPage() {
                   {/* Content */}
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center justify-between gap-3">
-                      {/* <span className={cn("badge", cfg.badgeClass)}>
-                        {cfg.label}
-                      </span> */}
                       <span className="shrink-0 text-xs text-gray-400">
                         {getRelativeTime(notification.timestamp)}
                       </span>
@@ -220,14 +227,14 @@ export default function NotificationsPage() {
                     <p
                       className={cn(
                         "text-sm leading-relaxed",
-                        read ? "text-gray-500" : "font-medium text-gray-800"
+                        read ? "text-gray-500" : "font-semibold"
                       )}
                     >
                       {notification.candidate_name}
                       <span
                         className={cn(
                           "ml-1",
-                          read ? "text-gray-400" : "font-normal text-gray-600"
+                          read ? "text-gray-400" : "font-normal text-gray-500"
                         )}
                       >
                         ・{notification.event_title}

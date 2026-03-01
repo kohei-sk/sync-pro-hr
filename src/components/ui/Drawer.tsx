@@ -105,7 +105,7 @@ export function Drawer({
           <div className="drawer-header">
             <h2
               id={titleId.current}
-              className="text-xl font-semibold text-gray-900"
+              className="text-xl font-bold"
             >
               {title}
             </h2>

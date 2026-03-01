@@ -11,13 +11,14 @@ import {
   Settings,
   LogOut,
   Menu,
+  LayoutList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/lib/notification-store";
 
 const baseNavigation = [
   { name: "イベント", href: "/events", icon: CalendarPlus },
-  { name: "予約一覧", href: "/bookings", icon: Calendar },
+  { name: "予約一覧", href: "/bookings", icon: LayoutList },
   { name: "通知", href: "/activity", icon: Bell, showBadge: true },
   { name: "チームメンバー", href: "/team", icon: Users },
   { name: "設定", href: "/settings", icon: Settings },
@@ -60,7 +61,7 @@ export function Sidebar() {
         </div>
         <span
           className={cn(
-            "flex-1 text-base font-bold text-gray-900 whitespace-nowrap",
+            "flex-1 text-base font-bold whitespace-nowrap",
             isCollapsed && "hidden"
           )}
         >
@@ -91,7 +92,7 @@ export function Sidebar() {
                 "relative flex items-center rounded-lg px-[12px] py-2.5 text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary-50 text-primary-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  : "text-gray-600 hover:bg-gray-50 hover:text-[#212529]",
                 isExpanded ? "gap-3.5" : "gap-0"
               )}
             >
@@ -134,7 +135,7 @@ export function Sidebar() {
               isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
             )}
           >
-            <p className="truncate text-sm font-medium text-gray-900">
+            <p className="truncate text-sm font-medium">
               田中 太郎
             </p>
             <p className="truncate text-xs text-gray-500">
