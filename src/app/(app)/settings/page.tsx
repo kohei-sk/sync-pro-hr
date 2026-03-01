@@ -55,8 +55,11 @@ const tabs: { id: Tab; label: string; icon: typeof User }[] = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
 
-  // タブ切替時にスクロール位置をリセット
+  // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
+  const prevTabRef = useRef(activeTab);
   useEffect(() => {
+    if (prevTabRef.current === activeTab) return;
+    prevTabRef.current = activeTab;
     document.querySelector('main')?.scrollTo({
       top: 114,
       left: 0,
