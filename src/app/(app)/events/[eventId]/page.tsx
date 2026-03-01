@@ -1584,20 +1584,9 @@ function ReminderTab({
             className="rounded-xl border border-gray-200 p-4 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {reminder.channel === "email" ? (
-                  <Mail className="h-4 w-4 text-primary-500" />
-                ) : reminder.channel === "sms" ? (
-                  <MessageSquare className="h-4 w-4 text-primary-500" />
-                ) : (
-                  <Bell className="h-4 w-4 text-primary-500" />
-                )}
-                <span className="text-sm font-medium text-gray-700">
-                  {{ email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel]}
-                  &nbsp;/&nbsp;
-                  {reminder.timing.value}{reminder.timing.unit === "hours" ? "時間" : "日"}前
-                </span>
-              </div>
+              <p className="text-sm font-semibold text-gray-900">
+                リマインド
+              </p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => removeReminder(reminder.id)}

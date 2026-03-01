@@ -208,7 +208,7 @@ export default function TeamPage() {
       </header>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-3">
         <div className="rounded-xl p-6 flex items-center gap-5 bg-green-100/60">
           <CheckCircle2 className="h-5.5 w-5.5 text-green-600" />
           <div>
@@ -239,37 +239,37 @@ export default function TeamPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
+      <div className="sticky-wrap py-3 mb-1">
+        <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="名前またはメールで検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input pl-9"
+            />
+          </div>
 
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="名前またはメールで検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-9"
-          />
+          {/* Filter */}
+          <div className="relative">
+            <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+              className="select appearance-none pl-9 pr-8 !py-1 min-w-[180px] h-[42px]"
+            >
+              <option value="all">すべての状態</option>
+              <option value="connected">接続済</option>
+              <option value="error">エラー</option>
+              <option value="invited">招待中</option>
+              <option value="not_connected">未接続</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          </div>
         </div>
-
-        {/* Filter */}
-        <div className="relative">
-          <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="select appearance-none pl-9 pr-8 !py-1 min-w-[180px] h-[42px]"
-          >
-            <option value="all">すべての状態</option>
-            <option value="connected">接続済</option>
-            <option value="error">エラー</option>
-            <option value="invited">招待中</option>
-            <option value="not_connected">未接続</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        </div>
-
       </div>
 
       {/* Member List */}

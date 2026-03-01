@@ -127,11 +127,11 @@ export default function BookingDetailPage() {
   return (
     <div className="bg-white">
       {/* Header card */}
-      <div className="p-6 border-b-[1px] border-gray-100">
+      <div className="px-6 py-5 border-b-[1px] border-gray-100">
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold text-gray-900">
+            <div className="inline-flex items-center gap-2">
+              <h1 className="font-bold text-base leading-relaxed">
                 {booking.candidate_name}
               </h1>
               <span className={statusInfo.className}>
@@ -145,10 +145,10 @@ export default function BookingDetailPage() {
                 className="h-2 w-2 rounded-full"
                 style={{ backgroundColor: event?.color || "#0071c1" }}
               />
-              <p className="text-sm text-gray-500">{event?.title}</p>
+              <p className="text-sm text-gray-500 leading-relaxed">{event?.title}</p>
             </div>
             {event?.description && (
-              <p className="mt-1.5 text-xs text-gray-400">{event.description}</p>
+              <p className="mt-1 text-xs text-gray-400 leading-relaxed">{event.description}</p>
             )}
           </div>
         </div>
@@ -169,20 +169,22 @@ export default function BookingDetailPage() {
       )}
 
       {/* Details card */}
-      <div className="p-6 divide-y divide-gray-100">
+      <div className="px-6 py-5 divide-y divide-gray-100">
         {/* Date/Time */}
         <section className="py-4 first:pt-0 last:pb-0">
           <div className="space-y-2">
-            <div className="flex items-center gap-2.5 text-sm text-gray-800">
+            <div className="flex items-center gap-2.5 text-sm">
               <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
               <span>{formatDate(booking.start_time)}</span>
             </div>
-            <div className="flex items-center gap-2.5 text-sm text-gray-800">
+            <div className="flex items-center gap-2.5 text-sm">
               <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-              <span>{formatTime(booking.start_time, booking.end_time)}</span>
-              <span className="text-gray-400">
-                ({formatDuration(booking.start_time, booking.end_time)})
-              </span>
+              <div>
+                <span>{formatTime(booking.start_time, booking.end_time)}</span>
+                <span className="text-xs text-gray-400 pl-2">
+                  ({formatDuration(booking.start_time, booking.end_time)})
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -190,7 +192,7 @@ export default function BookingDetailPage() {
         {/* Contact */}
         <section className="py-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2.5 text-sm text-gray-800">
+            <div className="flex items-center gap-2.5 text-sm">
               <Mail className="h-4 w-4 shrink-0 text-gray-400" />
               <a
                 href={`mailto:${booking.candidate_email}`}
@@ -200,7 +202,7 @@ export default function BookingDetailPage() {
               </a>
             </div>
             {booking.candidate_phone && (
-              <div className="flex items-center gap-2.5 text-sm text-gray-800">
+              <div className="flex items-center gap-2.5 text-sm">
                 <Phone className="h-4 w-4 shrink-0 text-gray-400" />
                 <a
                   href={`tel:${booking.candidate_phone}`}
@@ -226,10 +228,10 @@ export default function BookingDetailPage() {
                   href={booking.meeting_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
                 >
-                  <ExternalLink className="h-3 w-3" />
                   ミーティングリンクを開く
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </div>
@@ -238,25 +240,25 @@ export default function BookingDetailPage() {
 
         {/* Assigned Members */}
         <section className="py-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
-            面接官
+          <h2 className="section-label">
+            メンバー
           </h2>
           {booking.assigned_members && booking.assigned_members.length > 0 ? (
-            <div className="space-y-2.5">
+            <div className="inline-flex flex-wrap gap-x-4 gap-y-2">
               {booking.assigned_members.map((am) => {
                 const user = getUserById(am.user_id);
                 const role = mockRoles.find((r) => r.id === am.role_id);
                 return (
-                  <div key={am.user_id} className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                  <div key={am.user_id} className="flex flex-wrap items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
                       {user?.full_name?.charAt(0) || "?"}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-800">
+                      <p className="text-sm whitespace-nowrap">
                         {user?.full_name || "不明"}
                       </p>
                       {role && (
-                        <p className="text-xs text-gray-400">{role.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{role.name}</p>
                       )}
                     </div>
                   </div>
@@ -274,41 +276,32 @@ export default function BookingDetailPage() {
         {/* Reminders */}
         {booking.reminders && booking.reminders.length > 0 && (
           <section className="py-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
-              <Bell className="h-3.5 w-3.5" />
+            <h2 className="section-label">
               リマインド
             </h2>
             <div className="space-y-2">
               {booking.reminders.map((reminder, idx) => {
                 const isSent = reminder.status === "sent";
                 const isPending = reminder.status === "pending";
-                const channelIcon =
-                  reminder.channel === "email" ? (
-                    <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                  ) : reminder.channel === "sms" ? (
-                    <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                  ) : (
-                    <Bell className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                  );
                 const channelLabel =
                   { email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel];
                 const scheduledDate = new Date(reminder.scheduled_at).toLocaleString("ja-JP", {
+                  year: 'numeric',
                   month: "short",
                   day: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
                 });
                 return (
-                  <div key={idx} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      {channelIcon}
+                  <div key={idx} className="flex items-center text-sm">
+                    <div className="flex items-center gap-2">
                       <span>{channelLabel}</span>
                       <span className="text-gray-400">/</span>
-                      <span className="text-xs text-gray-500">{scheduledDate}</span>
+                      <span className="text-xs text-gray-400">{scheduledDate}</span>
                     </div>
                     <span
                       className={cn(
-                        "badge",
+                        "badge ml-3",
                         isSent
                           ? "badge-green"
                           : isPending
@@ -316,7 +309,7 @@ export default function BookingDetailPage() {
                             : "badge-gray"
                       )}
                     >
-                      {isSent ? "送信済み" : isPending ? "設定済み" : "スキップ"}
+                      {isSent ? "送信済み" : isPending ? "送信予定" : "送信失敗"}
                     </span>
                   </div>
                 );
@@ -328,11 +321,10 @@ export default function BookingDetailPage() {
         {/* Form Answers */}
         {eventCustomFields.length > 0 && booking.custom_field_values && (
           <section className="py-4 last:pb-0">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5" />
+            <h2 className="section-label">
               フォームの回答
             </h2>
-            <dl className="space-y-3">
+            <dl className="space-y-2">
               {eventCustomFields.map((field) => {
                 const value = booking.custom_field_values?.[field.id];
                 if (!value) return null;
@@ -345,7 +337,7 @@ export default function BookingDetailPage() {
                           {value}
                         </a>
                       ) : field.type === "multiline" ? (
-                        <p className="whitespace-pre-wrap">{value}</p>
+                        <p className="whitespace-pre-wrap leading-relaxed">{value}</p>
                       ) : (
                         value
                       )}
@@ -360,13 +352,13 @@ export default function BookingDetailPage() {
 
       {/* Actions */}
       {currentStatus !== "cancelled" && (
-        <div className="p-4 flex gap-2 border-t-[1px] border-gray-100 sticky bg-white bottom-0">
-          <button className="btn btn-ghost" onClick={() => setRescheduleOpen(true)}>
-            <MapPin className="h-4 w-4" />
+        <div className="p-4 flex gap-2 border-t-[1px] border-gray-100">
+          <button className="btn btn-ghost btn-size-s" onClick={() => setRescheduleOpen(true)}>
+            <MapPin className="h-3 w-3" />
             リスケジュール
           </button>
-          <button className="btn btn-ghost-danger" onClick={() => setCancelOpen(true)}>
-            <XCircle className="h-4 w-4" />
+          <button className="btn btn-ghost-danger btn-size-s" onClick={() => setCancelOpen(true)}>
+            <XCircle className="h-3 w-3" />
             キャンセル
           </button>
         </div>

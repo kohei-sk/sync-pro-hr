@@ -1745,7 +1745,7 @@ export default function NewEventPage() {
                             （{role.required_count}人）
                           </span>
                         </div>
-                        <ul className="pl-3 inline-flex flex-wrap gap-x-4 gap-y-2">
+                        <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                           {role.memberIds.slice(0, 4).map((userId) => {
                             const user = mockUsers.find((u) => u.id === userId);
                             return (
@@ -1779,20 +1779,20 @@ export default function NewEventPage() {
               <div className="rounded-2xl bg-gray-50 p-4">
                 <h3 className="section-label">フォーム項目</h3>
                 <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 mb-2">
+                  <div className="flex items-start gap-4">
+                    <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
                       デフォルト項目
                     </p>
-                    <p className="text-sm pl-3">
+                    <p className="text-sm">
                       お名前・メールアドレス・電話番号
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 mb-2">
+                  <div className="flex items-start gap-4">
+                    <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
                       カスタム項目
                     </p>
                     {formFields.length > 0 ? (
-                      <ul className="space-y-2 pl-3">
+                      <ul className="space-y-2">
                         {formFields.map((field) => (
                           <li
                             key={field.id}
@@ -1809,7 +1809,7 @@ export default function NewEventPage() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-gray-300 pl-3">カスタム項目未設定</p>
+                      <p className="text-sm text-gray-300">カスタム項目未設定</p>
                     )}
                   </div>
                 </div>

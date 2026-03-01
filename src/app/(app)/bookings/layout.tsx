@@ -116,67 +116,69 @@ export default function BookingsLayout({
 
       {/* ── Filters ── */}
       {/* Status tabs */}
-      <div className="tab mb-6">
-        {(["all", "confirmed", "pending", "cancelled"] as FilterStatus[]).map(
-          (status) => {
-            const label =
-              status === "all"
-                ? "すべて"
-                : statusConfig[status as BookingStatus].label;
-            return (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={cn(
-                  "tab-item",
-                  filterStatus === status
-                    ? "tab-item-active"
-                    : ""
-                )}
-              >
-                {label}
-                <span
+      <div className="sticky-wrap mb-6">
+        <div className="tab">
+          {(["all", "confirmed", "pending", "cancelled"] as FilterStatus[]).map(
+            (status) => {
+              const label =
+                status === "all"
+                  ? "すべて"
+                  : statusConfig[status as BookingStatus].label;
+              return (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
                   className={cn(
-                    "tab-badge",
+                    "tab-item",
                     filterStatus === status
-                      ? "tab-badge-active"
+                      ? "tab-item-active"
                       : ""
                   )}
                 >
-                  {statusCounts[status]}
-                </span>
-              </button>
-            );
-          }
-        )}
+                  {label}
+                  <span
+                    className={cn(
+                      "tab-badge",
+                      filterStatus === status
+                        ? "tab-badge-active"
+                        : ""
+                    )}
+                  >
+                    {statusCounts[status]}
+                  </span>
+                </button>
+              );
+            }
+          )}
 
-        {/* Search + Event filter */}
-        <div className="flex items-center gap-3 w-[450px] ml-auto">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="候補者名またはメールで検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-8 text-xs h-[32px]"
-            />
-          </div>
-          <div className="relative">
-            <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
-            <select
-              value={filterEvent}
-              onChange={(e) => setFilterEvent(e.target.value)}
-              className="select appearance-none pl-8 pr-8 !py-0.5 min-w-[180px] text-xs h-[32px]"
-            >
-              <option value="all">すべてのイベント</option>
-              {mockEventTypes.map((evt) => (
-                <option key={evt.id} value={evt.id}>
-                  {evt.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+          {/* Search + Event filter */}
+          <div className="flex items-center gap-3 w-[450px] ml-auto">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="候補者名またはメールで検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input pl-8 text-xs h-[32px]"
+              />
+            </div>
+            <div className="relative">
+              <Filter className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+              <select
+                value={filterEvent}
+                onChange={(e) => setFilterEvent(e.target.value)}
+                className="select appearance-none pl-8 pr-8 !py-0.5 min-w-[180px] text-xs h-[32px]"
+              >
+                <option value="all">すべてのイベント</option>
+                {mockEventTypes.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    {evt.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
         </div>
       </div>
@@ -220,13 +222,8 @@ export default function BookingsLayout({
 
                         {/* Candidate info */}
                         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span
-                              className={cn(
-                                "text-sm font-semibold",
-                                isSelected ? "text-gray-900" : "text-gray-800"
-                              )}
-                            >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold">
                               {booking.candidate_name}
                             </span>
                             <span className={statusInfo.className}>
@@ -234,31 +231,27 @@ export default function BookingsLayout({
                               {statusInfo.label}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1 mt-0.5">
+                          <div className="flex items-center gap-1 mt-1">
                             <div
-                              className="h-1.5 w-1.5 rounded-full"
+                              className="min-w-1.5 h-1.5 w-1.5 rounded-full"
                               style={{ backgroundColor: event?.color || "#0071c1" }}
                             />
-                            <p className="truncate text-[11px] text-gray-500 text-xs">
+                            <p className="truncate text-gray-500 text-xs">
                               {event?.title}
                             </p>
                           </div>
                         </div>
 
                         {/* Date/Time */}
-                        <div className="flex flex-col items-left gap-0.5">
-                          <div className="flex items-center justify-end gap-1 text-[11px] text-gray-500">
-                            <Calendar className="h-3 w-3 shrink-0 text-gray-400" />
-                            <span>{formatListDate(booking.start_time)}</span>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="text-xs text-gray-400">
+                            {formatListDate(booking.start_time)}
                           </div>
-                          <div className="mt-0.5 flex items-center justify-end gap-1 text-[11px] text-gray-500">
-                            <Clock className="h-3 w-3 shrink-0 text-gray-400" />
-                            <span>
-                              {formatListTime(
-                                booking.start_time,
-                                booking.end_time
-                              )}
-                            </span>
+                          <div className="text-xs text-gray-400">
+                            {formatListTime(
+                              booking.start_time,
+                              booking.end_time
+                            )}
                           </div>
                         </div>
                       </Link>
@@ -271,7 +264,7 @@ export default function BookingsLayout({
         </div>
 
         {/* Right panel: detail */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
+        <div className="flex-1 overflow-y-auto bg-white">
           {children}
         </div>
       </div>

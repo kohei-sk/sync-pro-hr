@@ -18,6 +18,9 @@ import {
   MessageSquare,
   Ban,
   FileText,
+  Search,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import {
   mockRoles,
@@ -362,13 +365,10 @@ function EventDrawerContent({ event }: { event: EventType }) {
                     </p>
                   }
                   {roleMembers.length === 0 ? (
-                    <p className="text-xs text-gray-400 pl-3">役割未設定</p>
+                    <p className="text-xs text-gray-400">役割未設定</p>
                   ) : (
                     <ul
-                      className={cn(
-                        "inline-flex flex-wrap gap-x-4 gap-y-2",
-                        event.scheduling_mode !== "fixed" && "pl-3"
-                      )}>
+                      className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {roleMembers.map((member) => {
                         const user = mockUsers.find(
                           (u) => u.id === member.user_id
@@ -382,7 +382,7 @@ function EventDrawerContent({ event }: { event: EventType }) {
                               {user?.full_name.charAt(0) ?? "?"}
                             </div>
                             <span className="text-sm whitespace-nowrap">
-                              {user?.full_name ?? "Unknown"}
+                              {user?.full_name ?? "不明"}
                             </span>
                           </li>
                         );
@@ -426,20 +426,20 @@ function EventDrawerContent({ event }: { event: EventType }) {
       {/* フォーム */}
       <DrawerSection title="フォーム">
         <div className="space-y-4">
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">
+          <div className="flex items-start gap-4">
+            <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
               デフォルト項目
             </p>
-            <p className="text-sm pl-3">
+            <p className="text-sm">
               お名前・メールアドレス・電話番号
             </p>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">
+          <div className="flex items-start gap-4">
+            <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
               カスタム項目
             </p>
             {customFields.length > 0 ? (
-              <ul className="space-y-2 pl-3">
+              <ul className="space-y-2">
                 {customFields.map((field) => (
                   <li
                     key={field.id}
@@ -456,7 +456,7 @@ function EventDrawerContent({ event }: { event: EventType }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-300 pl-3">カスタム項目未設定</p>
+              <p className="text-sm text-gray-300">カスタム項目未設定</p>
             )}
           </div>
         </div>
@@ -588,7 +588,7 @@ function EventsContent() {
 
   return (
     <div>
-      <header className="header">
+      <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">イベント</h1>
           <p className="header-sub-title">
@@ -601,46 +601,97 @@ function EventsContent() {
         </Link>
       </header>
 
-      {eventTypes.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 p-12">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-            <Plus className="h-6 w-6 text-gray-400" />
-          </div>
-          <h3 className="mt-4 text-sm font-semibold text-gray-900">
-            イベントがありません
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            新しいイベントを作成して面接日程の調整を始めましょう
-          </p>
-          <Link href="/events/new" className="btn btn-primary mt-4">
-            <Plus className="h-4 w-4" />
-            新規イベント作成
-          </Link>
-        </div>
-      ) : (
-        <div className="mt-6 flex flex-col gap-3">
-          {eventTypes.map((event) => {
-            const eventRoles = mockRoles.filter(
-              (r) => r.event_id === event.id
-            );
-            const roleIds = eventRoles.map((r) => r.id);
-            const memberCount = mockMembers.filter((m) =>
-              roleIds.includes(m.role_id)
-            ).length;
+      {/* Status tabs */}
+      <div className="sticky-wrap mb-6">
+        <div className="tab">
+          <button
+            className={"tab-item tab-item-active"}
+          >
+            すべて
+            <span
+              className={"tab-badge tab-bade-active"}
+            >
+              10
+            </span>
+          </button>
+          <button
+            className={"tab-item"}
+          >
+            公開中
+            <span
+              className={"tab-badge"}
+            >
+              5
+            </span>
+          </button>
+          <button
+            className={"tab-item"}
+          >
+            非公開
+            <span
+              className={"tab-badge"}
+            >
+              5
+            </span>
+          </button>
 
-            return (
-              <EventCard
-                key={event.id}
-                event={event}
-                memberCount={memberCount}
-                isCopied={copiedEventId === event.id}
-                onCardClick={() => openDrawer(event.id)}
-                onCopyLink={() => handleCopyLink(event.id, event.slug)}
+          <div className="flex items-center gap-3 w-[300px] ml-auto">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="イベント名で検索..."
+                value={""}
+                className="input pl-8 text-xs h-[32px]"
               />
-            );
-          })}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+
+      {
+        eventTypes.length === 0 ? (
+          <div className="mt-12 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 p-12">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <Plus className="h-6 w-6 text-gray-400" />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-gray-900">
+              イベントがありません
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              新しいイベントを作成して面接日程の調整を始めましょう
+            </p>
+            <Link href="/events/new" className="btn btn-primary mt-4">
+              <Plus className="h-4 w-4" />
+              新規イベント作成
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-6 flex flex-col gap-3">
+            {eventTypes.map((event) => {
+              const eventRoles = mockRoles.filter(
+                (r) => r.event_id === event.id
+              );
+              const roleIds = eventRoles.map((r) => r.id);
+              const memberCount = mockMembers.filter((m) =>
+                roleIds.includes(m.role_id)
+              ).length;
+
+              return (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  memberCount={memberCount}
+                  isCopied={copiedEventId === event.id}
+                  onCardClick={() => openDrawer(event.id)}
+                  onCopyLink={() => handleCopyLink(event.id, event.slug)}
+                />
+              );
+            })}
+          </div>
+        )
+      }
 
       {/* 詳細ドロワー */}
       <Drawer
@@ -661,7 +712,7 @@ function EventsContent() {
       >
         {selectedEvent && <EventDrawerContent event={selectedEvent} />}
       </Drawer>
-    </div>
+    </div >
   );
 }
 

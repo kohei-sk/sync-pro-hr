@@ -147,6 +147,10 @@
     @apply flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600;
   }
 
+  .sticky-wrap {
+    @apply sticky -top-8 -mx-8 px-8 backdrop-blur-[18px] z-30;
+  }
+
   .tab {
     @apply flex gap-1 border-b border-gray-200 items-center;
   }

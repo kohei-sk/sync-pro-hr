@@ -11,13 +11,14 @@ import {
   Settings,
   LogOut,
   Menu,
+  LayoutList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/lib/notification-store";
 
 const baseNavigation = [
   { name: "イベント", href: "/events", icon: CalendarPlus },
-  { name: "予約一覧", href: "/bookings", icon: Calendar },
+  { name: "予約一覧", href: "/bookings", icon: LayoutList },
   { name: "通知", href: "/activity", icon: Bell, showBadge: true },
   { name: "チームメンバー", href: "/team", icon: Users },
   { name: "設定", href: "/settings", icon: Settings },
