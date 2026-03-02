@@ -104,9 +104,6 @@ export default function NotificationsPage() {
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">通知</h1>
-          <p className="header-sub-title">
-            予約の受付・変更・キャンセルをお知らせします
-          </p>
         </div>
       </header>
 

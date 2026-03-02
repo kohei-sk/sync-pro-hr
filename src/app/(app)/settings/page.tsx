@@ -71,9 +71,6 @@ export default function SettingsPage() {
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">設定</h1>
-          <p className="header-sub-title">
-            アカウントとアプリケーションの設定を管理します
-          </p>
         </div>
       </header>
 

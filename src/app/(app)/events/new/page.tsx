@@ -513,9 +513,6 @@ export default function NewEventPage() {
           <h1 className="header-title">
             新規イベント作成
           </h1>
-          <p className="header-sub-title">
-            イベントの基本情報を入力して作成します
-          </p>
         </div>
       </header>
 

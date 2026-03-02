@@ -201,9 +201,6 @@ export default function TeamPage() {
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">チームメンバー</h1>
-          <p className="header-sub-title">
-            メンバーとカレンダー連携の状態を管理します
-          </p>
         </div>
         <button className="btn btn-primary" onClick={() => setInviteOpen(true)}>
           <Plus className="h-4 w-4" />

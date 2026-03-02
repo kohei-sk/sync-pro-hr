@@ -112,78 +112,80 @@ function EventCard({
     >
 
       {/* メインコンテンツ */}
-      <div className="flex flex-1 min-w-0 px-5 py-4 w-full flex-wrap">
-        <div className="flex flex-1 items-center gap-4">
-          {/* カラー */}
-          <div
-            className="flex h-7 w-7 min-w-7 items-center justify-center rounded-lg"
-            style={{
-              backgroundColor: (event.color || "#0071c1") + "14",
-            }}
-          >
+      <div className="flex flex-1 min-w-0 px-5 py-4 w-full flex-wrap gap-4 lg:gap-0">
+        <div className="flex flex-1 flex-col lg:flex-row">
+          <div className="flex flex-1 items-center gap-4">
+            {/* カラー */}
             <div
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: event.color || "#0071c1" }}
-            />
-          </div>
-          <div className="flex flex-col">
-            <div>
-              {/* タイトル行 */}
-              <div className="inline-flex items-center gap-2">
-                <span className="font-semibold text-sm leading-relaxed">
-                  {event.title}
-                </span>
-                <span
-                  className={cn(
-                    "badge",
-                    event.status === "active"
-                      ? "badge-green"
-                      : event.status === "draft"
-                        ? "badge-gray"
-                        : "badge-red"
-                  )}
-                >
-                  {event.status === "active"
-                    ? "公開中"
-                    : event.status === "draft"
-                      ? "非公開"
-                      : "アーカイブ"}
-                </span>
-              </div>
+              className="flex h-7 w-7 min-w-7 items-center justify-center rounded-lg"
+              style={{
+                backgroundColor: (event.color || "#0071c1") + "14",
+              }}
+            >
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: event.color || "#0071c1" }}
+              />
             </div>
+            <div className="flex flex-col">
+              <div>
+                {/* タイトル行 */}
+                <div className="inline-flex items-center gap-2">
+                  <span className="font-semibold text-sm leading-relaxed">
+                    {event.title}
+                  </span>
+                  <span
+                    className={cn(
+                      "badge",
+                      event.status === "active"
+                        ? "badge-green"
+                        : event.status === "draft"
+                          ? "badge-gray"
+                          : "badge-red"
+                    )}
+                  >
+                    {event.status === "active"
+                      ? "公開中"
+                      : event.status === "draft"
+                        ? "非公開"
+                        : "アーカイブ"}
+                  </span>
+                </div>
+              </div>
 
-            {/* 説明 */}
-            {event.description && (
-              <p className="mt-1 text-xs text-gray-500 leading-relaxed">
-                {event.description}
-              </p>
-            )}
+              {/* 説明 */}
+              {event.description && (
+                <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+                  {event.description}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* メタデータ行 */}
-        <div className="flex flex-wrap items-center gap-3 min-w-[306px] text-xs text-gray-400 px-8">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {event.duration}分
-          </span>
-          <span className="flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" />
-            {event.location_type === "online"
-              ? "オンライン"
-              : event.location_type === "in-person"
-                ? "対面"
-                : "電話"}
-          </span>
-          <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" />
-            {memberCount}人
-            <span className="badge badge-neutral">
-              {event.scheduling_mode === "fixed"
-                ? "固定"
-                : "プール"}
+          {/* メタデータ行 */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 min-w-auto lg:min-w-[306px] lg:px-8 mt-4 mt-3 lg:mt-0">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              {event.duration}分
             </span>
-          </span>
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {event.location_type === "online"
+                ? "オンライン"
+                : event.location_type === "in-person"
+                  ? "対面"
+                  : "電話"}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              {memberCount}人
+              <span className="badge badge-neutral">
+                {event.scheduling_mode === "fixed"
+                  ? "固定"
+                  : "プール"}
+              </span>
+            </span>
+          </div>
         </div>
 
         {/* アクション行 (クリックの伝播を停止) */}
@@ -608,9 +610,6 @@ function EventsContent() {
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">イベント</h1>
-          <p className="header-sub-title">
-            面接や面談のイベントを管理します
-          </p>
         </div>
         <Link href="/events/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
