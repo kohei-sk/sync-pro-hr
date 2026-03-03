@@ -99,6 +99,20 @@ type NewReminder = {
   is_enabled: boolean;
 };
 
+type ReminderDraft = {
+  channel: ReminderChannel;
+  timing_value: number;
+  timing_unit: ReminderUnit;
+  message: string;
+};
+
+const EMPTY_REMINDER_DRAFT: ReminderDraft = {
+  channel: "email",
+  timing_value: 24,
+  timing_unit: "hours",
+  message: "",
+};
+
 const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
 
 const EXCLUSION_TYPE_LABELS: Record<ExclusionRule["type"], string> = {
@@ -217,6 +231,10 @@ export default function NewEventPage() {
   const [editFieldDraft, setEditFieldDraft] = useState<NewFieldDraft>({ ...EMPTY_FIELD_DRAFT });
 
   const [reminders, setReminders] = useState<NewReminder[]>([]);
+  const [showReminderForm, setShowReminderForm] = useState(false);
+  const [reminderDraft, setReminderDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
+  const [editReminderDraft, setEditReminderDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
 
   const steps: { id: Step; label: string }[] = [
     { id: "basic", label: "基本設定" },
@@ -333,6 +351,22 @@ export default function NewEventPage() {
 
   function removeFixedMember(userId: string) {
     setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
+  }
+
+  function handleAddReminder() {
+    setReminders([...reminders, { id: generateId(), ...reminderDraft, is_enabled: true }]);
+    setReminderDraft({ ...EMPTY_REMINDER_DRAFT });
+    setShowReminderForm(false);
+  }
+
+  function startEditReminder(reminder: NewReminder) {
+    setEditingReminderId(reminder.id);
+    setEditReminderDraft({ channel: reminder.channel, timing_value: reminder.timing_value, timing_unit: reminder.timing_unit, message: reminder.message });
+  }
+
+  function saveEditReminder(id: string) {
+    setReminders(reminders.map((r) => r.id === id ? { ...r, ...editReminderDraft } : r));
+    setEditingReminderId(null);
   }
 
   function addExclusionRule() {
@@ -479,9 +513,6 @@ export default function NewEventPage() {
           <h1 className="header-title">
             新規イベント作成
           </h1>
-          <p className="header-sub-title">
-            イベントの基本情報を入力して作成します
-          </p>
         </div>
       </header>
 
@@ -1510,106 +1541,170 @@ export default function NewEventPage() {
                 {reminders.length > 0 && (
                   <div className="space-y-3">
                     {reminders.map((reminder) => (
-                      <div
-                        key={reminder.id}
-                        className="rounded-xl border border-gray-200 p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold">リマインド</p>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setReminders(reminders.filter((r) => r.id !== reminder.id))}
-                              className="text-gray-400 hover:text-red-500 transition-colors"
-                              title="削除"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                      <div key={reminder.id}>
+                        {editingReminderId === reminder.id ? (
+                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                            <p className="text-sm font-semibold">リマインドを編集</p>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <label className="label">送信チャネル</label>
+                                <select
+                                  className="select mt-1"
+                                  value={editReminderDraft.channel}
+                                  onChange={(e) => setEditReminderDraft({ ...editReminderDraft, channel: e.target.value as ReminderChannel })}
+                                >
+                                  <option value="email">メール</option>
+                                  <option value="sms">SMS</option>
+                                  <option value="both">メール + SMS</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="label">タイミング（数値）</label>
+                                <input
+                                  type="number"
+                                  className="input mt-1"
+                                  min={1}
+                                  value={editReminderDraft.timing_value}
+                                  onChange={(e) => setEditReminderDraft({ ...editReminderDraft, timing_value: parseInt(e.target.value) || 1 })}
+                                />
+                              </div>
+                              <div>
+                                <label className="label">単位</label>
+                                <select
+                                  className="select mt-1"
+                                  value={editReminderDraft.timing_unit}
+                                  onChange={(e) => setEditReminderDraft({ ...editReminderDraft, timing_unit: e.target.value as ReminderUnit })}
+                                >
+                                  <option value="hours">時間前</option>
+                                  <option value="days">日前</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="label">メッセージ内容</label>
+                              <textarea
+                                className="input mt-1 resize-y"
+                                placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
+                                value={editReminderDraft.message}
+                                onChange={(e) => setEditReminderDraft({ ...editReminderDraft, message: e.target.value })}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2 pt-1">
+                              <button onClick={() => setEditingReminderId(null)} className="btn btn-ghost">
+                                キャンセル
+                              </button>
+                              <button onClick={() => saveEditReminder(reminder.id)} className="btn btn-primary">
+                                保存
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="label">送信チャネル</label>
-                            <select
-                              className="select mt-1"
-                              value={reminder.channel}
-                              onChange={(e) =>
-                                setReminders(reminders.map((r) =>
-                                  r.id === reminder.id ? { ...r, channel: e.target.value as ReminderChannel } : r
-                                ))
-                              }
-                            >
-                              <option value="email">メール</option>
-                              <option value="sms">SMS</option>
-                              <option value="both">メール + SMS</option>
-                            </select>
+                        ) : (
+                          <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                            <div>
+                              <p className="text-sm font-medium">
+                                {reminder.channel === "email" ? "メール" : reminder.channel === "sms" ? "SMS" : "メール + SMS"}
+                              </p>
+                              <p className="mt-0.5 text-xs text-gray-500">
+                                {reminder.timing_value}{reminder.timing_unit === "hours" ? "時間前" : "日前"}
+                                {reminder.message && (
+                                  <span> · {reminder.message.length > 30 ? `${reminder.message.slice(0, 30)}…` : reminder.message}</span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => startEditReminder(reminder)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                title="編集"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setReminders(reminders.filter((r) => r.id !== reminder.id))}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                title="削除"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <label className="label">タイミング（数値）</label>
-                            <input
-                              type="number"
-                              className="input mt-1"
-                              min={1}
-                              value={reminder.timing_value}
-                              onChange={(e) =>
-                                setReminders(reminders.map((r) =>
-                                  r.id === reminder.id ? { ...r, timing_value: parseInt(e.target.value) || 1 } : r
-                                ))
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="label">単位</label>
-                            <select
-                              className="select mt-1"
-                              value={reminder.timing_unit}
-                              onChange={(e) =>
-                                setReminders(reminders.map((r) =>
-                                  r.id === reminder.id ? { ...r, timing_unit: e.target.value as ReminderUnit } : r
-                                ))
-                              }
-                            >
-                              <option value="hours">時間前</option>
-                              <option value="days">日前</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="label">メッセージ内容</label>
-                          <textarea
-                            className="input mt-1 resize-y"
-                            placeholder="候補者に送るメッセージを入力してください。&#10;{{date}}、{{location}} でスロット情報を挿入できます。"
-                            value={reminder.message}
-                            onChange={(e) =>
-                              setReminders(reminders.map((r) =>
-                                r.id === reminder.id ? { ...r, message: e.target.value } : r
-                              ))
-                            }
-                          />
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
 
-                <button
-                  onClick={() =>
-                    setReminders([
-                      ...reminders,
-                      {
-                        id: generateId(),
-                        channel: "email",
-                        timing_value: 24,
-                        timing_unit: "hours",
-                        message: "",
-                        is_enabled: true,
-                      },
-                    ])
-                  }
-                  className="add-btn"
-                >
-                  <Plus className="h-4 w-4" />
-                  リマインドを追加
-                </button>
+                {showReminderForm ? (
+                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                    <p className="text-sm font-semibold">新しいリマインド</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="label">送信チャネル</label>
+                        <select
+                          className="select mt-1"
+                          value={reminderDraft.channel}
+                          onChange={(e) => setReminderDraft({ ...reminderDraft, channel: e.target.value as ReminderChannel })}
+                        >
+                          <option value="email">メール</option>
+                          <option value="sms">SMS</option>
+                          <option value="both">メール + SMS</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label">タイミング（数値）</label>
+                        <input
+                          type="number"
+                          className="input mt-1"
+                          min={1}
+                          value={reminderDraft.timing_value}
+                          onChange={(e) => setReminderDraft({ ...reminderDraft, timing_value: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+                      <div>
+                        <label className="label">単位</label>
+                        <select
+                          className="select mt-1"
+                          value={reminderDraft.timing_unit}
+                          onChange={(e) => setReminderDraft({ ...reminderDraft, timing_unit: e.target.value as ReminderUnit })}
+                        >
+                          <option value="hours">時間前</option>
+                          <option value="days">日前</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">メッセージ内容</label>
+                      <textarea
+                        className="input mt-1 resize-y"
+                        placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
+                        value={reminderDraft.message}
+                        onChange={(e) => setReminderDraft({ ...reminderDraft, message: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => { setShowReminderForm(false); setReminderDraft({ ...EMPTY_REMINDER_DRAFT }); }}
+                        className="btn btn-ghost"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        onClick={handleAddReminder}
+                        className="btn btn-primary"
+                      >
+                        追加
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowReminderForm(true)}
+                    className="add-btn"
+                  >
+                    <Plus className="h-4 w-4" />
+                    リマインドを追加
+                  </button>
+                )}
 
                 {reminders.length === 0 && (
                   <p className="text-center text-xs text-gray-400">

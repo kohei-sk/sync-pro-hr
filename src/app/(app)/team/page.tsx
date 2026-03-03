@@ -44,7 +44,9 @@ export default function TeamPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [detailUser, setDetailUser] = useState<User | null>(null);
+  const [permissionOpen, setPermissionOpen] = useState(false);
   const [permissionUser, setPermissionUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState<"admin" | "member">("member");
   const [savingPermission, setSavingPermission] = useState(false);
@@ -174,6 +176,7 @@ export default function TeamPage() {
   function openPermissionModal(user: User) {
     setNewRole(user.role ?? "member");
     setPermissionUser(user);
+    setPermissionOpen(true);
   }
 
   // 権限変更保存
@@ -189,7 +192,7 @@ export default function TeamPage() {
       const label = newRole === "admin" ? "管理者" : "メンバー";
       toast.success(`${permissionUser.full_name} の権限を「${label}」に変更しました`);
       setSavingPermission(false);
-      setPermissionUser(null);
+      setPermissionOpen(false);
     }, 800);
   }
 
@@ -198,9 +201,6 @@ export default function TeamPage() {
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">チームメンバー</h1>
-          <p className="header-sub-title">
-            メンバーとカレンダー連携の状態を管理します
-          </p>
         </div>
         <button className="btn btn-primary" onClick={() => setInviteOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -295,11 +295,12 @@ export default function TeamPage() {
               role="button"
               tabIndex={0}
               aria-label={`${user.full_name} の詳細を見る`}
-              onClick={() => setDetailUser(user)}
+              onClick={() => { setDetailUser(user); setDetailOpen(true); }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   setDetailUser(user);
+                  setDetailOpen(true);
                 }
               }}
               className="card card-clickable !p-0 transition-shadow hover:shadow-card-hover"
@@ -516,12 +517,12 @@ export default function TeamPage() {
 
       {/* メンバー詳細モーダル */}
       <Modal
-        open={detailUser !== null}
-        onClose={() => setDetailUser(null)}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
         title="メンバー詳細"
         size="md"
         footer={
-          <button onClick={() => setDetailUser(null)} className="btn btn-ghost">
+          <button onClick={() => setDetailOpen(false)} className="btn btn-ghost">
             閉じる
           </button>
         }
@@ -597,14 +598,14 @@ export default function TeamPage() {
 
       {/* 権限変更モーダル */}
       <Modal
-        open={permissionUser !== null}
-        onClose={() => setPermissionUser(null)}
+        open={permissionOpen}
+        onClose={() => setPermissionOpen(false)}
         title="権限を変更"
         size="sm"
         footer={
           <>
             <button
-              onClick={() => setPermissionUser(null)}
+              onClick={() => setPermissionOpen(false)}
               disabled={savingPermission}
               className="btn btn-ghost"
             >

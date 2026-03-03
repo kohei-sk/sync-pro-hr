@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarCheck,
@@ -82,8 +82,11 @@ export default function NotificationsPage() {
   const displayedNotifications = (activeTab === "unread" ? unreadNotifications : readNotifications)
     .filter((n) => filterType === "all" || n.type === filterType);
 
-  // タブ切替時にスクロール位置をリセット
+  // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
+  const prevTabRef = useRef(activeTab);
   useEffect(() => {
+    if (prevTabRef.current === activeTab) return;
+    prevTabRef.current = activeTab;
     document.querySelector('main')?.scrollTo({
       top: 114,
       left: 0,
@@ -101,9 +104,6 @@ export default function NotificationsPage() {
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">通知</h1>
-          <p className="header-sub-title">
-            予約の受付・変更・キャンセルをお知らせします
-          </p>
         </div>
       </header>
 

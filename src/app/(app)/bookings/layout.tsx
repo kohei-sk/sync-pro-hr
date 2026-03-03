@@ -116,9 +116,6 @@ export default function BookingsLayout({
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">予約一覧</h1>
-          <p className="header-sub-title">
-            面接・面談の予約を管理します
-          </p>
         </div>
       </header>
 
@@ -194,7 +191,7 @@ export default function BookingsLayout({
       {/* ── Split panel ── */}
       <div className="flex flex-1 overflow-hidden rounded-xl ring-1 ring-gray-200/60">
         {/* Left panel: list */}
-        <div className="flex w-[360px] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white">
+        <div className="flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white w-[250px] lg:w-[360px]">
           <div className="flex-1 overflow-y-auto" id="booking-list-scroll-top">
             {filteredBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSyncExternalStore, useState } from "react";
+import { useSyncExternalStore, useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -112,78 +112,80 @@ function EventCard({
     >
 
       {/* メインコンテンツ */}
-      <div className="flex flex-1 min-w-0 px-5 py-4 w-full">
-        <div className="flex flex-1 items-center gap-4">
-          {/* カラー */}
-          <div
-            className="flex h-7 w-7 min-w-7 items-center justify-center rounded-lg"
-            style={{
-              backgroundColor: (event.color || "#0071c1") + "14",
-            }}
-          >
+      <div className="flex flex-1 min-w-0 px-5 py-4 w-full flex-wrap gap-4 lg:gap-0">
+        <div className="flex flex-1 flex-col lg:flex-row">
+          <div className="flex flex-1 items-center gap-4">
+            {/* カラー */}
             <div
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: event.color || "#0071c1" }}
-            />
-          </div>
-          <div className="flex flex-col">
-            <div>
-              {/* タイトル行 */}
-              <div className="inline-flex items-center gap-2">
-                <span className="font-semibold text-sm leading-relaxed">
-                  {event.title}
-                </span>
-                <span
-                  className={cn(
-                    "badge",
-                    event.status === "active"
-                      ? "badge-green"
-                      : event.status === "draft"
-                        ? "badge-gray"
-                        : "badge-red"
-                  )}
-                >
-                  {event.status === "active"
-                    ? "公開中"
-                    : event.status === "draft"
-                      ? "非公開"
-                      : "アーカイブ"}
-                </span>
-              </div>
+              className="flex h-7 w-7 min-w-7 items-center justify-center rounded-lg"
+              style={{
+                backgroundColor: (event.color || "#0071c1") + "14",
+              }}
+            >
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: event.color || "#0071c1" }}
+              />
             </div>
+            <div className="flex flex-col">
+              <div>
+                {/* タイトル行 */}
+                <div className="inline-flex items-center gap-2">
+                  <span className="font-semibold text-sm leading-relaxed">
+                    {event.title}
+                  </span>
+                  <span
+                    className={cn(
+                      "badge",
+                      event.status === "active"
+                        ? "badge-green"
+                        : event.status === "draft"
+                          ? "badge-gray"
+                          : "badge-red"
+                    )}
+                  >
+                    {event.status === "active"
+                      ? "公開中"
+                      : event.status === "draft"
+                        ? "非公開"
+                        : "アーカイブ"}
+                  </span>
+                </div>
+              </div>
 
-            {/* 説明 */}
-            {event.description && (
-              <p className="mt-1 text-xs text-gray-500 leading-relaxed">
-                {event.description}
-              </p>
-            )}
+              {/* 説明 */}
+              {event.description && (
+                <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+                  {event.description}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* メタデータ行 */}
-        <div className="flex flex-wrap items-center gap-3 min-w-[293px] text-xs text-gray-400 border-l border-r border-gray-100 px-6 mx-6">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {event.duration}分
-          </span>
-          <span className="flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" />
-            {event.location_type === "online"
-              ? "オンライン"
-              : event.location_type === "in-person"
-                ? "対面"
-                : "電話"}
-          </span>
-          <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" />
-            {memberCount}人
-            <span className="badge badge-neutral">
-              {event.scheduling_mode === "fixed"
-                ? "固定"
-                : "プール"}
+          {/* メタデータ行 */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 min-w-auto lg:min-w-[306px] lg:px-8 mt-4 mt-3 lg:mt-0">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              {event.duration}分
             </span>
-          </span>
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {event.location_type === "online"
+                ? "オンライン"
+                : event.location_type === "in-person"
+                  ? "対面"
+                  : "電話"}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              {memberCount}人
+              <span className="badge badge-neutral">
+                {event.scheduling_mode === "fixed"
+                  ? "固定"
+                  : "プール"}
+              </span>
+            </span>
+          </div>
         </div>
 
         {/* アクション行 (クリックの伝播を停止) */}
@@ -191,14 +193,14 @@ function EventCard({
           className="flex items-center gap-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <Link
+          {/* <Link
             href={`/events/${event.id}`}
             className="btn btn-ghost btn-size-s ml-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Edit className="h-3 w-3" />
             編集
-          </Link>
+          </Link> */}
           <button
             onClick={onCopyLink}
             className="btn btn-emphasis btn-size-s"
@@ -543,6 +545,15 @@ function EventsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "active" | "draft">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const prevTabRef = useRef(activeTab);
+  useEffect(() => {
+    if (prevTabRef.current === activeTab) return;
+    prevTabRef.current = activeTab;
+    document.querySelector("main")?.scrollTo({ top: 114, left: 0 });
+  }, [activeTab]);
 
   const selectedEventId = searchParams.get("id");
   const selectedEvent = selectedEventId
@@ -586,14 +597,19 @@ function EventsContent() {
     }
   }
 
+  const filteredEvents = eventTypes
+    .filter((e) => activeTab === "all" || e.status === activeTab)
+    .filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const countAll = eventTypes.length;
+  const countActive = eventTypes.filter((e) => e.status === "active").length;
+  const countDraft = eventTypes.filter((e) => e.status === "draft").length;
+
   return (
     <div>
       <header className="header mb-6">
         <div className="header-col">
           <h1 className="header-title">イベント</h1>
-          <p className="header-sub-title">
-            面接や面談のイベントを管理します
-          </p>
         </div>
         <Link href="/events/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
@@ -605,33 +621,30 @@ function EventsContent() {
       <div className="sticky-wrap mb-6">
         <div className="tab">
           <button
-            className={"tab-item tab-item-active"}
+            onClick={() => setActiveTab("all")}
+            className={cn("tab-item", activeTab === "all" && "tab-item-active")}
           >
             すべて
-            <span
-              className={"tab-badge tab-bade-active"}
-            >
-              10
+            <span className={cn("tab-badge", activeTab === "all" && "tab-bade-active")}>
+              {countAll}
             </span>
           </button>
           <button
-            className={"tab-item"}
+            onClick={() => setActiveTab("active")}
+            className={cn("tab-item", activeTab === "active" && "tab-item-active")}
           >
             公開中
-            <span
-              className={"tab-badge"}
-            >
-              5
+            <span className={cn("tab-badge", activeTab === "active" && "tab-bade-active")}>
+              {countActive}
             </span>
           </button>
           <button
-            className={"tab-item"}
+            onClick={() => setActiveTab("draft")}
+            className={cn("tab-item", activeTab === "draft" && "tab-item-active")}
           >
             非公開
-            <span
-              className={"tab-badge"}
-            >
-              5
+            <span className={cn("tab-badge", activeTab === "draft" && "tab-bade-active")}>
+              {countDraft}
             </span>
           </button>
 
@@ -642,7 +655,8 @@ function EventsContent() {
               <input
                 type="text"
                 placeholder="イベント名で検索..."
-                value={""}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="input pl-8 text-xs h-[32px]"
               />
             </div>
@@ -651,25 +665,29 @@ function EventsContent() {
       </div>
 
       {
-        eventTypes.length === 0 ? (
+        filteredEvents.length === 0 ? (
           <div className="mt-12 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 p-12">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
               <Plus className="h-6 w-6 text-gray-400" />
             </div>
             <h3 className="mt-4 text-sm font-semibold">
-              イベントがありません
+              {searchQuery || activeTab !== "all" ? "条件に一致するイベントがありません" : "イベントがありません"}
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              新しいイベントを作成して面接日程の調整を始めましょう
+              {searchQuery || activeTab !== "all"
+                ? "検索条件やタブを変えてお試しください"
+                : "新しいイベントを作成して面接日程の調整を始めましょう"}
             </p>
-            <Link href="/events/new" className="btn btn-primary mt-4">
-              <Plus className="h-4 w-4" />
-              新規イベント作成
-            </Link>
+            {!searchQuery && activeTab === "all" && (
+              <Link href="/events/new" className="btn btn-primary mt-4">
+                <Plus className="h-4 w-4" />
+                新規イベント作成
+              </Link>
+            )}
           </div>
         ) : (
           <div className="mt-6 flex flex-col gap-3">
-            {eventTypes.map((event) => {
+            {filteredEvents.map((event) => {
               const eventRoles = mockRoles.filter(
                 (r) => r.event_id === event.id
               );
