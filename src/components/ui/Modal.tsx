@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDialogState } from "@/hooks/useDialogState";
 
 // ============================================================
 // Modal
@@ -33,20 +34,7 @@ export function Modal({
   const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2, 7)}`);
 
   // isMounted: DOM に残すか / isOpen: アニメーション状態
-  const [isMounted, setIsMounted] = useState(open);
-  const [isOpen, setIsOpen] = useState(open);
-
-  useEffect(() => {
-    if (open) {
-      setIsMounted(true);
-      // DOM マウント後に class を付与してアニメーション開始
-      requestAnimationFrame(() => setIsOpen(true));
-    } else {
-      setIsOpen(false);
-      const t = setTimeout(() => setIsMounted(false), EXIT_DURATION);
-      return () => clearTimeout(t);
-    }
-  }, [open]);
+  const { isMounted, isOpen } = useDialogState(open, EXIT_DURATION);
 
   // ESCキーで閉じる
   useEffect(() => {
