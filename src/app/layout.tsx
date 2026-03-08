@@ -3,7 +3,7 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
-  title: "SyncPro HR - スマートな面接日程調整",
+  title: "Pitasuke - スマートな面接日程調整",
   description:
     "複数の面接官の空き時間を自動合成し、最適な面接スケジュールを提案するプロフェッショナルな日程調整SaaS",
 };
