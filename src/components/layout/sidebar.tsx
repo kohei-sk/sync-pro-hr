@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Calendar,
@@ -47,26 +48,25 @@ export function Sidebar() {
       {/* Logo + Hamburger */}
       <div
         className={cn(
-          "flex h-14 items-center border-b border-gray-100 overflow-hidden transition-all duration-200",
+          "flex h-[60px] items-center border-b border-gray-100 overflow-hidden transition-all duration-200",
           isCollapsed ? "justify-center px-0" : "px-3 gap-2.5"
         )}
       >
         <div
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500",
-            isCollapsed && "hidden"
-          )}
-        >
-          <Calendar className="h-4.5 w-4.5 text-white" />
+            "flex-1 px-[9px]",
+            isCollapsed && "flex-none px-[0px]"
+          )}>
+          <Image
+            className={cn(
+              isCollapsed && "hidden"
+            )}
+            src="/common/logo.svg"
+            alt="Pitasuke"
+            width={125}
+            height={40}
+          />
         </div>
-        <span
-          className={cn(
-            "flex-1 text-base font-bold whitespace-nowrap",
-            isCollapsed && "hidden"
-          )}
-        >
-          SyncPro HR
-        </span>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"

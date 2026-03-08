@@ -92,7 +92,7 @@ const mockReminderSettings: Record<string, ReminderSetting[]> = {
       id: "rs2",
       channel: "sms",
       timing: { value: 1, unit: "hours" },
-      message: "【SyncPro HR】1時間後に面接があります。準備をお忘れなく。",
+      message: "【Pitasuke】1時間後に面接があります。準備をお忘れなく。",
       is_enabled: true,
     },
   ],

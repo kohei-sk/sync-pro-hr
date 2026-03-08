@@ -1,7 +1,7 @@
 import type { ExclusionRule, CustomField } from "@/types";
 
 // ============================================================
-// SyncPro HR - Shared Constants
+// Pitasuke - Shared Constants
 // ============================================================
 
 /** タブ切替時のスクロールリセット位置（sticky ヘッダーの高さに合わせた値） */

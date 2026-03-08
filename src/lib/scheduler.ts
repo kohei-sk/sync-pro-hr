@@ -11,7 +11,7 @@ import type {
 import { getEventData, mockCalendarEvents } from "./mock-data";
 
 // ============================================================
-// SyncPro HR - Scheduling Engine (Intersection Engine)
+// Pitasuke - Scheduling Engine (Intersection Engine)
 // ============================================================
 // Computes available time slots by intersecting:
 // 1. Calendar busy times for all team members
@@ -297,19 +297,19 @@ export function computeAvailableSlots(
   const available_slots =
     event.scheduling_mode === "fixed"
       ? computeFixedMode(
-          candidateSlots,
-          roles,
-          members,
-          busyTimesMap,
-          exclusion_rules
-        )
+        candidateSlots,
+        roles,
+        members,
+        busyTimesMap,
+        exclusion_rules
+      )
       : computePoolMode(
-          candidateSlots,
-          roles,
-          members,
-          busyTimesMap,
-          exclusion_rules
-        );
+        candidateSlots,
+        roles,
+        members,
+        busyTimesMap,
+        exclusion_rules
+      );
 
   return { available_slots };
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Eye, EyeOff, Calendar, LogIn, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -39,119 +40,121 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-[400px]">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-500 mb-3">
-            <Calendar className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold">SyncPro HR</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            アカウントにログインしてください
-          </p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="label">
-                メールアドレス
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                className="input mt-1"
-                placeholder="your@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading || isGoogleLoading}
+    <>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-[400px]">
+          {/* Logo */}
+          <div className="flex flex-col items-center mb-8">
+            <h1 className="text-2xl font-bold">
+              <Image
+                src="/common/logo.svg"
+                alt="Pitasuke"
+                width={190}
+                height={40}
               />
-            </div>
+            </h1>
+          </div>
 
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="label">
-                パスワード
-              </label>
-              <div className="relative mt-1">
+          {/* Card */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            {error && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="label">
+                  メールアドレス
+                </label>
                 <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  className="input pr-10"
-                  placeholder="パスワードを入力"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  className="input mt-1"
+                  placeholder="your@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading || isGoogleLoading}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
               </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="label">
+                  パスワード
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    className="input pr-10"
+                    placeholder="パスワードを入力"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Login button */}
+              <button
+                type="submit"
+                disabled={isLoading || isGoogleLoading}
+                className="btn btn-primary w-full justify-center"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogIn className="h-4 w-4" />
+                )}
+                {isLoading ? "ログイン中..." : "ログイン"}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400">または</span>
+              <div className="h-px flex-1 bg-gray-200" />
             </div>
 
-            {/* Login button */}
+            {/* Google SSO */}
             <button
-              type="submit"
+              type="button"
+              onClick={handleGoogleLogin}
               disabled={isLoading || isGoogleLoading}
-              className="btn btn-primary w-full justify-center"
+              className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {isGoogleLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
               ) : (
-                <LogIn className="h-4 w-4" />
+                <GoogleIcon />
               )}
-              {isLoading ? "ログイン中..." : "ログイン"}
+              {isGoogleLoading ? "接続中..." : "Googleでログイン"}
             </button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs text-gray-400">または</span>
-            <div className="h-px flex-1 bg-gray-200" />
           </div>
-
-          {/* Google SSO */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={isLoading || isGoogleLoading}
-            className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isGoogleLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-            ) : (
-              <GoogleIcon />
-            )}
-            {isGoogleLoading ? "接続中..." : "Googleでログイン"}
-          </button>
         </div>
-
-        <p className="mt-4 text-center text-xs text-gray-400">
-          © 2026 SyncPro HR. All rights reserved.
-        </p>
       </div>
-    </div>
+      <p className="fixed bottom-4 w-full text-center text-xs text-gray-400">
+        © 2026 Pitasuke. All rights reserved.
+      </p>
+    </>
   );
 }
 

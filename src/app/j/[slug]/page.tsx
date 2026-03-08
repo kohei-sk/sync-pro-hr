@@ -570,7 +570,7 @@ export default function BookingPage() {
                 </dl>
               </div>
               <p className="mt-6 text-xs text-gray-400">
-                Powered by SyncPro HR
+                Powered by Pitasuke
               </p>
             </div>
           )}

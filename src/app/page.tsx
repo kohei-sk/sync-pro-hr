@@ -17,7 +17,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Calendar className="h-8 w-8 text-primary-600" />
             <span className="text-xl font-bold text-gray-900">
-              SyncPro HR
+              Pitasuke
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -160,7 +160,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-8">
         <div className="mx-auto max-w-7xl px-6 text-center text-sm text-gray-500">
-          &copy; 2026 SyncPro HR. All rights reserved.
+          &copy; 2026 Pitasuke. All rights reserved.
         </div>
       </footer>
     </div>
