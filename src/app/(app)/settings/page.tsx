@@ -17,6 +17,7 @@ import {
   Link,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 import { useToast } from "@/components/ui/Toast";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 
@@ -61,7 +62,7 @@ export default function SettingsPage() {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
     document.querySelector('main')?.scrollTo({
-      top: 114,
+      top: TAB_SCROLL_OFFSET,
       left: 0,
     });
   }, [activeTab]);
@@ -279,6 +280,7 @@ function AvatarUploadModal({
   onClose: () => void;
   onUploaded: (dataUrl: string) => void;
 }) {
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -293,7 +295,7 @@ function AvatarUploadModal({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert("ファイルサイズは2MB以下にしてください");
+      toast.error("ファイルサイズは2MB以下にしてください");
       return;
     }
     const reader = new FileReader();

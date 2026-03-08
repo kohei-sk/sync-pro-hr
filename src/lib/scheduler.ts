@@ -8,6 +8,7 @@ import type {
   EventRole,
   EventMember,
 } from "@/types";
+import { getEventData, mockCalendarEvents } from "./mock-data";
 
 // ============================================================
 // SyncPro HR - Scheduling Engine (Intersection Engine)
@@ -320,9 +321,6 @@ export function getAvailableSlotsForEvent(
   eventId: string,
   dateRange?: { start: string; end: string }
 ): SchedulerOutput {
-  const { getEventData } = require("./mock-data");
-  const { mockCalendarEvents } = require("./mock-data");
-
   const data = getEventData(eventId);
   if (!data.event) {
     return { available_slots: [] };

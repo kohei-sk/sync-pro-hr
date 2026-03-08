@@ -132,7 +132,7 @@ export default function NotificationsPage() {
                   className={cn(
                     "tab-badge",
                     activeTab === tab
-                      ? "tab-bade-active"
+                      ? "tab-badge-active"
                       : ""
                   )}
                 >

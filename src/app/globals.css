@@ -167,7 +167,7 @@
     @apply flex items-center justify-center h-5 min-w-5 rounded-full font-bold text-[10px] bg-gray-200 text-gray-500;
   }
 
-  .tab-bade-active {
+  .tab-badge-active {
     @apply bg-primary-100 text-primary-700;
   }
 

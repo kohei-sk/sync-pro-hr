@@ -26,21 +26,18 @@ import {
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, generateId } from "@/lib/utils";
+import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS } from "@/lib/constants";
 import {
   mockEventTypes,
   mockRoles,
@@ -61,6 +58,7 @@ import type {
   FieldType,
   ReminderSetting,
   ReminderChannel,
+  SchedulingMode,
 } from "@/types";
 
 type TabId = "basic" | "team" | "exclusions" | "form" | "reminder";
@@ -147,7 +145,7 @@ export default function EventDetailPage() {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
     document.querySelector('main')?.scrollTo({
-      top: 114,
+      top: TAB_SCROLL_OFFSET,
       left: 0,
     });
   }, [activeTab]);
@@ -306,20 +304,34 @@ const EVENT_COLORS = [
   "#6b7280",
 ];
 
+type BasicFormState = {
+  isPublic: boolean;
+  color: string;
+  title: string;
+  slug: string;
+  description: string;
+  duration: number;
+  bufferBefore: number;
+  bufferAfter: number;
+};
+
 function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; onDirtyChange: (dirty: boolean) => void }) {
   const toast = useToast();
-  const [isPublic, setIsPublic] = useState(event.status === "active");
-  const [color, setColor] = useState(
-    EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0]
-  );
-  const [title, setTitle] = useState(event.title);
-  const [slug, setSlug] = useState(event.slug);
-  const [description, setDescription] = useState(event.description ?? "");
-  const [duration, setDuration] = useState(event.duration);
-  const [bufferBefore, setBufferBefore] = useState(event.buffer_before);
-  const [bufferAfter, setBufferAfter] = useState(event.buffer_after);
+  const [form, setForm] = useState<BasicFormState>({
+    isPublic: event.status === "active",
+    color: EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0],
+    title: event.title,
+    slug: event.slug,
+    description: event.description ?? "",
+    duration: event.duration,
+    bufferBefore: event.buffer_before,
+    bufferAfter: event.buffer_after,
+  });
 
-  function markDirty() { onDirtyChange(true); }
+  function updateField<K extends keyof BasicFormState>(key: K, value: BasicFormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    onDirtyChange(true);
+  }
 
   return (
     <div className="space-y-5">
@@ -333,15 +345,15 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
       </div>
       <div>
         <label className="label">イベント名</label>
-        <input type="text" className="input mt-1" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} />
+        <input type="text" className="input mt-1" value={form.title} onChange={(e) => updateField("title", e.target.value)} />
       </div>
       <div>
         <label className="label">説明</label>
         <textarea
           className="input mt-1"
           rows={3}
-          value={description}
-          onChange={(e) => { setDescription(e.target.value); markDirty(); }}
+          value={form.description}
+          onChange={(e) => updateField("description", e.target.value)}
         />
       </div>
       <div>
@@ -350,10 +362,10 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
           {EVENT_COLORS.map((c) => (
             <button
               key={c}
-              onClick={() => { setColor(c); markDirty(); }}
+              onClick={() => updateField("color", c)}
               className={cn(
                 "h-8 w-8 rounded-full transition-all",
-                color === c
+                form.color === c
                   ? "ring-2 ring-offset-2 ring-gray-400"
                   : "hover:scale-110"
               )}
@@ -368,10 +380,10 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
           <input
             type="number"
             className="input mt-1"
-            value={duration}
+            value={form.duration}
             min={15}
             step={15}
-            onChange={(e) => { setDuration(parseInt(e.target.value) || 15); markDirty(); }}
+            onChange={(e) => updateField("duration", parseInt(e.target.value) || 15)}
           />
         </div>
         <div>
@@ -379,10 +391,10 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
           <input
             type="number"
             className="input mt-1"
-            value={bufferBefore}
+            value={form.bufferBefore}
             min={0}
             step={5}
-            onChange={(e) => { setBufferBefore(parseInt(e.target.value) || 0); markDirty(); }}
+            onChange={(e) => updateField("bufferBefore", parseInt(e.target.value) || 0)}
           />
         </div>
         <div>
@@ -390,10 +402,10 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
           <input
             type="number"
             className="input mt-1"
-            value={bufferAfter}
+            value={form.bufferAfter}
             min={0}
             step={5}
-            onChange={(e) => { setBufferAfter(parseInt(e.target.value) || 0); markDirty(); }}
+            onChange={(e) => updateField("bufferAfter", parseInt(e.target.value) || 0)}
           />
         </div>
       </div>
@@ -403,32 +415,32 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
         <label className="label">公開設定</label>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <button
-            onClick={() => { setIsPublic(true); markDirty(); }}
+            onClick={() => updateField("isPublic", true)}
             className={cn(
               "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
-              isPublic
+              form.isPublic
                 ? "border-green-500 bg-green-50"
                 : "border-gray-200 hover:border-gray-300"
             )}
           >
-            <Globe className={cn("h-5 w-5", isPublic ? "text-green-600" : "text-gray-400")} />
+            <Globe className={cn("h-5 w-5", form.isPublic ? "text-green-600" : "text-gray-400")} />
             <div>
-              <p className={cn("font-semibold text-sm", isPublic ? "text-green-800" : "text-gray-700")}>公開</p>
+              <p className={cn("font-semibold text-sm", form.isPublic ? "text-green-800" : "text-gray-700")}>公開</p>
               <p className="mt-1 text-xs text-gray-500">候補者が予約できます</p>
             </div>
           </button>
           <button
-            onClick={() => { setIsPublic(false); markDirty(); }}
+            onClick={() => updateField("isPublic", false)}
             className={cn(
               "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
-              !isPublic
+              !form.isPublic
                 ? "border-gray-500 bg-gray-50"
                 : "border-gray-200 hover:border-gray-300"
             )}
           >
-            <EyeOff className={cn("h-5 w-5", !isPublic ? "text-gray-600" : "text-gray-400")} />
+            <EyeOff className={cn("h-5 w-5", !form.isPublic ? "text-gray-600" : "text-gray-400")} />
             <div>
-              <p className={cn("font-semibold text-sm", !isPublic ? "text-gray-800" : "text-gray-700")}>非公開</p>
+              <p className={cn("font-semibold text-sm", !form.isPublic ? "text-gray-800" : "text-gray-700")}>非公開</p>
               <p className="mt-1 text-xs text-gray-500">下書き状態で保存します</p>
             </div>
           </button>
@@ -442,8 +454,8 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
           <input
             type="text"
             className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm focus:ring-0 rounded-lg"
-            value={slug}
-            onChange={(e) => { setSlug(e.target.value); markDirty(); }}
+            value={form.slug}
+            onChange={(e) => updateField("slug", e.target.value)}
           />
         </div>
       </div>
@@ -463,7 +475,7 @@ function TeamTab({
 }: {
   roles: EventRole[];
   members: EventMember[];
-  mode: string;
+  mode: SchedulingMode;
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const toast = useToast();
@@ -492,10 +504,7 @@ function TeamTab({
   const [newRoleCount, setNewRoleCount] = useState(1);
 
   // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useDndSensors();
 
   // Fixed mode: add member
   function addFixedMember(userId: string) {
@@ -954,9 +963,119 @@ const EMPTY_EXCLUSION_DRAFT: ExclusionDraft = {
   end_time: "10:00",
 };
 
+function ExclusionForm({
+  draft,
+  onDraftChange,
+  onSave,
+  onCancel,
+  saveLabel = "保存",
+}: {
+  draft: ExclusionDraft;
+  onDraftChange: (d: ExclusionDraft) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saveLabel?: string;
+}) {
+  return (
+    <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+      <div>
+        <label className="label">ルール名</label>
+        <input
+          type="text"
+          className="input mt-1"
+          value={draft.name}
+          onChange={(e) => onDraftChange({ ...draft, name: e.target.value })}
+          placeholder="例: 昼休み"
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <label className="label">タイプ</label>
+          <select
+            className="select mt-1"
+            value={draft.type}
+            onChange={(e) => onDraftChange({ ...draft, type: e.target.value as "all-day" | "time-range" })}
+          >
+            <option value="all-day">終日</option>
+            <option value="time-range">時間帯</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">繰り返し</label>
+          <button
+            onClick={() => onDraftChange({ ...draft, recurring: !draft.recurring })}
+            className={cn(
+              "toggle-btn",
+              draft.recurring ? "toggle-btn-active" : ""
+            )}
+          >
+            <span>繰り返す</span>
+            <div className={cn("toggle-btn-switch", draft.recurring ? "toggle-btn-switch-active" : "")}>
+              <span className={cn("toggle-btn-switch-handle", draft.recurring ? "toggle-btn-switch-handle-active" : "")} />
+            </div>
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {draft.recurring ? (
+          <div>
+            <label className="label">曜日</label>
+            <select
+              className="select mt-1"
+              value={draft.day_of_week ?? ""}
+              onChange={(e) =>
+                onDraftChange({
+                  ...draft,
+                  day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
+                })
+              }
+            >
+              <option value="">毎日</option>
+              {DAY_NAMES.map((d, i) => (
+                <option key={i} value={i}>{d}曜日</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div>
+            <label className="label">対象日</label>
+            <input
+              type="date"
+              className="input mt-1"
+              value={draft.specific_date ?? ""}
+              onChange={(e) => onDraftChange({ ...draft, specific_date: e.target.value })}
+            />
+          </div>
+        )}
+        {draft.type === "time-range" && (
+          <>
+            <div>
+              <label className="label">開始時刻</label>
+              <input type="time" className="input mt-1"
+                value={draft.start_time ?? "09:00"}
+                onChange={(e) => onDraftChange({ ...draft, start_time: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">終了時刻</label>
+              <input type="time" className="input mt-1"
+                value={draft.end_time ?? "10:00"}
+                onChange={(e) => onDraftChange({ ...draft, end_time: e.target.value })} />
+            </div>
+          </>
+        )}
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
+        <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary">
+          {saveLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule[]; eventId: string; onDirtyChange: (dirty: boolean) => void }) {
   const toast = useToast();
-  const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
 
   const [localRules, setLocalRules] = useState<ExclusionRule[]>(rules);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -1027,117 +1146,6 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
     onDirtyChange(false);
   }
 
-  function renderExclusionForm(
-    draft: ExclusionDraft,
-    setDraft: (d: ExclusionDraft) => void,
-    onSave: () => void,
-    onCancel: () => void,
-    saveLabel = "保存"
-  ) {
-    return (
-      <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-        <div>
-          <label className="label">ルール名</label>
-          <input
-            type="text"
-            className="input mt-1"
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            placeholder="例: 昼休み"
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="label">タイプ</label>
-            <select
-              className="select mt-1"
-              value={draft.type}
-              onChange={(e) => setDraft({ ...draft, type: e.target.value as "all-day" | "time-range" })}
-            >
-              <option value="all-day">終日</option>
-              <option value="time-range">時間帯</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">繰り返し</label>
-            <button
-              onClick={() => setDraft({ ...draft, recurring: !draft.recurring })}
-              className={cn(
-                "toggle-btn",
-                draft.recurring
-                  ? "toggle-btn-active"
-                  : ""
-              )}
-            >
-              <span>繰り返す</span>
-              <div className={cn("toggle-btn-switch",
-                draft.recurring ? "toggle-btn-switch-active" : ""
-              )}>
-                <span className={cn("toggle-btn-switch-handle",
-                  draft.recurring ? "toggle-btn-switch-handle-active" : ""
-                )} />
-              </div>
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {draft.recurring ? (
-            <div>
-              <label className="label">曜日</label>
-              <select
-                className="select mt-1"
-                value={draft.day_of_week ?? ""}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    day_of_week: e.target.value === "" ? undefined : parseInt(e.target.value),
-                  })
-                }
-              >
-                <option value="">毎日</option>
-                {daysOfWeek.map((d, i) => (
-                  <option key={i} value={i}>{d}曜日</option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div>
-              <label className="label">対象日</label>
-              <input
-                type="date"
-                className="input mt-1"
-                value={draft.specific_date ?? ""}
-                onChange={(e) => setDraft({ ...draft, specific_date: e.target.value })}
-              />
-            </div>
-          )}
-          {draft.type === "time-range" && (
-            <>
-              <div>
-                <label className="label">開始時刻</label>
-                <input type="time" className="input mt-1"
-                  value={draft.start_time ?? "09:00"}
-                  onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">終了時刻</label>
-                <input type="time" className="input mt-1"
-                  value={draft.end_time ?? "10:00"}
-                  onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
-              </div>
-            </>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary">
-            {saveLabel}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -1151,13 +1159,13 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
         {localRules.map((rule) => (
           <div key={rule.id}>
             {editingId === rule.id ? (
-              renderExclusionForm(
-                editDraft,
-                setEditDraft,
-                () => handleEditSave(rule.id),
-                () => setEditingId(null),
-                "保存"
-              )
+              <ExclusionForm
+                draft={editDraft}
+                onDraftChange={setEditDraft}
+                onSave={() => handleEditSave(rule.id)}
+                onCancel={() => setEditingId(null)}
+                saveLabel="保存"
+              />
             ) : (
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
                 <div>
@@ -1165,7 +1173,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
                   <p className="mt-0.5 text-sm text-gray-500">
                     {rule.type === "all-day" ? "終日" : `${rule.start_time} - ${rule.end_time}`}
                     {rule.recurring && rule.day_of_week !== undefined && (
-                      <span> · 毎週{daysOfWeek[rule.day_of_week]}曜日</span>
+                      <span> · 毎週{DAY_NAMES[rule.day_of_week]}曜日</span>
                     )}
                     {rule.recurring && rule.day_of_week === undefined && (
                       <span> · 毎日</span>
@@ -1203,12 +1211,14 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
         ))}
       </div>
 
-      {showAddForm && renderExclusionForm(
-        addDraft,
-        setAddDraft,
-        handleAddSave,
-        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); },
-        "追加"
+      {showAddForm && (
+        <ExclusionForm
+          draft={addDraft}
+          onDraftChange={setAddDraft}
+          onSave={handleAddSave}
+          onCancel={() => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); }}
+          saveLabel="追加"
+        />
       )}
 
       {!showAddForm && (
@@ -1241,14 +1251,6 @@ const EMPTY_FIELD_DRAFT: FieldDraft = {
 
 function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; eventId: string; onDirtyChange: (dirty: boolean) => void }) {
   const toast = useToast();
-  const fieldTypeLabels: Record<string, string> = {
-    text: "テキスト",
-    email: "メール",
-    tel: "電話番号",
-    multiline: "複数行テキスト",
-    url: "URL",
-    file: "ファイル",
-  };
 
   const [localFields, setLocalFields] = useState<CustomField[]>(
     [...fields].sort((a, b) => a.sort_order - b.sort_order)
@@ -1258,10 +1260,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
   const [addDraft, setAddDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
   const [editDraft, setEditDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useDndSensors();
 
   function handleFieldDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -1431,7 +1430,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
             <span className="text-sm font-medium text-gray-500">{field.label}</span>
             <div className="flex items-center gap-4">
               <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
-                {fieldTypeLabels[field.type]}
+                {FIELD_TYPE_LABELS[field.type as FieldType]}
               </span>
               <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">
                 必須
@@ -1478,7 +1477,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
                           </div>
                           <div className="flex items-center gap-4">
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                              {fieldTypeLabels[field.type] || field.type}
+                              {FIELD_TYPE_LABELS[field.type] || field.type}
                             </span>
                             <span className={cn(
                               "rounded-full px-2 py-0.5 text-xs",

@@ -38,7 +38,7 @@ export default function BookingPage() {
 
   // Use current month as base
   const [viewMonth, setViewMonth] = useState(() => {
-    const now = new Date("2026-02-18");
+    const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 

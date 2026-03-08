@@ -32,8 +32,10 @@ import {
 import { getEventTypes, subscribe } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
 import { Drawer } from "@/components/ui/Drawer";
-import { cn } from "@/lib/utils";
-import type { EventType, ExclusionRule, CustomField } from "@/types";
+import { cn, copyToClipboard } from "@/lib/utils";
+import { EventStatusBadge } from "@/components/ui/EventStatusBadge";
+import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS } from "@/lib/constants";
+import type { EventType } from "@/types";
 
 function useEventTypes() {
   return useSyncExternalStore(subscribe, getEventTypes, getEventTypes);
@@ -134,22 +136,7 @@ function EventCard({
                   <span className="font-semibold text-sm leading-relaxed">
                     {event.title}
                   </span>
-                  <span
-                    className={cn(
-                      "badge",
-                      event.status === "active"
-                        ? "badge-green"
-                        : event.status === "draft"
-                          ? "badge-gray"
-                          : "badge-red"
-                    )}
-                  >
-                    {event.status === "active"
-                      ? "公開中"
-                      : event.status === "draft"
-                        ? "非公開"
-                        : "アーカイブ"}
-                  </span>
+                  <EventStatusBadge status={event.status} />
                 </div>
               </div>
 
@@ -227,21 +214,6 @@ function EventCard({
 // EventDrawerContent
 // ============================================================
 
-const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
-
-const EXCLUSION_TYPE_LABELS: Record<ExclusionRule["type"], string> = {
-  "all-day": "終日",
-  "time-range": "時間帯",
-};
-
-const FIELD_TYPE_LABELS: Record<CustomField["type"], string> = {
-  text: "テキスト",
-  email: "メール",
-  tel: "電話番号",
-  multiline: "複数行テキスト",
-  url: "URL",
-  file: "ファイル",
-};
 
 function EventDrawerContent({ event }: { event: EventType }) {
   const eventRoles = mockRoles.filter((r) => r.event_id === event.id);
@@ -552,7 +524,7 @@ function EventsContent() {
   useEffect(() => {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
-    document.querySelector("main")?.scrollTo({ top: 114, left: 0 });
+    document.querySelector("main")?.scrollTo({ top: TAB_SCROLL_OFFSET, left: 0 });
   }, [activeTab]);
 
   const selectedEventId = searchParams.get("id");
@@ -568,32 +540,15 @@ function EventsContent() {
     router.push("/events", { scroll: false });
   }
 
-  function handleCopyLink(id: string, slug: string) {
+  async function handleCopyLink(id: string, slug: string) {
     const url = `${window.location.origin}/j/${slug}`;
-    const doCopy = () => {
+    const ok = await copyToClipboard(url);
+    if (ok) {
       setCopiedEventId(id);
       toast.success("リンクをコピーしました");
       setTimeout(() => setCopiedEventId(null), 2000);
-    };
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(doCopy).catch(() => {
-        // フォールバック: execCommand
-        const el = document.createElement("textarea");
-        el.value = url;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand("copy");
-        document.body.removeChild(el);
-        doCopy();
-      });
     } else {
-      const el = document.createElement("textarea");
-      el.value = url;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
-      doCopy();
+      toast.error("コピーに失敗しました。URLを手動でコピーしてください");
     }
   }
 
@@ -625,7 +580,7 @@ function EventsContent() {
             className={cn("tab-item", activeTab === "all" && "tab-item-active")}
           >
             すべて
-            <span className={cn("tab-badge", activeTab === "all" && "tab-bade-active")}>
+            <span className={cn("tab-badge", activeTab === "all" && "tab-badge-active")}>
               {countAll}
             </span>
           </button>
@@ -634,7 +589,7 @@ function EventsContent() {
             className={cn("tab-item", activeTab === "active" && "tab-item-active")}
           >
             公開中
-            <span className={cn("tab-badge", activeTab === "active" && "tab-bade-active")}>
+            <span className={cn("tab-badge", activeTab === "active" && "tab-badge-active")}>
               {countActive}
             </span>
           </button>
@@ -643,7 +598,7 @@ function EventsContent() {
             className={cn("tab-item", activeTab === "draft" && "tab-item-active")}
           >
             非公開
-            <span className={cn("tab-badge", activeTab === "draft" && "tab-bade-active")}>
+            <span className={cn("tab-badge", activeTab === "draft" && "tab-badge-active")}>
               {countDraft}
             </span>
           </button>
