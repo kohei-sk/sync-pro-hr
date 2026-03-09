@@ -524,15 +524,15 @@ function ReceptionTab({
         <div>
           <label className="label">曜日設定</label>
           <div className="mt-1">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {WEEKDAY_LABELS.map((label, i) => (
                 <label
                   key={i}
                   className={cn(
-                    "flex cursor-pointer items-center justify-center rounded-xl border-[1px] h-[42px] w-[42px] px-3 py-2 text-xs font-semibold transition-all select-none",
+                    "flex cursor-pointer items-center justify-center rounded-xl border-[1px] h-[42px] w-[42px] px-3 py-2 text-sm font-semibold transition-all select-none",
                     settings.allowed_days[i]
                       ? "border-primary-300 bg-primary-50 text-primary-700"
-                      : "border-gray-300 text-gray-600"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
                   )}
                 >
                   <input type="checkbox" className="sr-only" checked={settings.allowed_days[i]} onChange={() => toggleDay(i)} />
