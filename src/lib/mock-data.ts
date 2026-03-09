@@ -11,6 +11,7 @@ import type {
   Notification,
   ReminderSetting,
   BookingReminder,
+  ReceptionSettings,
 } from "@/types";
 
 // --- Mock Users ---
@@ -77,6 +78,13 @@ export const mockUsers: User[] = [
   },
 ];
 
+// --- Mock Reception Settings ---
+const defaultReceptionSettings: ReceptionSettings = {
+  exclude_outside_hours: true,
+  allowed_days: [true, true, true, true, true, false, false], // 月〜金ON、土日OFF
+  accept_holidays: false,
+};
+
 // --- Mock Reminder Settings ---
 const mockReminderSettings: Record<string, ReminderSetting[]> = {
   evt1: [
@@ -126,6 +134,7 @@ export const mockEventTypes: EventType[] = [
     scheduling_mode: "pool",
     color: "#3b82f6",
     reminder_settings: mockReminderSettings["evt1"],
+    reception_settings: defaultReceptionSettings,
     created_at: "2026-01-15T00:00:00Z",
     updated_at: "2026-02-10T00:00:00Z",
   },
@@ -144,6 +153,7 @@ export const mockEventTypes: EventType[] = [
     scheduling_mode: "fixed",
     color: "#8b5cf6",
     reminder_settings: mockReminderSettings["evt2"],
+    reception_settings: defaultReceptionSettings,
     created_at: "2026-01-20T00:00:00Z",
     updated_at: "2026-02-10T00:00:00Z",
   },
@@ -161,6 +171,11 @@ export const mockEventTypes: EventType[] = [
     status: "draft",
     scheduling_mode: "pool",
     color: "#ec4899",
+    reception_settings: {
+      exclude_outside_hours: true,
+      allowed_days: [true, true, true, true, true, false, false],
+      accept_holidays: false,
+    },
     created_at: "2026-02-01T00:00:00Z",
     updated_at: "2026-02-15T00:00:00Z",
   },
@@ -176,8 +191,20 @@ export const mockEventTypes: EventType[] = [
     location_type: "online",
     location_detail: "Google Meet",
     status: "active",
-    scheduling_mode: "fixed",
+    scheduling_mode: "weekday",
     color: "#22c55e",
+    reception_settings: {
+      exclude_outside_hours: true,
+      allowed_days: [true, true, true, true, true, false, false], // 月〜金
+      accept_holidays: false,
+    },
+    weekday_schedule: [
+      { day_index: 0, member_ids: ["u1", "u2"] }, // 月曜: 田中, 鈴木
+      { day_index: 1, member_ids: ["u3", "u4"] }, // 火曜: 佐藤, 山田
+      { day_index: 2, member_ids: ["u1", "u3"] }, // 水曜: 田中, 佐藤
+      { day_index: 3, member_ids: ["u2", "u4"] }, // 木曜: 鈴木, 山田
+      { day_index: 4, member_ids: ["u1", "u4"] }, // 金曜: 田中, 山田
+    ],
     created_at: "2026-02-05T00:00:00Z",
     updated_at: "2026-02-12T00:00:00Z",
   },

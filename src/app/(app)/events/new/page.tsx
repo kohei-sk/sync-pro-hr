@@ -22,6 +22,7 @@ import {
   Mail,
   MessageSquare,
   Clock,
+  CalendarDays,
 } from "lucide-react";
 import {
   DndContext,
@@ -41,6 +42,7 @@ import { cn, generateId } from "@/lib/utils";
 import { addEventType } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/lib/mock-data";
+import { WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
 import type { ExclusionRule, CustomField } from "@/types";
 
 type Step = "basic" | "options" | "confirm";
@@ -185,10 +187,21 @@ export default function NewEventPage() {
     buffer_after: 15,
     location_type: "online" as "online" | "in-person" | "phone",
     location_detail: "",
-    scheduling_mode: "fixed" as "pool" | "fixed",
+    scheduling_mode: "weekday" as "pool" | "fixed" | "weekday",
     color: "#3b82f6",
     isPublic: true,
   });
+
+  // 受付設定
+  const [receptionSettings, setReceptionSettings] = useState({
+    excludeOutsideHours: true,
+    allowedDays: [...DEFAULT_ALLOWED_DAYS],
+    acceptHolidays: false,
+  });
+
+  // 曜日モード
+  const [weekdaySchedule, setWeekdaySchedule] = useState<{ dayIndex: number; memberIds: string[] }[]>([]);
+  const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
 
   const [roles, setRoles] = useState<NewRole[]>([
     { id: "role-1", name: "面接官", required_count: 1, memberIds: [] },
@@ -477,6 +490,55 @@ export default function NewEventPage() {
     }
   }
 
+  // 受付設定: 曜日トグル
+  function toggleAllowedDay(dayIndex: number) {
+    const updated = [...receptionSettings.allowedDays];
+    updated[dayIndex] = !updated[dayIndex];
+    setReceptionSettings({ ...receptionSettings, allowedDays: updated });
+  }
+
+  // 曜日モード: メンバー追加
+  function addWeekdayMember(dayIndex: number, userId: string) {
+    setWeekdaySchedule((prev) => {
+      const existing = prev.find((e) => e.dayIndex === dayIndex);
+      if (existing) {
+        if (existing.memberIds.includes(userId)) return prev;
+        return prev.map((e) => e.dayIndex === dayIndex ? { ...e, memberIds: [...e.memberIds, userId] } : e);
+      }
+      return [...prev, { dayIndex, memberIds: [userId] }];
+    });
+    setWeekdayMemberDropdownOpen(null);
+  }
+
+  // 曜日モード: メンバー削除
+  function removeWeekdayMember(dayIndex: number, userId: string) {
+    setWeekdaySchedule((prev) =>
+      prev.map((e) => e.dayIndex === dayIndex ? { ...e, memberIds: e.memberIds.filter((id) => id !== userId) } : e)
+    );
+  }
+
+  // 曜日モード: メンバー並び替え
+  function handleWeekdayMemberDragEnd(event: DragEndEvent, dayIndex: number) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setWeekdaySchedule((prev) =>
+        prev.map((e) => {
+          if (e.dayIndex !== dayIndex) return e;
+          const activeId = (active.id as string).replace(`${dayIndex}-`, "");
+          const overId = (over.id as string).replace(`${dayIndex}-`, "");
+          const oldIndex = e.memberIds.indexOf(activeId);
+          const newIndex = e.memberIds.indexOf(overId);
+          return { ...e, memberIds: arrayMove(e.memberIds, oldIndex, newIndex) };
+        })
+      );
+    }
+  }
+
+  // 有効な曜日一覧（曜日モードUI用）
+  const enabledDays = WEEKDAY_LABELS
+    .map((label, i) => ({ label, dayIndex: i }))
+    .filter((_, i) => receptionSettings.allowedDays[i]);
+
   const colors = [
     "#3b82f6",
     "#8b5cf6",
@@ -488,9 +550,11 @@ export default function NewEventPage() {
     "#6b7280",
   ];
 
-  const totalMembers = formData.scheduling_mode === "fixed"
-    ? fixedMemberIds.length
-    : roles.reduce((acc, r) => acc + r.memberIds.length, 0);
+  const totalMembers = formData.scheduling_mode === "weekday"
+    ? new Set(weekdaySchedule.flatMap((e) => e.memberIds)).size
+    : formData.scheduling_mode === "fixed"
+      ? fixedMemberIds.length
+      : roles.reduce((acc, r) => acc + r.memberIds.length, 0);
 
   return (
     <div>
@@ -676,10 +740,10 @@ export default function NewEventPage() {
                           setFormData({ ...formData, location_type: loc.type })
                         }
                         className={cn(
-                          "flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium ring-1 transition-colors",
+                          "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ring-1 transition-colors h-[42px]",
                           formData.location_type === loc.type
                             ? "bg-primary-50 text-primary-700 ring-primary-300"
-                            : "text-gray-600 ring-gray-200 hover:bg-gray-50"
+                            : "text-gray-600 ring-gray-200 hover:ring-gray-300"
                         )}
                       >
                         <loc.icon className="h-4 w-4" />
@@ -765,6 +829,65 @@ export default function NewEventPage() {
                 </div>
               </div>
             </div>
+
+            {/* 受付設定 */}
+            <div className="card">
+              <h2 className="step-section-title">受付設定</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                予約を受け付ける時間・曜日を設定します
+              </p>
+              <div className="mt-6 space-y-6">
+                {/* 時間設定 */}
+                <div>
+                  <label className="label">時間設定</label>
+                  <button
+                    type="button"
+                    className={cn("toggle-btn w-[250px] mt-1", receptionSettings.excludeOutsideHours && "toggle-btn-active")}
+                    onClick={() => setReceptionSettings({ ...receptionSettings, excludeOutsideHours: !receptionSettings.excludeOutsideHours })}
+                  >
+                    <span>営業時間外は受け付けない</span>
+                    <span className={cn("toggle-btn-switch", receptionSettings.excludeOutsideHours && "toggle-btn-switch-active")}>
+                      <span className={cn("toggle-btn-switch-handle", receptionSettings.excludeOutsideHours && "toggle-btn-switch-handle-active")} />
+                    </span>
+                  </button>
+                </div>
+                {/* 曜日設定 */}
+                <div>
+                  <label className="label">曜日設定</label>
+                  <div className="mt-1">
+                    <div className="flex flex-wrap gap-3">
+                      {WEEKDAY_LABELS.map((label, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => toggleAllowedDay(i)}
+                          className={cn(
+                            "flex cursor-pointer items-center justify-center rounded-xl border-[1px] h-[42px] w-[42px] px-3 py-2 text-sm font-semibold transition-all select-none",
+                            receptionSettings.allowedDays[i]
+                              ? "border-primary-300 bg-primary-50 text-primary-700"
+                              : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          )}
+                          aria-pressed={receptionSettings.allowedDays[i]}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className={cn("toggle-btn w-[250px] mt-4", receptionSettings.acceptHolidays && "toggle-btn-active")}
+                      onClick={() => setReceptionSettings({ ...receptionSettings, acceptHolidays: !receptionSettings.acceptHolidays })}
+                    >
+                      <span>祝日は受け付ける</span>
+                      <span className={cn("toggle-btn-switch", receptionSettings.acceptHolidays && "toggle-btn-switch-active")}>
+                        <span className={cn("toggle-btn-switch-handle", receptionSettings.acceptHolidays && "toggle-btn-switch-handle-active")} />
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="card">
               <h2 className="step-section-title">メンバー設定</h2>
               <p className="mt-1 text-sm text-gray-500">
@@ -774,7 +897,28 @@ export default function NewEventPage() {
                 {/* Scheduling mode */}
                 <div>
                   <label className="label">スケジューリングモード</label>
-                  <div className="mt-2 grid grid-cols-2 gap-3">
+                  <div className="mt-2 grid grid-cols-3 gap-3">
+                    <button
+                      onClick={() =>
+                        setFormData({ ...formData, scheduling_mode: "weekday" })
+                      }
+                      className={cn(
+                        "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+                        formData.scheduling_mode === "weekday"
+                          ? "border-primary-600 bg-primary-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      )}
+                    >
+                      <CalendarDays className="h-5 w-5 text-gray-600 shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold">
+                          曜日モード
+                        </h4>
+                        <p className="mt-1 text-xs text-gray-500">
+                          曜日ごとにメンバーを設定
+                        </p>
+                      </div>
+                    </button>
                     <button
                       onClick={() =>
                         setFormData({ ...formData, scheduling_mode: "fixed" })
@@ -786,13 +930,13 @@ export default function NewEventPage() {
                           : "border-gray-200 hover:border-gray-300"
                       )}
                     >
-                      <Lock className="h-5 w-5 text-gray-600" />
+                      <Lock className="h-5 w-5 text-gray-600 shrink-0" />
                       <div>
                         <h4 className="text-sm font-semibold">
                           固定モード
                         </h4>
                         <p className="mt-1 text-xs text-gray-500">
-                          指定メンバー全員が空いている枠のみ表示
+                          優先順でメンバーを設定
                         </p>
                       </div>
                     </button>
@@ -807,28 +951,126 @@ export default function NewEventPage() {
                           : "border-gray-200 hover:border-gray-300"
                       )}
                     >
-                      <Users className="h-5 w-5 text-gray-600" />
+                      <Users className="h-5 w-5 text-gray-600 shrink-0" />
                       <div>
                         <h4 className="text-sm font-semibold">
                           プールモード
                         </h4>
                         <p className="mt-1 text-xs text-gray-500">
-                          役割ごとに必要人数を満たす枠を自動選出
+                          役割ごとにメンバーを設定
                         </p>
                       </div>
                     </button>
                   </div>
-                  <div className="mt-3 rounded-2xl bg-gray-50 p-4">
+                  <div className="mt-3 rounded-xl bg-gray-50 p-4">
                     <p className="text-xs text-gray-600">
-                      {formData.scheduling_mode === "fixed"
-                        ? "固定モードでは、全メンバーの空き時間が一致する枠のみが候補者に表示されます。少人数の面接に適しています。"
-                        : "プールモードでは、役割ごとに必要人数を設定し、条件を満たす枠が自動で選出されます。大人数の面接パネルに適しています。"}
+                      {formData.scheduling_mode === "weekday"
+                        ? "曜日モードでは、受付設定で有効な曜日ごとに担当メンバーを設定します。各曜日に優先度順でメンバーを割り当てられます。"
+                        : formData.scheduling_mode === "fixed"
+                          ? "固定モードでは、全メンバーの空き時間が一致する枠のみが候補者に表示されます。少人数の面接に適しています。"
+                          : "プールモードでは、役割ごとに必要人数を設定し、条件を満たす枠が自動で選出されます。大人数の面接パネルに適しています。"}
                     </p>
                   </div>
                 </div>
 
+                {/* Weekday mode */}
+                {formData.scheduling_mode === "weekday" && (
+                  <div>
+                    <label className="label">曜日別メンバー</label>
+                    {enabledDays.length === 0 ? (
+                      <p className="mt-2 text-sm text-gray-400">受付設定で曜日を有効にしてください</p>
+                    ) : (
+                      <div className="mt-2 space-y-3">
+                        {enabledDays.map(({ label, dayIndex }) => {
+                          const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] };
+                          const usedIds = entry.memberIds;
+                          return (
+                            <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                                <span className="text-xs text-gray-400">{usedIds.length}人</span>
+                              </div>
+                              <div className="space-y-2">
+                                <DndContext
+                                  sensors={sensors}
+                                  collisionDetection={closestCenter}
+                                  onDragEnd={(e) => handleWeekdayMemberDragEnd(e, dayIndex)}
+                                >
+                                  <SortableContext
+                                    items={usedIds.map((uid) => `${dayIndex}-${uid}`)}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    {usedIds.map((userId, memberIndex) => {
+                                      const user = mockUsers.find((u) => u.id === userId);
+                                      return (
+                                        <SortableRow key={`${dayIndex}-${userId}`} id={`${dayIndex}-${userId}`}>
+                                          {(handle) => (
+                                            <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+                                              {handle}
+                                              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
+                                                {memberIndex + 1}
+                                              </span>
+                                              <span className="flex-1 text-sm text-gray-700">
+                                                {user?.full_name || userId}
+                                              </span>
+                                              <button
+                                                onClick={() => removeWeekdayMember(dayIndex, userId)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                              >
+                                                <Trash2 className="h-3 w-3" />
+                                              </button>
+                                            </div>
+                                          )}
+                                        </SortableRow>
+                                      );
+                                    })}
+                                  </SortableContext>
+                                </DndContext>
+                                <div className="relative">
+                                  <button
+                                    onClick={() => setWeekdayMemberDropdownOpen(weekdayMemberDropdownOpen === dayIndex ? null : dayIndex)}
+                                    className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                    メンバー追加
+                                    <ChevronDown className="h-3 w-3" />
+                                  </button>
+                                  {weekdayMemberDropdownOpen === dayIndex && (
+                                    <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                      {mockUsers
+                                        .filter((u) => !usedIds.includes(u.id))
+                                        .map((user) => (
+                                          <button
+                                            key={user.id}
+                                            onClick={() => addWeekdayMember(dayIndex, user.id)}
+                                            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                          >
+                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                              {user.full_name.charAt(0)}
+                                            </div>
+                                            <div className="text-left min-w-0">
+                                              <p className="font-medium truncate">{user.full_name}</p>
+                                              <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      {mockUsers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
+                                        <p className="px-3 py-2 text-sm text-gray-400">追加できるメンバーがいません</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Fixed mode */}
-                {formData.scheduling_mode === "fixed" ? (
+                {formData.scheduling_mode === "fixed" && (
                   <div>
                     <label className="label">メンバー</label>
                     <div className="mt-2 rounded-2xl border border-gray-200 p-4">
@@ -910,8 +1152,10 @@ export default function NewEventPage() {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  /* Pool mode */
+                )}
+
+                {/* Pool mode */}
+                {formData.scheduling_mode === "pool" && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <label className="label">役割とメンバー</label>
@@ -1791,13 +2035,62 @@ export default function NewEventPage() {
                 </div>
               </div>
 
+              {/* 受付設定 */}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <h3 className="section-label">受付設定</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-4">
+                    <dt className="min-w-[26px] leading-[1.3rem] text-xs font-semibold text-gray-600">時間</dt>
+                    <dd>{receptionSettings.excludeOutsideHours ? "営業時間外は受け付けない" : "時間制限なし"}</dd>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <dt className="min-w-[26px] leading-[1.3rem] text-xs font-semibold text-gray-600">曜日</dt>
+                    <dd>
+                      {WEEKDAY_LABELS.filter((_, i) => receptionSettings.allowedDays[i]).join("・")}
+                      {receptionSettings.allowedDays.every((d) => !d) && <span className="text-gray-300">なし</span>}
+                      <span className="ml-2">（{receptionSettings.acceptHolidays ? "祝日は受け付ける" : "祝日は受け付けない"}）</span>
+                    </dd>
+                  </div>
+                </div>
+              </div>
+
               {/* メンバー */}
               <div className="rounded-2xl bg-gray-50 p-4">
                 <h3 className="section-label">
                   メンバー
-                  <span className="section-sub-label">（{formData.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}）</span>
+                  <span className="section-sub-label">（{formData.scheduling_mode === "weekday" ? "曜日モード" : formData.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}）</span>
                 </h3>
-                {formData.scheduling_mode === "fixed" ? (
+                {formData.scheduling_mode === "weekday" ? (
+                  weekdaySchedule.filter((e) => e.memberIds.length > 0).length > 0 ? (
+                    <div className="space-y-3">
+                      {weekdaySchedule
+                        .filter((e) => e.memberIds.length > 0)
+                        .map((entry) => {
+                          const label = WEEKDAY_LABELS[entry.dayIndex];
+                          return (
+                            <div key={entry.dayIndex}>
+                              <p className="text-xs font-semibold text-gray-600 mb-1">{label}曜日</p>
+                              <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
+                                {entry.memberIds.map((userId) => {
+                                  const user = mockUsers.find((u) => u.id === userId);
+                                  return (
+                                    <li key={userId} className="flex flex-wrap items-center gap-2">
+                                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                        {user?.full_name.charAt(0) ?? "?"}
+                                      </div>
+                                      <span className="text-sm whitespace-nowrap">{user?.full_name ?? "Unknown"}</span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-300">メンバー未設定</p>
+                  )
+                ) : formData.scheduling_mode === "fixed" ? (
                   fixedMemberIds.length > 0 ? (
                     <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {fixedMemberIds.slice(0, 4).map((userId) => {

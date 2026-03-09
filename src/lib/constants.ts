@@ -25,3 +25,9 @@ export const FIELD_TYPE_LABELS: Record<CustomField["type"], string> = {
   url: "URL",
   file: "ファイル",
 };
+
+/** 曜日名（月曜始まり、0=月曜日） */
+export const WEEKDAY_LABELS = ["月", "火", "水", "木", "金", "土", "日"] as const;
+
+/** 受付設定のデフォルト許容曜日（月〜金ON, 土日OFF） */
+export const DEFAULT_ALLOWED_DAYS: boolean[] = [true, true, true, true, true, false, false];

@@ -26,6 +26,7 @@ import {
   mockCustomFields,
   getUserById,
 } from "@/lib/mock-data";
+import { WEEKDAY_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
@@ -242,12 +243,37 @@ export default function BookingDetailPage() {
         <section className="py-4">
           <h2 className="section-label">
             メンバー
+            {event?.scheduling_mode && (
+              <span className="section-sub-label">
+                （{event.scheduling_mode === "weekday" ? "曜日モード" : event.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}）
+              </span>
+            )}
           </h2>
-          {booking.assigned_members && booking.assigned_members.length > 0 ? (
+          {event?.scheduling_mode === "weekday" ? (() => {
+            const dayIndex = (new Date(booking.start_time).getDay() + 6) % 7;
+            const dayEntry = event.weekday_schedule?.find((e) => e.day_index === dayIndex);
+            return dayEntry && dayEntry.member_ids.length > 0 ? (
+              <div className="inline-flex flex-wrap gap-x-4 gap-y-2">
+                {dayEntry.member_ids.map((userId) => {
+                  const user = getUserById(userId);
+                  return (
+                    <div key={userId} className="flex flex-wrap items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                        {user?.full_name?.charAt(0) || "?"}
+                      </div>
+                      <p className="text-sm whitespace-nowrap">{user?.full_name || "不明"}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-300">担当者未設定</p>
+            );
+          })() : booking.assigned_members && booking.assigned_members.length > 0 ? (
             <div className="inline-flex flex-wrap gap-x-4 gap-y-2">
               {booking.assigned_members.map((am) => {
                 const user = getUserById(am.user_id);
-                const role = mockRoles.find((r) => r.id === am.role_id);
+                const role = event?.scheduling_mode !== "fixed" ? mockRoles.find((r) => r.id === am.role_id) : undefined;
                 return (
                   <div key={am.user_id} className="flex flex-wrap items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">

@@ -17,7 +17,20 @@ export interface User {
 // --- Event Types ---
 export type EventStatus = "active" | "draft" | "archived";
 export type LocationType = "online" | "in-person" | "phone";
-export type SchedulingMode = "fixed" | "pool";
+export type SchedulingMode = "fixed" | "pool" | "weekday";
+
+// --- Reception Settings ---
+export interface ReceptionSettings {
+  exclude_outside_hours: boolean; // 営業時間外は受け付けない
+  allowed_days: boolean[];        // [月, 火, 水, 木, 金, 土, 日] インデックス順
+  accept_holidays: boolean;       // 祝日は受け付ける
+}
+
+// --- Weekday Schedule (曜日モード用) ---
+export interface WeekdayScheduleEntry {
+  day_index: number;    // 0=月, 1=火, 2=水, 3=木, 4=金, 5=土, 6=日
+  member_ids: string[]; // 優先順にソート済みユーザーID
+}
 
 export interface EventType {
   id: string;
@@ -34,6 +47,8 @@ export interface EventType {
   scheduling_mode: SchedulingMode;
   color?: string;
   reminder_settings?: ReminderSetting[];
+  reception_settings?: ReceptionSettings;
+  weekday_schedule?: WeekdayScheduleEntry[];
   created_at: string;
   updated_at: string;
 }
