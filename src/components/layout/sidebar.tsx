@@ -55,7 +55,7 @@ export function Sidebar() {
         <div
           className={cn(
             "flex-1 px-[9px]",
-            isCollapsed && "flex-none px-[0px]"
+            isCollapsed && "flex-none !px-[0px]"
           )}>
           <Image
             className={cn(
