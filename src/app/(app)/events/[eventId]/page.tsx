@@ -22,6 +22,7 @@ import {
   Mail,
   MessageSquare,
   Eye,
+  CalendarDays,
 } from "lucide-react";
 import {
   DndContext,
@@ -37,7 +38,7 @@ import {
 import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, generateId } from "@/lib/utils";
-import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS } from "@/lib/constants";
+import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
 import {
   mockEventTypes,
   mockRoles,
@@ -51,6 +52,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import type {
+  EventType,
   EventRole,
   EventMember,
   ExclusionRule,
@@ -59,12 +61,15 @@ import type {
   ReminderSetting,
   ReminderChannel,
   SchedulingMode,
+  ReceptionSettings,
+  WeekdayScheduleEntry,
 } from "@/types";
 
-type TabId = "basic" | "team" | "exclusions" | "form" | "reminder";
+type TabId = "basic" | "reception" | "team" | "exclusions" | "form" | "reminder";
 
 const tabs: { id: TabId; label: string; icon: typeof Settings }[] = [
   { id: "basic", label: "基本設定", icon: Settings },
+  { id: "reception", label: "受付設定", icon: CalendarDays },
   { id: "team", label: "メンバー", icon: Users },
   { id: "exclusions", label: "除外ルール", icon: ShieldOff },
   { id: "form", label: "フォーム", icon: FileText },
@@ -253,8 +258,11 @@ export default function EventDetailPage() {
           {activeTab === "basic" && (
             <BasicTab event={event} onDirtyChange={setIsDirty} />
           )}
+          {activeTab === "reception" && (
+            <ReceptionTab event={event} onDirtyChange={setIsDirty} />
+          )}
           {activeTab === "team" && (
-            <TeamTab roles={roles} members={members} mode={event.scheduling_mode} onDirtyChange={setIsDirty} />
+            <TeamTab roles={roles} members={members} mode={event.scheduling_mode} event={event} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "exclusions" && (
             <ExclusionsTab rules={exclusionRules} eventId={eventId} onDirtyChange={setIsDirty} />
@@ -467,15 +475,102 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
   );
 }
 
+// ============================================================
+// ReceptionTab
+// ============================================================
+
+function ReceptionTab({
+  event,
+  onDirtyChange,
+}: {
+  event: EventType;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
+  const toast = useToast();
+  const initial = event.reception_settings ?? {
+    exclude_outside_hours: true,
+    allowed_days: [...DEFAULT_ALLOWED_DAYS],
+    accept_holidays: false,
+  };
+  const [settings, setSettings] = useState<ReceptionSettings>({ ...initial });
+
+  function toggleDay(i: number) {
+    const updated = [...settings.allowed_days];
+    updated[i] = !updated[i];
+    setSettings({ ...settings, allowed_days: updated });
+    onDirtyChange(true);
+  }
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold">受付設定</h3>
+      <p className="text-sm text-gray-500 mt-1">予約を受け付ける時間・曜日を設定します</p>
+      <div className="mt-6 space-y-6">
+        {/* 時間設定 */}
+        <div>
+          <label className="label">時間設定</label>
+          <button
+            type="button"
+            className={cn("toggle-btn w-[250px] mt-1", settings.exclude_outside_hours && "toggle-btn-active")}
+            onClick={() => { setSettings({ ...settings, exclude_outside_hours: !settings.exclude_outside_hours }); onDirtyChange(true); }}
+          >
+            <span>営業時間外は受け付けない</span>
+            <span className={cn("toggle-btn-switch", settings.exclude_outside_hours && "toggle-btn-switch-active")}>
+              <span className={cn("toggle-btn-switch-handle", settings.exclude_outside_hours && "toggle-btn-switch-handle-active")} />
+            </span>
+          </button>
+        </div>
+        {/* 曜日設定 */}
+        <div>
+          <label className="label">曜日設定</label>
+          <div className="mt-1">
+            <div className="flex flex-wrap gap-2">
+              {WEEKDAY_LABELS.map((label, i) => (
+                <label
+                  key={i}
+                  className={cn(
+                    "flex cursor-pointer items-center justify-center rounded-xl border-[1px] h-[42px] w-[42px] px-3 py-2 text-xs font-semibold transition-all select-none",
+                    settings.allowed_days[i]
+                      ? "border-primary-300 bg-primary-50 text-primary-700"
+                      : "border-gray-300 text-gray-600"
+                  )}
+                >
+                  <input type="checkbox" className="sr-only" checked={settings.allowed_days[i]} onChange={() => toggleDay(i)} />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              className={cn("toggle-btn w-[250px] mt-4", settings.accept_holidays && "toggle-btn-active")}
+              onClick={() => { setSettings({ ...settings, accept_holidays: !settings.accept_holidays }); onDirtyChange(true); }}
+            >
+              <span>祝日は受け付ける</span>
+              <span className={cn("toggle-btn-switch", settings.accept_holidays && "toggle-btn-switch-active")}>
+                <span className={cn("toggle-btn-switch-handle", settings.accept_holidays && "toggle-btn-switch-handle-active")} />
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="mt-6 flex justify-end">
+        <button onClick={() => { toast.success("変更を保存しました"); onDirtyChange(false); }} className="btn btn-primary">変更を保存</button>
+      </div>
+    </div>
+  );
+}
+
 function TeamTab({
   roles,
   members,
   mode: initialMode,
+  event,
   onDirtyChange,
 }: {
   roles: EventRole[];
   members: EventMember[];
   mode: SchedulingMode;
+  event: EventType;
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const toast = useToast();
@@ -502,6 +597,17 @@ function TeamTab({
   const [showAddRoleForm, setShowAddRoleForm] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleCount, setNewRoleCount] = useState(1);
+
+  // Weekday mode: weekday schedule
+  const initialWeekdaySchedule: WeekdayScheduleEntry[] = event.weekday_schedule ?? [];
+  const [weekdaySchedule, setWeekdaySchedule] = useState<WeekdayScheduleEntry[]>(initialWeekdaySchedule);
+  const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
+
+  // Enabled days from reception settings
+  const receptionAllowedDays = event.reception_settings?.allowed_days ?? [...DEFAULT_ALLOWED_DAYS];
+  const enabledDays = WEEKDAY_LABELS
+    .map((label, i) => ({ label, dayIndex: i }))
+    .filter((_, i) => receptionAllowedDays[i]);
 
   // DnD sensors
   const sensors = useDndSensors();
@@ -600,6 +706,44 @@ function TeamTab({
     }
   }
 
+  // Weekday mode: member management
+  function addWeekdayMember(dayIndex: number, userId: string) {
+    setWeekdaySchedule((prev) => {
+      const existing = prev.find((e) => e.day_index === dayIndex);
+      if (existing) {
+        if (existing.member_ids.includes(userId)) return prev;
+        return prev.map((e) => e.day_index === dayIndex ? { ...e, member_ids: [...e.member_ids, userId] } : e);
+      }
+      return [...prev, { day_index: dayIndex, member_ids: [userId] }];
+    });
+    setWeekdayMemberDropdownOpen(null);
+    onDirtyChange(true);
+  }
+
+  function removeWeekdayMember(dayIndex: number, userId: string) {
+    setWeekdaySchedule((prev) =>
+      prev.map((e) => e.day_index === dayIndex ? { ...e, member_ids: e.member_ids.filter((id) => id !== userId) } : e)
+    );
+    onDirtyChange(true);
+  }
+
+  function handleWeekdayMemberDragEnd(dragEvent: DragEndEvent, dayIndex: number) {
+    const { active, over } = dragEvent;
+    if (over && active.id !== over.id) {
+      setWeekdaySchedule((prev) =>
+        prev.map((e) => {
+          if (e.day_index !== dayIndex) return e;
+          const activeId = (active.id as string).replace(`wd-${dayIndex}-`, "");
+          const overId = (over.id as string).replace(`wd-${dayIndex}-`, "");
+          const oldIndex = e.member_ids.indexOf(activeId);
+          const newIndex = e.member_ids.indexOf(overId);
+          return { ...e, member_ids: arrayMove(e.member_ids, oldIndex, newIndex) };
+        })
+      );
+      onDirtyChange(true);
+    }
+  }
+
   function handleSave() {
     toast.success("変更を保存しました");
     onDirtyChange(false);
@@ -612,7 +756,24 @@ function TeamTab({
         <h3 className="text-lg font-bold">メンバー</h3>
         <p className="text-sm text-gray-500 mt-1">スケジューリングモードとメンバーを設定します</p>
         <label className="label mt-6">スケジューリングモード</label>
-        <div className="mt-2 grid grid-cols-2 gap-3">
+        <div className="mt-2 grid grid-cols-3 gap-3">
+          <button
+            onClick={() => { setMode("weekday"); onDirtyChange(true); }}
+            className={cn(
+              "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+              mode === "weekday"
+                ? "border-primary-600 bg-primary-50"
+                : "border-gray-200 hover:border-gray-300"
+            )}
+          >
+            <CalendarDays className={cn("h-5 w-5 shrink-0", mode === "weekday" ? "text-primary-600" : "text-gray-400")} />
+            <div>
+              <h4 className="text-sm font-semibold">曜日モード</h4>
+              <p className="mt-1 text-xs text-gray-500">
+                曜日ごとにメンバーを設定
+              </p>
+            </div>
+          </button>
           <button
             onClick={() => { setMode("fixed"); onDirtyChange(true); }}
             className={cn(
@@ -626,7 +787,7 @@ function TeamTab({
             <div>
               <h4 className="text-sm font-semibold">固定モード</h4>
               <p className="mt-1 text-xs text-gray-500">
-                指定メンバー全員が空いている枠のみ表示
+                優先順でメンバーを設定
               </p>
             </div>
           </button>
@@ -643,15 +804,116 @@ function TeamTab({
             <div>
               <h4 className="text-sm font-semibold">プールモード</h4>
               <p className="mt-1 text-xs text-gray-500">
-                役割ごとに必要人数を満たす枠を自動選出
+                役割ごとにメンバーを設定
               </p>
             </div>
           </button>
         </div>
       </div>
 
+      {/* Weekday mode */}
+      {mode === "weekday" && (
+        <div>
+          <p className="label mb-3">曜日別メンバー<span className="font-normal ml-1.5 text-xs text-gray-400">（上から優先度順）</span></p>
+          {enabledDays.length === 0 ? (
+            <p className="text-sm text-gray-400">受付設定タブで曜日を有効にしてください</p>
+          ) : (
+            <div className="space-y-3">
+              {enabledDays.map(({ label, dayIndex }) => {
+                const entry = weekdaySchedule.find((e) => e.day_index === dayIndex) ?? { day_index: dayIndex, member_ids: [] };
+                const usedIds = entry.member_ids;
+                return (
+                  <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                      <span className="text-xs text-gray-400">{usedIds.length}人</span>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 divide-y divide-gray-50">
+                      {usedIds.length === 0 ? (
+                        <p className="px-3 py-3 text-sm text-gray-400 text-center">メンバーを追加してください</p>
+                      ) : (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(e) => handleWeekdayMemberDragEnd(e, dayIndex)}
+                        >
+                          <SortableContext
+                            items={usedIds.map((uid) => `wd-${dayIndex}-${uid}`)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {usedIds.map((userId, memberIndex) => {
+                              const user = mockUsers.find((u) => u.id === userId);
+                              return (
+                                <SortableRow key={`wd-${dayIndex}-${userId}`} id={`wd-${dayIndex}-${userId}`}>
+                                  {(handle) => (
+                                    <div className="flex items-center gap-3 px-4 py-3">
+                                      {handle}
+                                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
+                                        {memberIndex + 1}
+                                      </span>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{user?.full_name || "Unknown"}</p>
+                                        <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                                      </div>
+                                      <button
+                                        onClick={() => removeWeekdayMember(dayIndex, userId)}
+                                        className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </SortableRow>
+                              );
+                            })}
+                          </SortableContext>
+                        </DndContext>
+                      )}
+                      <div className="relative">
+                        <button
+                          onClick={() => setWeekdayMemberDropdownOpen(weekdayMemberDropdownOpen === dayIndex ? null : dayIndex)}
+                          className="flex w-full items-center gap-1.5 px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                          メンバーを追加
+                          <ChevronDown className="h-3 w-3 ml-auto" />
+                        </button>
+                        {weekdayMemberDropdownOpen === dayIndex && (
+                          <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                            {mockUsers
+                              .filter((u) => !usedIds.includes(u.id))
+                              .map((user) => (
+                                <button
+                                  key={user.id}
+                                  onClick={() => addWeekdayMember(dayIndex, user.id)}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                    {user.full_name.charAt(0)}
+                                  </div>
+                                  <div className="text-left min-w-0">
+                                    <p className="font-medium truncate">{user.full_name}</p>
+                                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            {mockUsers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
+                              <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">追加できるメンバーがいません</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Fixed mode */}
-      {mode === "fixed" ? (
+      {mode === "fixed" && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="label">
@@ -746,8 +1008,10 @@ function TeamTab({
 
           </div>
         </div>
-      ) : (
-        /* Pool mode */
+      )}
+
+      {/* Pool mode */}
+      {mode === "pool" && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="label">役割とメンバー</p>

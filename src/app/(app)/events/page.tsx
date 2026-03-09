@@ -34,7 +34,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Drawer } from "@/components/ui/Drawer";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { EventStatusBadge } from "@/components/ui/EventStatusBadge";
-import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS } from "@/lib/constants";
+import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/constants";
 import type { EventType } from "@/types";
 
 function useEventTypes() {
@@ -73,8 +73,8 @@ function DrawerRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2 text-sm">
-      <dt className="w-32 shrink-0 text-gray-400">{label}</dt>
+    <div className="flex items-start gap-4">
+      <dt className="min-w-[26px] leading-[1.3rem] text-xs font-semibold text-gray-600">{label}</dt>
       <dd className="flex flex-wrap items-center gap-1 text-gray-700">
         {children}
       </dd>
@@ -169,7 +169,9 @@ function EventCard({
               <span className="badge badge-neutral">
                 {event.scheduling_mode === "fixed"
                   ? "固定"
-                  : "プール"}
+                  : event.scheduling_mode === "pool"
+                    ? "プール"
+                    : "曜日"}
               </span>
             </span>
           </div>
@@ -315,12 +317,55 @@ function EventDrawerContent({ event }: { event: EventType }) {
         </dl>
       </div>
 
+      {/* 受付設定 */}
+      {event.reception_settings && (
+        <DrawerSection title="受付設定">
+          <dl className="space-y-1.5 text-sm">
+            <DrawerRow label="時間">
+              {event.reception_settings.exclude_outside_hours ? "営業時間外は受け付けない" : "時間制限なし"}
+            </DrawerRow>
+            <DrawerRow label="曜日">
+              {WEEKDAY_LABELS.filter((_, i) => event.reception_settings!.allowed_days[i]).join("・") || "なし"}
+              <span className="ml-2">（{event.reception_settings.accept_holidays ? "祝日は受け付ける" : "祝日は受け付けない"}）</span>
+            </DrawerRow>
+          </dl>
+        </DrawerSection>
+      )}
+
       {/* メンバー */}
       <DrawerSection
         title="メンバー"
-        subTitle={event.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}
+        subTitle={event.scheduling_mode === "weekday" ? "曜日モード" : event.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}
       >
-        {eventRoles.length === 0 ? (
+        {event.scheduling_mode === "weekday" ? (
+          event.weekday_schedule && event.weekday_schedule.length > 0 ? (
+            <div className="space-y-3">
+              {event.weekday_schedule.map((entry) => {
+                const label = WEEKDAY_LABELS[entry.day_index];
+                return (
+                  <div key={entry.day_index}>
+                    <p className="text-xs font-semibold text-gray-600 mb-2">{label}曜日</p>
+                    <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
+                      {entry.member_ids.map((userId) => {
+                        const user = mockUsers.find((u) => u.id === userId);
+                        return (
+                          <li key={userId} className="flex flex-wrap items-center gap-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                              {user?.full_name.charAt(0) ?? "?"}
+                            </div>
+                            <span className="text-sm whitespace-nowrap">{user?.full_name ?? "不明"}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-300">メンバー未設定</p>
+          )
+        ) : eventRoles.length === 0 ? (
           <p className="text-sm text-gray-300">メンバー未設定</p>
         ) : (
           <div className="space-y-4">

@@ -172,7 +172,7 @@
   }
 
   .toggle-btn {
-    @apply mt-1 flex w-full items-center justify-between rounded-lg py-2.5 px-3 h-[42px] text-sm ring-1 ring-inset transition-colors bg-white ring-gray-300 text-gray-600 shadow-sm;
+    @apply flex w-full items-center justify-between rounded-lg py-2.5 px-3 h-[42px] text-sm ring-1 ring-inset transition-colors bg-white ring-gray-300 text-gray-600 shadow-sm;
   }
 
   .toggle-btn-active {
