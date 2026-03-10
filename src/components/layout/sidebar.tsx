@@ -126,7 +126,7 @@ export function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-gray-100 p-2 overflow-hidden">
+      <div className="border-t border-gray-100 p-2">
         <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
             田
