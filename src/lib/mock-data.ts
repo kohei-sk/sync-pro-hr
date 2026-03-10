@@ -20,6 +20,7 @@ export const mockUsers: User[] = [
     id: "u1",
     email: "tanaka@example.com",
     full_name: "田中 太郎",
+    company_name: "株式会社サンプル",
     avatar_url: undefined,
     calendar_status: "connected",
     last_synced_at: "2026-02-18T09:30:00Z",

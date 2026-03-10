@@ -2,11 +2,18 @@
 // Pitasuke - Core Type Definitions
 // ============================================================
 
+// --- Company ---
+export interface Company {
+  id: string;
+  name: string;
+}
+
 // --- User ---
 export interface User {
   id: string;
   email: string;
   full_name: string;
+  company_name?: string;
   avatar_url?: string;
   status?: "active" | "invited";
   role?: "admin" | "member";

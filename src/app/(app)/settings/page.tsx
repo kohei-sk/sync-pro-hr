@@ -111,6 +111,7 @@ export default function SettingsPage() {
 
 function ProfileTab() {
   const toast = useToast();
+  const [company] = useState("株式会社サンプル");
   const [name, setName] = useState("田中 太郎");
   const [email, setEmail] = useState("tanaka@example.com");
   const [timezone, setTimezone] = useState("Asia/Tokyo");
@@ -163,6 +164,18 @@ function ProfileTab() {
               </button>
               <p className="mt-1 text-xs text-gray-400">JPG, PNG 最大 2MB</p>
             </div>
+          </div>
+
+          <div>
+            <label className="label">会社名</label>
+            <input
+              type="text"
+              value={company}
+              className="input mt-1"
+              disabled
+              readOnly
+            />
+            <p className="mt-1 text-xs text-gray-400">会社名は変更できません</p>
           </div>
 
           <div>

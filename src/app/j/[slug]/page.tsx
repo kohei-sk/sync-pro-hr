@@ -5,21 +5,17 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import {
   Calendar,
-  Clock,
-  MapPin,
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
   ArrowLeft,
-  User,
-  Mail,
-  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getEventBySlug } from "@/lib/mock-data";
+import { getEventBySlug, mockUsers } from "@/lib/mock-data";
 import { computeAvailableSlots } from "@/lib/scheduler";
 import { mockCalendarEvents } from "@/lib/mock-data";
 import type { TimeSlot, CustomField } from "@/types";
+import { EventPageHeader } from "@/components/booking/EventPageHeader";
 
 type BookingStep = "select-date" | "select-time" | "form" | "confirmed";
 
@@ -118,6 +114,7 @@ export default function BookingPage() {
 
   const event = eventData.event;
   const customFields = eventData.customFields;
+  const companyName = mockUsers.find((u) => u.id === event.user_id)?.company_name;
 
   function handleDateSelect(day: number) {
     const dateStr = `${viewMonth.year}-${String(viewMonth.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -150,29 +147,12 @@ export default function BookingPage() {
 
   return (
     <>
-      {/* Event header */}
-      <div className="px-4 py-2.5 text-center border-b-[1px] border-gray-200 sticky top-0 backdrop-blur-[18px] z-30">
-        <h1 className="text-md font-bold">
-          {event.title}
-        </h1>
-        {/* {event.description && (
-          <p className="mt-1 text-xs text-gray-500">{event.description}</p>
-        )} */}
-        <div className="mt-1 flex items-center justify-center gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {event.duration}分
-          </span>
-          <span className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {event.location_type === "online"
-              ? "オンライン"
-              : event.location_type === "in-person"
-                ? "対面"
-                : "電話"}
-          </span>
-        </div>
-      </div>
+      <EventPageHeader
+        title={event.title}
+        duration={event.duration}
+        locationType={event.location_type}
+        companyName={companyName}
+      />
       <div className="flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-lg">
 
@@ -528,6 +508,7 @@ export default function BookingPage() {
                     </span>{"に"}
                   </p>
                   <p className="mt-1 text-sm text-gray-500 whitespace-nowrap">確認メールを送信しました</p>
+                  <p className="mt-1 text-xs text-gray-400">日程変更・キャンセルは確認メールのリンクから行えます</p>
                   <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-left">
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between gap-4">

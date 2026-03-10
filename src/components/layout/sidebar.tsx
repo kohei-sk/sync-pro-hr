@@ -13,9 +13,11 @@ import {
   LogOut,
   Menu,
   LayoutList,
+  MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/lib/notification-store";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 
 const baseNavigation = [
   { name: "イベント", href: "/events", icon: CalendarPlus },
@@ -139,17 +141,30 @@ export function Sidebar() {
               田中 太郎
             </p>
             <p className="truncate text-xs text-gray-500">
-              tanaka@example.com
+              株式会社サンプル
             </p>
           </div>
           {isExpanded && (
-            <button
-              onClick={handleLogout}
-              title="ログアウト"
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 shrink-0"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+              <DropdownMenu
+                align="right"
+                trigger={
+                  <button
+                    className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                }
+                items={[
+                  {
+                    label: "ログアウト",
+                    icon: LogOut,
+                    variant: "danger" as const,
+                    onClick: handleLogout,
+                  },
+                ]}
+              />
+            </div>
           )}
         </div>
       </div>
