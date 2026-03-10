@@ -1,4 +1,4 @@
-import { Building2 } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import type { LocationType } from "@/types";
 
 interface EventPageHeaderProps {
@@ -22,20 +22,22 @@ export function EventPageHeader({
         : "電話";
 
   return (
-    <div className="px-4 py-2.5 text-center border-b border-gray-200 sticky top-0 backdrop-blur-[18px] z-30">
-      {companyName && (
-        <div className="flex items-center justify-center gap-1 text-gray-500 text-xs mb-1">
-          <Building2 className="w-3.5 h-3.5 text-gray-400" />
-          <p>{companyName}</p>
-        </div>
-      )}
-      <h1 className="text-md font-bold">{title}</h1>
-      <div className="mt-0.5 flex items-center justify-center gap-2 text-[11px] text-gray-400">
+    <div className="text-center border-b border-gray-200 sticky top-0 backdrop-blur-[18px] z-30">
+      <div className="px-4 py-2.5">
+        {companyName && (
+          <div className="flex items-center justify-center gap-1 text-gray-500 text-xs mb-0.5">
+            <p>{companyName}</p>
+          </div>
+        )}
+        <h1 className="text-md font-bold">{title}</h1>
+      </div>
+      <div className="p-1.5 flex items-center justify-center gap-3.5 text-[11px] text-gray-400 border-t border-gray-200">
         <span className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
           {duration}分
         </span>
-        <span className="text-gray-300">/</span>
         <span className="flex items-center gap-1">
+          <MapPin className="w-3 h-3" />
           {locationLabel}
         </span>
       </div>

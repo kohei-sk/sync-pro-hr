@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -149,6 +149,11 @@ export default function ManageBookingPage() {
     setSelectedSlot(slot);
     setStep("reschedule-confirm");
   }
+
+  // ステップ切替時にスクロールをトップにリセット
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
 
   return (
     <>

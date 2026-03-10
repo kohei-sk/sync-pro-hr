@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -147,6 +147,11 @@ export default function BookingPage() {
     }
   }
 
+  // ステップ切替時にスクロールをトップにリセット
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
   return (
     <>
       <EventPageHeader
@@ -160,7 +165,7 @@ export default function BookingPage() {
 
           {/* Step indicator */}
           {step !== "confirmed" && (
-            <div className="p-6 flex items-center justify-center gap-3">
+            <div className="p-6 pt-4 flex items-center justify-center gap-3">
               {[
                 { id: "select-date", label: "日付選択" },
                 { id: "select-time", label: "時間選択" },
@@ -598,7 +603,7 @@ export default function BookingPage() {
                     </span>{"に"}
                   </p>
                   <p className="mt-1 text-sm text-gray-500 whitespace-nowrap">確認メールを送信しました</p>
-                  <p className="mt-1 text-xs text-gray-400">日程変更・キャンセルは確認メールのリンクから行えます</p>
+                  <p className="mt-1.5 text-xs text-gray-400">日程変更・キャンセルは確認メールのリンクから行えます</p>
                   <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-left">
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between gap-4">
