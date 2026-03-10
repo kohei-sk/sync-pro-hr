@@ -32,6 +32,7 @@ interface DropdownMenuProps {
   trigger: React.ReactNode;
   items: DropdownEntry[];
   align?: "left" | "right";
+  side?: "top" | "bottom";
 }
 
 // ============================================================
@@ -42,6 +43,7 @@ export function DropdownMenu({
   trigger,
   items,
   align = "right",
+  side = "bottom",
 }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -75,6 +77,7 @@ export function DropdownMenu({
         <div
           className={cn(
             "dropdown-panel",
+            side === "top" && "dropdown-panel-up",
             align === "right" ? "right-0" : "left-0"
           )}
           role="menu"

@@ -23,6 +23,7 @@ type ManageStep =
   | "detail"
   | "reschedule-date"
   | "reschedule-time"
+  | "reschedule-confirm"
   | "reschedule-complete"
   | "cancel-confirm"
   | "cancel-complete";
@@ -146,7 +147,7 @@ export default function ManageBookingPage() {
 
   function handleSlotSelect(slot: TimeSlot) {
     setSelectedSlot(slot);
-    setStep("reschedule-complete");
+    setStep("reschedule-confirm");
   }
 
   return (
@@ -340,6 +341,88 @@ export default function ManageBookingPage() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* 日程変更確認 */}
+            {step === "reschedule-confirm" && selectedSlot && (
+              <div>
+                <button
+                  onClick={() => { setSelectedSlot(null); setStep("reschedule-time"); }}
+                  className="mb-5 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  時間を変更
+                </button>
+                <h2 className="text-base font-semibold mb-4">日程変更の確認</h2>
+
+                {/* 新しい日時サマリー */}
+                <div className="mb-4 rounded-xl bg-primary-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-5 w-5 text-primary-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-primary-500 font-medium mb-0.5">変更後の日程</p>
+                      <p className="text-sm font-semibold text-primary-900">
+                        {new Date(selectedSlot.start).toLocaleDateString("ja-JP", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          weekday: "long",
+                        })}
+                      </p>
+                      <p className="text-sm text-primary-700">
+                        {new Date(selectedSlot.start).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" "}〜{" "}
+                        {new Date(selectedSlot.end).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" "}({event.duration}分)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 現在の日程（変更前） */}
+                <div className="mb-6 rounded-xl bg-gray-50 p-4">
+                  <dl className="space-y-1.5 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-gray-400 text-xs">変更前の日程</dt>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-gray-500">日時</dt>
+                      <dd className="flex-1 font-medium text-right text-gray-500 line-through">
+                        {new Date(booking.start_time).toLocaleDateString("ja-JP", {
+                          month: "long",
+                          day: "numeric",
+                          weekday: "short",
+                        })}{" "}
+                        {new Date(booking.start_time).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setStep("reschedule-complete")}
+                    className="btn btn-primary w-full"
+                  >
+                    この日程に変更する
+                  </button>
+                  <button
+                    onClick={() => { setSelectedSlot(null); setStep("reschedule-time"); }}
+                    className="btn btn-secondary w-full"
+                  >
+                    戻る
+                  </button>
                 </div>
               </div>
             )}

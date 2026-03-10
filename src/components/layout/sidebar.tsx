@@ -148,6 +148,7 @@ export function Sidebar() {
             <div onClick={(e) => e.stopPropagation()} className="shrink-0">
               <DropdownMenu
                 align="right"
+                side="top"
                 trigger={
                   <button
                     className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"

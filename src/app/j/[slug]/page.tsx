@@ -17,7 +17,7 @@ import { mockCalendarEvents } from "@/lib/mock-data";
 import type { TimeSlot, CustomField } from "@/types";
 import { EventPageHeader } from "@/components/booking/EventPageHeader";
 
-type BookingStep = "select-date" | "select-time" | "form" | "confirmed";
+type BookingStep = "select-date" | "select-time" | "form" | "confirm" | "confirmed";
 
 export default function BookingPage() {
   const params = useParams();
@@ -132,7 +132,7 @@ export default function BookingPage() {
 
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStep("confirmed");
+    setStep("confirm");
   }
 
   function handleBack() {
@@ -142,6 +142,8 @@ export default function BookingPage() {
     } else if (step === "form") {
       setStep("select-time");
       setSelectedSlot(null);
+    } else if (step === "confirm") {
+      setStep("form");
     }
   }
 
@@ -165,7 +167,9 @@ export default function BookingPage() {
                 { id: "form", label: "情報入力" },
               ].map((s, i) => {
                 const stepOrder = ["select-date", "select-time", "form"];
-                const currentIndex = stepOrder.indexOf(step);
+                // "confirm" は "form" と同じ位置として扱う
+                const effectiveStep = step === "confirm" ? "form" : step;
+                const currentIndex = stepOrder.indexOf(effectiveStep);
                 const thisIndex = stepOrder.indexOf(s.id);
                 return (
                   <div key={s.id} className="flex items-center gap-3">
@@ -486,13 +490,99 @@ export default function BookingPage() {
                   ))}
 
                   <button type="submit" className="btn btn-primary w-full mt-6">
-                    予約を確定する
+                    入力内容を確認する
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Step 4: Confirmation */}
+            {/* Step 4: 予約内容確認 */}
+            {step === "confirm" && selectedSlot && (
+              <div>
+                <button
+                  onClick={handleBack}
+                  className="mb-5 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  入力に戻る
+                </button>
+                <h2 className="text-base font-semibold mb-4">予約内容の確認</h2>
+
+                {/* 選択日時 */}
+                <div className="mb-4 rounded-xl bg-primary-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-5 w-5 text-primary-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-primary-900">
+                        {new Date(selectedSlot.start).toLocaleDateString("ja-JP", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          weekday: "long",
+                        })}
+                      </p>
+                      <p className="text-sm text-primary-700">
+                        {new Date(selectedSlot.start).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" "}〜{" "}
+                        {new Date(selectedSlot.end).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" "}({event.duration}分)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 入力内容 */}
+                <div className="mb-6 rounded-xl bg-gray-50 p-4">
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-gray-500">お名前</dt>
+                      <dd className="font-medium">{formValues.candidate_name}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-gray-500">メールアドレス</dt>
+                      <dd className="font-medium break-all">{formValues.candidate_email}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-gray-500">電話番号</dt>
+                      <dd className="font-medium">{formValues.candidate_phone}</dd>
+                    </div>
+                    {customFields.map((field) =>
+                      formValues[field.id] ? (
+                        <div key={field.id} className="flex justify-between gap-4">
+                          <dt className="text-gray-500">{field.label}</dt>
+                          <dd className="flex-1 font-medium text-right break-all">
+                            {formValues[field.id]}
+                          </dd>
+                        </div>
+                      ) : null
+                    )}
+                  </dl>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setStep("confirmed")}
+                    className="btn btn-primary w-full"
+                  >
+                    予約を確定する
+                  </button>
+                  <button
+                    onClick={handleBack}
+                    className="btn btn-secondary w-full"
+                  >
+                    戻る
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: 予約完了 */}
             {step === "confirmed" && selectedSlot && (
               <>
                 <div className="py-8 text-center">

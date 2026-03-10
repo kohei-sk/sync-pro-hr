@@ -352,6 +352,11 @@
     @apply absolute z-20 mt-1 min-w-40 bg-white rounded-lg shadow-lg ring-1 ring-gray-200 py-1;
   }
 
+  /* 上方向に開くドロップダウン（画面下部で切れる場合に使用） */
+  .dropdown-panel-up {
+    @apply bottom-full top-auto mt-0 mb-1;
+  }
+
   .dropdown-item {
     @apply flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 text-left transition-colors whitespace-nowrap;
   }
