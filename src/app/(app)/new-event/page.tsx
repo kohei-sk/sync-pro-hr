@@ -135,7 +135,7 @@ export default function NewEventPage() {
       <div className="mb-8 flex items-center gap-4">
         <Link
           href="/events"
-          className="flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600"
+          className="header-back-btn"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>

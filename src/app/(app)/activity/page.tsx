@@ -88,7 +88,7 @@ export default function NotificationsPage() {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
     document.querySelector('main')?.scrollTo({
-      top: 114,
+      top: 96,
       left: 0,
     });
   }, [activeTab]);

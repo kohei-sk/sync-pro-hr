@@ -396,103 +396,105 @@ export default function BookingPage() {
                   </div>
                 </div>
 
-                <form onSubmit={handleFormSubmit} className="space-y-4">
+                <form onSubmit={handleFormSubmit}>
                   {/* Default fields */}
-                  <div>
-                    <label className="label">
-                      お名前<span className="ml-1 rounded-[3px] px-1 text-[11px] bg-red-100 text-red-500">必須</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="input mt-1"
-                      required
-                      value={formValues.candidate_name}
-                      onChange={(e) =>
-                        setFormValues({
-                          ...formValues,
-                          candidate_name: e.target.value,
-                        })
-                      }
-                      placeholder="山田 太郎"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">
-                      メールアドレス<span className="ml-1 rounded-[3px] px-1 text-[11px] bg-red-100 text-red-500">必須</span>
-                    </label>
-                    <input
-                      type="email"
-                      className="input mt-1"
-                      required
-                      value={formValues.candidate_email}
-                      onChange={(e) =>
-                        setFormValues({
-                          ...formValues,
-                          candidate_email: e.target.value,
-                        })
-                      }
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">
-                      電話番号<span className="ml-1 rounded-[3px] px-1 text-[11px] bg-red-100 text-red-500">必須</span>
-                    </label>
-                    <input
-                      type="tel"
-                      className="input mt-1"
-                      required
-                      value={formValues.candidate_phone}
-                      onChange={(e) =>
-                        setFormValues({
-                          ...formValues,
-                          candidate_phone: e.target.value,
-                        })
-                      }
-                      placeholder="090-0000-0000"
-                    />
-                  </div>
-
-                  {/* Custom fields */}
-                  {customFields.map((field) => (
-                    <div key={field.id}>
+                  <div className="space-y-4">
+                    <div>
                       <label className="label">
-                        {field.label}
-                        {field.is_required && (
-                          <span className="text-red-500"> *</span>
-                        )}
+                        お名前<span className="ml-1 rounded-[3px] px-1 text-[11px] bg-red-100 text-red-500">必須</span>
                       </label>
-                      {field.type === "multiline" ? (
-                        <textarea
-                          className="input mt-1"
-                          rows={3}
-                          required={field.is_required}
-                          value={formValues[field.id] || ""}
-                          onChange={(e) =>
-                            setFormValues({
-                              ...formValues,
-                              [field.id]: e.target.value,
-                            })
-                          }
-                          placeholder={field.placeholder}
-                        />
-                      ) : (
-                        <input
-                          type={field.type}
-                          className="input mt-1"
-                          required={field.is_required}
-                          value={formValues[field.id] || ""}
-                          onChange={(e) =>
-                            setFormValues({
-                              ...formValues,
-                              [field.id]: e.target.value,
-                            })
-                          }
-                          placeholder={field.placeholder}
-                        />
-                      )}
+                      <input
+                        type="text"
+                        className="input mt-1"
+                        required
+                        value={formValues.candidate_name}
+                        onChange={(e) =>
+                          setFormValues({
+                            ...formValues,
+                            candidate_name: e.target.value,
+                          })
+                        }
+                        placeholder="山田 太郎"
+                      />
                     </div>
-                  ))}
+                    <div>
+                      <label className="label">
+                        メールアドレス<span className="ml-1 rounded-[3px] px-1 text-[11px] bg-red-100 text-red-500">必須</span>
+                      </label>
+                      <input
+                        type="email"
+                        className="input mt-1"
+                        required
+                        value={formValues.candidate_email}
+                        onChange={(e) =>
+                          setFormValues({
+                            ...formValues,
+                            candidate_email: e.target.value,
+                          })
+                        }
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="label">
+                        電話番号<span className="ml-1 rounded-[3px] px-1 text-[11px] bg-red-100 text-red-500">必須</span>
+                      </label>
+                      <input
+                        type="tel"
+                        className="input mt-1"
+                        required
+                        value={formValues.candidate_phone}
+                        onChange={(e) =>
+                          setFormValues({
+                            ...formValues,
+                            candidate_phone: e.target.value,
+                          })
+                        }
+                        placeholder="090-0000-0000"
+                      />
+                    </div>
+
+                    {/* Custom fields */}
+                    {customFields.map((field) => (
+                      <div key={field.id}>
+                        <label className="label">
+                          {field.label}
+                          {field.is_required && (
+                            <span className="text-red-500"> *</span>
+                          )}
+                        </label>
+                        {field.type === "multiline" ? (
+                          <textarea
+                            className="input mt-1"
+                            rows={3}
+                            required={field.is_required}
+                            value={formValues[field.id] || ""}
+                            onChange={(e) =>
+                              setFormValues({
+                                ...formValues,
+                                [field.id]: e.target.value,
+                              })
+                            }
+                            placeholder={field.placeholder}
+                          />
+                        ) : (
+                          <input
+                            type={field.type}
+                            className="input mt-1"
+                            required={field.is_required}
+                            value={formValues[field.id] || ""}
+                            onChange={(e) =>
+                              setFormValues({
+                                ...formValues,
+                                [field.id]: e.target.value,
+                              })
+                            }
+                            placeholder={field.placeholder}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
 
                   <button type="submit" className="btn btn-primary w-full mt-6">
                     入力内容を確認する
