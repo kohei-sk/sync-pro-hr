@@ -23,23 +23,25 @@ export function EventPageHeader({
 
   return (
     <div className="text-center border-b border-gray-200 sticky top-0 backdrop-blur-[18px] z-30">
-      <div className="px-4 py-2.5">
+      <div className="px-4 pt-2.5 pb-2">
         {companyName && (
-          <div className="flex items-center justify-center gap-1 text-gray-500 text-xs mb-0.5">
-            <p>{companyName}</p>
-          </div>
+          <h1 className="text-md font-bold">{companyName}</h1>
         )}
-        <h1 className="text-md font-bold">{title}</h1>
       </div>
-      <div className="p-1.5 flex items-center justify-center gap-3.5 text-[11px] text-gray-400 border-t border-gray-200">
-        <span className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {duration}分
-        </span>
-        <span className="flex items-center gap-1">
-          <MapPin className="w-3 h-3" />
-          {locationLabel}
-        </span>
+      <div className="p-2 px-4 flex items-center justify-center gap-5">
+        <div className="text-gray-500 text-xs text-left">
+          <p>{title}</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            <Clock className="w-3 h-3 min-w-3" />
+            {duration}分
+          </span>
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            <MapPin className="w-3 h-3 min-w-3" />
+            {locationLabel}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -562,7 +562,7 @@ export default function NewEventPage() {
       <header className="header mb-8">
         <Link
           href="/events"
-          className="flex h-10 w-10 items-center justify-center rounded-2xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600"
+          className="header-back-btn"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -2040,11 +2040,11 @@ export default function NewEventPage() {
                 <h3 className="section-label">受付設定</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start gap-4">
-                    <dt className="min-w-[26px] leading-[1.3rem] text-xs font-semibold text-gray-600">時間</dt>
+                    <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">時間</dt>
                     <dd>{receptionSettings.excludeOutsideHours ? "営業時間外は受け付けない" : "時間制限なし"}</dd>
                   </div>
                   <div className="flex items-start gap-4">
-                    <dt className="min-w-[26px] leading-[1.3rem] text-xs font-semibold text-gray-600">曜日</dt>
+                    <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">曜日</dt>
                     <dd>
                       {WEEKDAY_LABELS.filter((_, i) => receptionSettings.allowedDays[i]).join("・")}
                       {receptionSettings.allowedDays.every((d) => !d) && <span className="text-gray-300">なし</span>}
@@ -2161,7 +2161,7 @@ export default function NewEventPage() {
                 <h3 className="section-label">フォーム項目</h3>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
-                    <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
+                    <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
                       デフォルト項目
                     </p>
                     <p className="text-sm">
@@ -2169,7 +2169,7 @@ export default function NewEventPage() {
                     </p>
                   </div>
                   <div className="flex items-start gap-4">
-                    <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
+                    <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
                       カスタム項目
                     </p>
                     {formFields.length > 0 ? (

@@ -74,7 +74,7 @@ function DrawerRow({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <dt className="min-w-[26px] leading-[1.3rem] text-xs font-semibold text-gray-600">{label}</dt>
+      <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">{label}</dt>
       <dd className="flex flex-wrap items-center gap-1 text-gray-700">
         {children}
       </dd>
@@ -446,7 +446,7 @@ function EventDrawerContent({ event }: { event: EventType }) {
       <DrawerSection title="フォーム">
         <div className="space-y-4">
           <div className="flex items-start gap-4">
-            <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
+            <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
               デフォルト項目
             </p>
             <p className="text-sm">
@@ -454,7 +454,7 @@ function EventDrawerContent({ event }: { event: EventType }) {
             </p>
           </div>
           <div className="flex items-start gap-4">
-            <p className="min-w-[80px] leading-[1.3rem] text-xs font-semibold text-gray-600">
+            <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
               カスタム項目
             </p>
             {customFields.length > 0 ? (
