@@ -268,3 +268,69 @@ export function revokeToken(token: string): void {
     // 失敗しても無視（接続解除はDB側で完結させる）
   });
 }
+
+// ============================================================
+// 9. registerWebhookChannel — Google Calendar プッシュ通知チャンネルを登録
+// ============================================================
+// Google がカレンダーの変更を検知すると webhookUrl へ POST を送信する。
+// token に userId をセットし、X-Goog-Channel-Token ヘッダーでユーザーを識別する。
+// チャンネルの最大有効期限は7日（604800秒）。HTTPS URL のみ受け付ける。
+
+export async function registerWebhookChannel(
+  accessToken: string,
+  userId: string,
+  webhookUrl: string
+): Promise<{ channelId: string; resourceId: string; expiration: string }> {
+  const channelId = crypto.randomUUID();
+  const res = await fetch(
+    `${GOOGLE_CALENDAR_API}/calendars/primary/events/watch`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: channelId,
+        type: "web_hook",
+        address: webhookUrl,
+        token: userId,              // X-Goog-Channel-Token でユーザーを識別
+        params: { ttl: "604800" }, // 7日（Google の最大値）
+      }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      `Failed to register webhook channel: ${JSON.stringify(err)}`
+    );
+  }
+  const data = await res.json();
+  return {
+    channelId:  data.id as string,
+    resourceId: data.resourceId as string,
+    expiration: new Date(Number(data.expiration)).toISOString(),
+  };
+}
+
+// ============================================================
+// 10. stopWebhookChannel — Google Calendar プッシュ通知チャンネルを停止
+// ============================================================
+// 接続解除時・チャンネル更新時に呼び出す（ベストエフォート）。
+
+export async function stopWebhookChannel(
+  accessToken: string,
+  channelId: string,
+  resourceId: string
+): Promise<void> {
+  await fetch(`${GOOGLE_CALENDAR_API}/channels/stop`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id: channelId, resourceId }),
+  }).catch(() => {
+    // チャンネルが既に期限切れの場合も無視
+  });
+}

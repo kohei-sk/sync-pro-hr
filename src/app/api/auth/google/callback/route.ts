@@ -7,6 +7,7 @@ import {
   getUserEmail,
   fetchCalendarEvents,
   upsertCalendarEventsToDb,
+  registerWebhookChannel,
 } from "@/lib/google-calendar";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -78,6 +79,28 @@ export async function GET(request: NextRequest) {
     doInitialSync(serviceClient, user.id).catch((e) =>
       console.error("[Google callback] Initial sync failed:", e)
     );
+
+    // Webhook チャンネル登録（本番環境のみ: Google は HTTPS が必須）
+    if (APP_URL.startsWith("https://")) {
+      registerWebhookChannel(
+        tokens.access_token,
+        user.id,
+        `${APP_URL}/api/calendar/webhook`
+      )
+        .then((channel) =>
+          serviceClient
+            .from("profiles")
+            .update({
+              google_webhook_channel_id:  channel.channelId,
+              google_webhook_resource_id: channel.resourceId,
+              google_webhook_expiration:  channel.expiration,
+            })
+            .eq("id", user.id)
+        )
+        .catch((e) =>
+          console.error("[Google callback] Webhook registration failed:", e)
+        );
+    }
 
     return NextResponse.redirect(`${SETTINGS_CALENDAR}&connected=true`);
   } catch (err) {
