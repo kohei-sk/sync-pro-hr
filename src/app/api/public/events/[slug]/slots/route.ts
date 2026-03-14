@@ -77,17 +77,23 @@ export async function GET(
       .eq("calendar_status", "connected");
 
     if (connectedUsers && connectedUsers.length > 0) {
+      // Google Calendar API は ISO 8601 完全形式が必要（"YYYY-MM-DD" のみは不可）
+      const syncTimeMin = startDate + "T00:00:00.000Z";
+      const syncTimeMax = endDate   + "T23:59:59.999Z";
+
       await Promise.all(
         connectedUsers.map(async (u: { id: string }) => {
           try {
-            const token = await getValidAccessToken(supabase, u.id);
-            const events = await fetchCalendarEvents(token, startDate, endDate + "T23:59:59Z");
-            await upsertCalendarEventsToDb(supabase, u.id, events, startDate);
+            const token  = await getValidAccessToken(supabase, u.id);
+            const events = await fetchCalendarEvents(token, syncTimeMin, syncTimeMax);
+            await upsertCalendarEventsToDb(supabase, u.id, events, syncTimeMin);
             await supabase
               .from("profiles")
               .update({ last_synced_at: new Date().toISOString() })
               .eq("id", u.id);
-          } catch {
+            console.log(`[Slots] Synced ${events.length} events for user ${u.id}`);
+          } catch (err) {
+            console.error(`[Slots] Calendar sync failed for user ${u.id}:`, err);
             // 同期失敗しても空き枠計算は続行
           }
         })
