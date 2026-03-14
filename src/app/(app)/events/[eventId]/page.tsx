@@ -39,15 +39,8 @@ import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, generateId } from "@/lib/utils";
 import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
-import {
-  mockEventTypes,
-  mockRoles,
-  mockMembers,
-  mockExclusionRules,
-  mockCustomFields,
-  mockUsers,
-} from "@/lib/mock-data";
-import { deleteEventType } from "@/lib/event-store";
+import { deleteEventTypeApi, updateEventTypeApi } from "@/lib/event-store";
+import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
@@ -132,17 +125,31 @@ export default function EventDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const { navigate, pendingHref, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty);
+  const { members: teamMembers } = useTeamMembers();
 
-  const event = mockEventTypes.find((e) => e.id === eventId);
-  const roles = mockRoles.filter((r) => r.event_id === eventId);
-  const roleIds = roles.map((r) => r.id);
-  const members = mockMembers.filter((m) => roleIds.includes(m.role_id));
-  const exclusionRules = mockExclusionRules.filter(
-    (r) => r.event_id === eventId
-  );
-  const customFields = mockCustomFields.filter(
-    (f) => f.event_id === eventId
-  );
+  const [event, setEvent] = useState<EventType | null | undefined>(undefined);
+  const [roles, setRoles] = useState<EventRole[]>([]);
+  const [members, setMembers] = useState<EventMember[]>([]);
+  const [exclusionRules, setExclusionRules] = useState<ExclusionRule[]>([]);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/events/${eventId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) { setEvent(null); return; }
+        setEvent(data);
+        setRoles(data.event_roles ?? []);
+        const allMembers = (data.event_roles ?? []).flatMap(
+          (r: EventRole) => r.event_members ?? []
+        );
+        setMembers(allMembers);
+        setExclusionRules(data.exclusion_rules ?? []);
+        setCustomFields(data.custom_fields ?? []);
+      })
+      .catch(() => setEvent(null));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
 
   // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
   const prevTabRef = useRef(activeTab);
@@ -155,13 +162,25 @@ export default function EventDetailPage() {
     });
   }, [activeTab]);
 
-  function handleDelete() {
-    deleteEventType(eventId);
-    toast.success("イベントを削除しました");
-    router.push("/events");
+  async function handleDelete() {
+    try {
+      await deleteEventTypeApi(eventId);
+      toast.success("イベントを削除しました");
+      router.push("/events");
+    } catch {
+      toast.error("削除に失敗しました");
+    }
   }
 
-  if (!event) {
+  if (event === undefined) {
+    return (
+      <div className="text-center py-12">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-200 mx-auto" />
+      </div>
+    );
+  }
+
+  if (event === null) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">イベントが見つかりません</p>
@@ -256,7 +275,7 @@ export default function EventDetailPage() {
         {/* Tab Content */}
         <div className="card max-w-3xl">
           {activeTab === "basic" && (
-            <BasicTab event={event} onDirtyChange={setIsDirty} />
+            <BasicTab event={event} onDirtyChange={setIsDirty} onSaved={setEvent} />
           )}
           {activeTab === "reception" && (
             <ReceptionTab event={event} onDirtyChange={setIsDirty} />
@@ -323,8 +342,10 @@ type BasicFormState = {
   bufferAfter: number;
 };
 
-function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; onDirtyChange: (dirty: boolean) => void }) {
+function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirtyChange: (dirty: boolean) => void; onSaved?: (updated: EventType) => void }) {
   const toast = useToast();
+  const { members: teamMembers } = useTeamMembers();
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<BasicFormState>({
     isPublic: event.status === "active",
     color: EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0],
@@ -469,7 +490,34 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
       </div>
 
       <div className="flex justify-end pt-4">
-        <button onClick={() => { toast.success("変更を保存しました"); onDirtyChange(false); }} className="btn btn-primary">変更を保存</button>
+        <button
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            try {
+              const updated = await updateEventTypeApi(event.id, {
+                title: form.title,
+                slug: form.slug,
+                description: form.description || null,
+                duration: form.duration,
+                buffer_before: form.bufferBefore,
+                buffer_after: form.bufferAfter,
+                color: form.color,
+                status: form.isPublic ? "active" : "draft",
+              });
+              onSaved?.(updated);
+              onDirtyChange(false);
+              toast.success("変更を保存しました");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+            } finally {
+              setSaving(false);
+            }
+          }}
+          className="btn btn-primary"
+        >
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -574,6 +622,7 @@ function TeamTab({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const toast = useToast();
+  const { members: teamMembers } = useTeamMembers();
   const [mode, setMode] = useState(initialMode);
 
   // Fixed mode: ordered list of user IDs
@@ -842,7 +891,7 @@ function TeamTab({
                             strategy={verticalListSortingStrategy}
                           >
                             {usedIds.map((userId, memberIndex) => {
-                              const user = mockUsers.find((u) => u.id === userId);
+                              const user = teamMembers.find((u) => u.id === userId);
                               return (
                                 <SortableRow key={`wd-${dayIndex}-${userId}`} id={`wd-${dayIndex}-${userId}`}>
                                   {(handle) => (
@@ -880,7 +929,7 @@ function TeamTab({
                         </button>
                         {weekdayMemberDropdownOpen === dayIndex && (
                           <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                            {mockUsers
+                            {teamMembers
                               .filter((u) => !usedIds.includes(u.id))
                               .map((user) => (
                                 <button
@@ -897,7 +946,7 @@ function TeamTab({
                                   </div>
                                 </button>
                               ))}
-                            {mockUsers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
+                            {teamMembers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
                               <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">追加できるメンバーがいません</p>
                             )}
                           </div>
@@ -938,7 +987,7 @@ function TeamTab({
                   strategy={verticalListSortingStrategy}
                 >
                   {fixedMemberIds.map((userId, index) => {
-                    const user = mockUsers.find((u) => u.id === userId);
+                    const user = teamMembers.find((u) => u.id === userId);
                     return (
                       <SortableRow key={userId} id={userId}>
                         {(handle) => (
@@ -980,7 +1029,7 @@ function TeamTab({
               </button>
               {showMemberPicker && (
                 <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                  {mockUsers
+                  {teamMembers
                     .filter((u) => !fixedMemberIds.includes(u.id))
                     .map((user) => (
                       <button
@@ -997,7 +1046,7 @@ function TeamTab({
                         </div>
                       </button>
                     ))}
-                  {mockUsers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
+                  {teamMembers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
                     <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
                       追加できるメンバーがいません
                     </p>
@@ -1065,7 +1114,7 @@ function TeamTab({
                                 strategy={verticalListSortingStrategy}
                               >
                                 {role.memberIds.map((userId, memberIndex) => {
-                                  const user = mockUsers.find((u) => u.id === userId);
+                                  const user = teamMembers.find((u) => u.id === userId);
                                   return (
                                     <SortableRow key={userId} id={userId}>
                                       {(memberHandle) => (
@@ -1108,7 +1157,7 @@ function TeamTab({
                             </button>
                             {memberPickerRoleId === role.id && (
                               <div className="absolute left-0 top-full z-10 mt-0.5 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                {mockUsers
+                                {teamMembers
                                   .filter((u) => !role.memberIds.includes(u.id))
                                   .map((user) => (
                                     <button
@@ -1125,7 +1174,7 @@ function TeamTab({
                                       </div>
                                     </button>
                                   ))}
-                                {mockUsers.filter((u) => !role.memberIds.includes(u.id)).length === 0 && (
+                                {teamMembers.filter((u) => !role.memberIds.includes(u.id)).length === 0 && (
                                   <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
                                     追加できるメンバーがいません
                                   </p>

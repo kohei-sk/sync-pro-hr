@@ -1,16 +1,42 @@
-import { useSyncExternalStore } from "react";
-import { mockNotifications } from "@/lib/mock-data";
+"use client";
 
-// Module-level set of read notification IDs
-const readIds = new Set<string>(
-  mockNotifications.filter((n) => n.is_read).map((n) => n.id)
-);
+import { useSyncExternalStore, useEffect } from "react";
+import type { NotificationType } from "@/types";
 
-// Subscribers for reactivity
+// ============================================================
+// 通知の型（API レスポンス形式）
+// ============================================================
+export type NotificationItem = {
+  id: string;
+  type: NotificationType;
+  booking_id: string;
+  candidate_name: string;
+  event_title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string; // DB は created_at で返す（timestamp の代わり）
+};
+
+// ============================================================
+// モジュールレベルのキャッシュ（ページをまたいで共有）
+// ============================================================
+let notifications: NotificationItem[] = [];
+let fetched = false;
+let epoch = 0; // 変更検知用のカウンター
+
 const listeners = new Set<() => void>();
 
-function notify() {
+function emit() {
+  epoch++;
   listeners.forEach((l) => l());
+}
+
+function getSnapshot(): number {
+  return epoch;
+}
+
+function getServerSnapshot(): number {
+  return 0;
 }
 
 export function subscribe(listener: () => void): () => void {
@@ -18,39 +44,61 @@ export function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-export function markAsRead(id: string): void {
-  if (!readIds.has(id)) {
-    readIds.add(id);
-    notify();
+// ============================================================
+// データ取得（初回のみ API コール）
+// ============================================================
+export async function ensureFetched(): Promise<void> {
+  if (fetched) return;
+  fetched = true;
+  try {
+    const res = await fetch("/api/notifications");
+    if (res.ok) {
+      const data = await res.json();
+      notifications = Array.isArray(data) ? data : [];
+      emit();
+    }
+  } catch {
+    fetched = false; // リトライを許可
   }
 }
 
-export function markAllAsRead(): void {
-  let changed = false;
-  mockNotifications.forEach((n) => {
-    if (!readIds.has(n.id)) {
-      readIds.add(n.id);
-      changed = true;
-    }
-  });
-  if (changed) notify();
+// ============================================================
+// アクション（楽観的更新 + API コール）
+// ============================================================
+export async function markAsRead(id: string): Promise<void> {
+  notifications = notifications.map((n) =>
+    n.id === id ? { ...n, is_read: true } : n
+  );
+  emit();
+  await fetch(`/api/notifications/${id}`, { method: "PATCH" }).catch(() => {});
+}
+
+export async function markAllAsRead(): Promise<void> {
+  notifications = notifications.map((n) => ({ ...n, is_read: true }));
+  emit();
+  await fetch("/api/notifications", { method: "PATCH" }).catch(() => {});
 }
 
 export function isRead(id: string): boolean {
-  return readIds.has(id);
+  return notifications.find((n) => n.id === id)?.is_read ?? false;
 }
 
-function getSnapshot() {
-  return readIds.size;
-}
-
+// ============================================================
+// React フック
+// ============================================================
 export function useNotificationStore() {
-  // useSyncExternalStore triggers re-render when readIds.size changes
-  useSyncExternalStore(subscribe, getSnapshot, () => 0);
+  // epoch が変わるたびに再レンダー
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const unreadCount = mockNotifications.filter((n) => !readIds.has(n.id)).length;
+  // マウント時にデータを取得
+  useEffect(() => {
+    ensureFetched();
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return {
+    notifications,
     unreadCount,
     isRead,
     markAsRead,

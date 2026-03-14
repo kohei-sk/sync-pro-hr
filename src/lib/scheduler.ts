@@ -7,6 +7,7 @@ import type {
   ExclusionRule,
   EventRole,
   EventMember,
+  WeekdayScheduleEntry,
 } from "@/types";
 import { getEventData, mockCalendarEvents } from "./mock-data";
 
@@ -126,7 +127,17 @@ function isUserAvailable(
 }
 
 /**
+ * JS の getDay() (0=日,1=月,...,6=土) を
+ * Pitasuke の day_index (0=月,1=火,...,5=土,6=日) に変換する。
+ */
+function jsDayToPitasuke(jsDay: number): number {
+  return (jsDay + 6) % 7;
+}
+
+/**
  * Generate candidate time slots for a date range.
+ * allowedDays: Pitasuke形式 [0=月,1=火,...,5=土,6=日]。
+ * 未指定の場合は平日(月〜金)のみ生成。
  */
 function generateCandidateSlots(
   startDate: string,
@@ -134,7 +145,8 @@ function generateCandidateSlots(
   workingHoursStart: string,
   workingHoursEnd: string,
   durationMinutes: number,
-  stepMinutes: number = 30
+  stepMinutes: number = 30,
+  allowedDays?: boolean[]
 ): TimeRange[] {
   const slots: TimeRange[] = [];
   const start = new Date(startDate);
@@ -144,8 +156,12 @@ function generateCandidateSlots(
 
   const current = new Date(start);
   while (current <= end) {
-    // Skip weekends
-    if (current.getDay() !== 0 && current.getDay() !== 6) {
+    const pitasukeDayIndex = jsDayToPitasuke(current.getDay());
+    // allowedDays が指定されていればそれを使い、なければ平日(Pitasuke 0-4)のみ
+    const dayIsAllowed = allowedDays
+      ? allowedDays[pitasukeDayIndex] === true
+      : pitasukeDayIndex <= 4; // 0=月〜4=金
+    if (dayIsAllowed) {
       const dayStart = new Date(current);
       dayStart.setHours(whStart.hours, whStart.minutes, 0, 0);
 
@@ -252,6 +268,54 @@ function computePoolMode(
 }
 
 /**
+ * Main scheduling function - Weekday Mode
+ * 曜日ごとに担当メンバーが決まっている。全員が空き状態のスロットのみ返す。
+ * weekdaySchedule の day_index は Pitasuke形式 (0=月,...,5=土,6=日)。
+ */
+function computeWeekdayMode(
+  candidateSlots: TimeRange[],
+  weekdaySchedule: WeekdayScheduleEntry[],
+  busyTimesMap: Map<string, TimeRange[]>,
+  exclusionRules: ExclusionRule[]
+): TimeSlot[] {
+  // Pitasuke day_index → member_ids のマップを構築
+  const scheduledDays = new Map<number, string[]>(
+    weekdaySchedule.map((ws) => [ws.day_index, ws.member_ids])
+  );
+
+  return candidateSlots
+    .filter((slot) => {
+      if (isExcluded(slot, exclusionRules)) return false;
+
+      const pitasukeDayIndex = jsDayToPitasuke(slot.start.getDay());
+      const memberIds = scheduledDays.get(pitasukeDayIndex);
+
+      // その曜日にメンバーが設定されていなければスキップ
+      if (!memberIds || memberIds.length === 0) return false;
+
+      // 担当全員が空き状態であること
+      return memberIds.every((userId) =>
+        isUserAvailable(userId, slot, busyTimesMap)
+      );
+    })
+    .map((slot) => {
+      const pitasukeDayIndex = jsDayToPitasuke(slot.start.getDay());
+      const memberIds = scheduledDays.get(pitasukeDayIndex) || [];
+      return {
+        start: slot.start.toISOString(),
+        end: slot.end.toISOString(),
+        available_members: [
+          {
+            role_id: `weekday-${pitasukeDayIndex}`,
+            role_name: `曜日担当`,
+            available_user_ids: memberIds,
+          },
+        ],
+      };
+    });
+}
+
+/**
  * Compute available time slots based on the scheduling input.
  * This is the main entry point for the scheduling engine.
  */
@@ -284,13 +348,44 @@ export function computeAvailableSlots(
     );
   }
 
+  // reception_settings から allowed_days を取得（Pitasuke形式: 0=月,...,6=日）
+  const receptionSettings = (event as any).reception_settings as
+    | { allowed_days?: boolean[] }
+    | undefined;
+  const allowedDays = receptionSettings?.allowed_days;
+
+  // weekday モードの場合は weekday_schedule からユーザーIDを収集
+  const weekdaySchedule = ((event as any).weekday_schedule ||
+    []) as WeekdayScheduleEntry[];
+
+  if (event.scheduling_mode === "weekday") {
+    const weekdayUserIds = [
+      ...new Set(weekdaySchedule.flatMap((ws) => ws.member_ids)),
+    ];
+    for (const userId of weekdayUserIds) {
+      if (!busyTimesMap.has(userId)) {
+        busyTimesMap.set(
+          userId,
+          getUserBusyTimes(
+            userId,
+            calendar_events,
+            event.buffer_before,
+            event.buffer_after
+          )
+        );
+      }
+    }
+  }
+
   // Generate all candidate time slots
   const candidateSlots = generateCandidateSlots(
     date_range.start,
     date_range.end,
     working_hours.start,
     working_hours.end,
-    event.duration
+    event.duration,
+    30,
+    allowedDays
   );
 
   // Compute based on scheduling mode
@@ -303,13 +398,20 @@ export function computeAvailableSlots(
         busyTimesMap,
         exclusion_rules
       )
-      : computePoolMode(
-        candidateSlots,
-        roles,
-        members,
-        busyTimesMap,
-        exclusion_rules
-      );
+      : event.scheduling_mode === "weekday"
+        ? computeWeekdayMode(
+          candidateSlots,
+          weekdaySchedule,
+          busyTimesMap,
+          exclusion_rules
+        )
+        : computePoolMode(
+          candidateSlots,
+          roles,
+          members,
+          busyTimesMap,
+          exclusion_rules
+        );
 
   return { available_slots };
 }

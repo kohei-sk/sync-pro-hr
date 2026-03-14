@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff, Calendar, LogIn, Loader2 } from "lucide-react";
+import { Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,19 +25,48 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    // Mock authentication: accept any non-empty credentials
-    await new Promise((r) => setTimeout(r, 800));
-    document.cookie = "auth_token=mock; path=/; max-age=86400";
-    router.push("/events");
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        setError("メールアドレスまたはパスワードが正しくありません");
+        return;
+      }
+
+      router.push("/events");
+      router.refresh();
+    } catch {
+      setError("ログインに失敗しました。もう一度お試しください");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleGoogleLogin() {
     setError("");
     setIsGoogleLoading(true);
-    // Mock Google SSO: same flow
-    await new Promise((r) => setTimeout(r, 800));
-    document.cookie = "auth_token=mock; path=/; max-age=86400";
-    router.push("/events");
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (authError) {
+        setError("Googleログインに失敗しました");
+        setIsGoogleLoading(false);
+      }
+      // OAuth はリダイレクトするのでローディング状態は維持
+    } catch {
+      setError("Googleログインに失敗しました。もう一度お試しください");
+      setIsGoogleLoading(false);
+    }
   }
 
   return (

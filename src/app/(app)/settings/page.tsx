@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 import { useToast } from "@/components/ui/Toast";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { invalidateUser } from "@/lib/user-store";
 
 // ============================================================
 // Types
@@ -111,21 +112,46 @@ export default function SettingsPage() {
 
 function ProfileTab() {
   const toast = useToast();
-  const [company] = useState("株式会社サンプル");
-  const [name, setName] = useState("田中 太郎");
-  const [email, setEmail] = useState("tanaka@example.com");
+  const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [timezone, setTimezone] = useState("Asia/Tokyo");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
-  function handleSaveProfile() {
+  useEffect(() => {
+    fetch("/api/settings/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        setCompany(data.company_name ?? "");
+        setName(data.full_name ?? "");
+        setEmail(data.email ?? "");
+        setTimezone(data.timezone ?? "Asia/Tokyo");
+        if (data.avatar_url) setAvatarPreview(data.avatar_url);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSaveProfile() {
     setSavingProfile(true);
-    setTimeout(() => {
-      setSavingProfile(false);
+    try {
+      const res = await fetch("/api/settings/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: name, timezone }),
+      });
+      if (!res.ok) throw new Error();
+      invalidateUser();
       toast.success("基本情報を保存しました");
-    }, 800);
+    } catch {
+      toast.error("保存に失敗しました");
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   function handleSavePassword() {
@@ -134,6 +160,14 @@ function ProfileTab() {
       setSavingPassword(false);
       toast.success("パスワードを変更しました");
     }, 800);
+  }
+
+  if (loading) {
+    return (
+      <div className="card flex items-center justify-center py-16">
+        <span className="spinner" />
+      </div>
+    );
   }
 
   return (
@@ -151,7 +185,9 @@ function ProfileTab() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-xl font-bold text-primary-700">田</span>
+                <span className="text-xl font-bold text-primary-700">
+                  {name ? name.charAt(0) : "?"}
+                </span>
               )}
             </div>
             <div>
@@ -406,6 +442,18 @@ function NotificationsTab() {
   const [chatworkNotify, setChatworkNotify] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    fetch("/api/settings/user")
+      .then((r) => r.json())
+      .then((data) => {
+        setEmailBookingNew(data.notify_booking_new ?? true);
+        setEmailBookingCancel(data.notify_booking_cancel ?? true);
+        setEmailReminder(data.notify_reminder ?? true);
+        setEmailDigest(data.notify_digest ?? false);
+      })
+      .catch(() => {});
+  }, []);
+
   const emailNotifications = [
     {
       id: "new",
@@ -454,12 +502,26 @@ function NotificationsTab() {
     },
   ];
 
-  function handleSave() {
+  async function handleSave() {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const res = await fetch("/api/settings/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notify_booking_new: emailBookingNew,
+          notify_booking_cancel: emailBookingCancel,
+          notify_reminder: emailReminder,
+          notify_digest: emailDigest,
+        }),
+      });
+      if (!res.ok) throw new Error();
       toast.success("通知設定を保存しました");
-    }, 800);
+    } catch {
+      toast.error("保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -975,17 +1037,41 @@ function GeneralTab() {
   const [workStart, setWorkStart] = useState("09:00");
   const [workEnd, setWorkEnd] = useState("18:00");
   const [language, setLanguage] = useState("ja");
-  const [bookingUrl, setBookingUrl] = useState(
-    "https://syncpro-hr.example.com/j/"
-  );
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const bookingUrl = appUrl ? `${appUrl}/j/` : "/j/";
   const [saving, setSaving] = useState(false);
 
-  function handleSave() {
+  useEffect(() => {
+    fetch("/api/settings/user")
+      .then((r) => r.json())
+      .then((data) => {
+        // TIME型は "HH:MM:SS" で返るので先頭5文字だけ使う
+        if (data.working_hours_start)
+          setWorkStart(data.working_hours_start.slice(0, 5));
+        if (data.working_hours_end)
+          setWorkEnd(data.working_hours_end.slice(0, 5));
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleSave() {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const res = await fetch("/api/settings/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          working_hours_start: workStart,
+          working_hours_end: workEnd,
+        }),
+      });
+      if (!res.ok) throw new Error();
       toast.success("一般設定を保存しました");
-    }, 800);
+    } catch {
+      toast.error("保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -1026,11 +1112,12 @@ function GeneralTab() {
           <input
             type="url"
             value={bookingUrl}
-            onChange={(e) => setBookingUrl(e.target.value)}
             className="input mt-1"
+            readOnly
+            disabled
           />
           <p className="mt-1 text-xs text-gray-400">
-            候補者に共有される予約ページのURLプレフィックスです
+            候補者に共有される予約ページのURLプレフィックスです（環境変数 NEXT_PUBLIC_APP_URL で設定）
           </p>
         </div>
       </div>
