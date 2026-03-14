@@ -15,6 +15,8 @@ import {
   MessageSquare,
   ExternalLink,
   Link,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TAB_SCROLL_OFFSET } from "@/lib/constants";
@@ -27,12 +29,6 @@ import { invalidateUser } from "@/lib/user-store";
 // ============================================================
 
 type Tab = "profile" | "notifications" | "calendar" | "general";
-
-interface CalendarIntegrationState {
-  connected: boolean;
-  account: string | null;
-  loading: boolean;
-}
 
 interface MessagingIntegrationState {
   connected: boolean;
@@ -56,6 +52,20 @@ const tabs: { id: Tab; label: string; icon: typeof User }[] = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
+
+  // URLパラメータ ?tab=... からタブを初期化
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (
+      tab === "profile" ||
+      tab === "notifications" ||
+      tab === "calendar" ||
+      tab === "general"
+    ) {
+      setActiveTab(tab as Tab);
+    }
+  }, []);
 
   // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
   const prevTabRef = useRef(activeTab);
@@ -622,255 +632,230 @@ function NotificationToggleRow({
 // CalendarTab
 // ============================================================
 
-const CALENDAR_INTEGRATIONS = [
-  {
-    name: "Google Calendar",
-    description: "Googleカレンダーと同期して空き時間を自動取得します",
-    icon: "G",
-    iconBg: "bg-red-50",
-    iconColor: "text-red-600",
-    defaultAccount: "tanaka@example.com",
-    defaultConnected: true,
-  },
-  {
-    name: "Outlook Calendar",
-    description: "Microsoft Outlookカレンダーと連携します",
-    icon: "O",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    defaultAccount: null,
-    defaultConnected: false,
-  },
-  {
-    name: "Apple Calendar",
-    description: "Apple iCloudカレンダーと連携します",
-    icon: "A",
-    iconBg: "bg-gray-100",
-    iconColor: "text-gray-700",
-    defaultAccount: null,
-    defaultConnected: false,
-  },
-];
+type CalendarStatus = "not_connected" | "connected" | "error";
 
 function CalendarTab() {
   const toast = useToast();
-
-  // カレンダー連携状態
-  const [calendarStates, setCalendarStates] = useState<
-    Record<string, CalendarIntegrationState>
-  >(() => {
-    const initial: Record<string, CalendarIntegrationState> = {};
-    for (const c of CALENDAR_INTEGRATIONS) {
-      initial[c.name] = {
-        connected: c.defaultConnected,
-        account: c.defaultConnected ? c.defaultAccount : null,
-        loading: false,
-      };
-    }
-    return initial;
-  });
-  const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [calendarStatus, setCalendarStatus] =
+    useState<CalendarStatus>("not_connected");
+  const [googleAccount, setGoogleAccount] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  // 同期設定
-  const [autoSync, setAutoSync] = useState(true);
-  const [savingSyncSettings, setSavingSyncSettings] = useState(false);
+  useEffect(() => {
+    // プロフィールからカレンダー連携状態を取得
+    fetch("/api/settings/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        setCalendarStatus(
+          (data.calendar_status as CalendarStatus) ?? "not_connected"
+        );
+        setGoogleAccount(data.google_account_email ?? null);
+        setLastSyncedAt(data.last_synced_at ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
 
-  function handleConnect(name: string) {
-    setCalendarStates((prev) => ({
-      ...prev,
-      [name]: { ...prev[name], loading: true },
-    }));
-    setTimeout(() => {
-      setCalendarStates((prev) => ({
-        ...prev,
-        [name]: {
-          connected: true,
-          account: "tanaka@example.com",
-          loading: false,
-        },
-      }));
-      toast.success(`${name} を接続しました`);
-    }, 1500);
+    // OAuthコールバック後のURLパラメータを処理
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("connected") === "true") {
+      toast.success("Google Calendar を接続しました");
+      history.replaceState({}, "", window.location.pathname);
+    } else if (params.get("error")) {
+      const err = params.get("error");
+      toast.error(
+        err === "access_denied"
+          ? "接続がキャンセルされました"
+          : "Google Calendar の接続に失敗しました"
+      );
+      history.replaceState({}, "", window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleConnect() {
+    window.location.href = "/api/auth/google";
   }
 
-  function handleDisconnect(name: string) {
-    setDisconnectTarget(name);
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/calendar/sync", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setLastSyncedAt(new Date().toISOString());
+      toast.success("カレンダーを同期しました");
+    } catch {
+      toast.error("同期に失敗しました");
+    } finally {
+      setSyncing(false);
+    }
   }
 
-  function handleDisconnectConfirm() {
-    if (!disconnectTarget) return;
+  async function handleDisconnectConfirm() {
     setDisconnecting(true);
-    setTimeout(() => {
-      const name = disconnectTarget;
-      setCalendarStates((prev) => ({
-        ...prev,
-        [name]: { connected: false, account: null, loading: false },
-      }));
-      setDisconnectTarget(null);
+    try {
+      const res = await fetch("/api/calendar/disconnect", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setCalendarStatus("not_connected");
+      setGoogleAccount(null);
+      setLastSyncedAt(null);
+      setDisconnectOpen(false);
+      toast.success("Google Calendar の接続を解除しました");
+    } catch {
+      toast.error("接続解除に失敗しました");
+    } finally {
       setDisconnecting(false);
-      toast.success(`${name} の接続を解除しました`);
-    }, 1000);
+    }
   }
 
-  function handleSaveSyncSettings() {
-    setSavingSyncSettings(true);
-    setTimeout(() => {
-      setSavingSyncSettings(false);
-      toast.success("同期設定を保存しました");
-    }, 800);
-  }
+  const lastSyncedText = lastSyncedAt
+    ? new Date(lastSyncedAt).toLocaleString("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }) + " に同期"
+    : "未同期";
 
   return (
     <div className="space-y-4">
       {/* カレンダー連携 */}
       <div className="card">
-        <h2 className="text-md font-semibold">
-          カレンダー連携
-        </h2>
+        <h2 className="text-md font-semibold">カレンダー連携</h2>
         <p className="text-xs text-gray-500 mb-4 mt-1">
           カレンダーを接続して面接官の空き時間を自動取得します
         </p>
 
-        <div className="space-y-3">
-          {CALENDAR_INTEGRATIONS.map((integration) => {
-            const state = calendarStates[integration.name];
-            return (
-              <div
-                key={integration.name}
-                className="flex items-center gap-4 rounded-lg border border-gray-200 p-4"
-              >
-                <div
-                  className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
-                    integration.iconBg,
-                    integration.iconColor
-                  )}
-                >
-                  {integration.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold">
-                      {integration.name}
-                    </h3>
-                    {state.connected && (
-                      <span className="badge badge-green">
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
-                        接続済み
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {state.connected
-                      ? state.account
-                      : integration.description}
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    state.connected
-                      ? handleDisconnect(integration.name)
-                      : handleConnect(integration.name)
-                  }
-                  disabled={state.loading}
-                  className={cn(
-                    state.connected
-                      ? "btn btn-ghost-danger btn-size-s"
-                      : "btn btn-secondary btn-size-s"
-                  )}
-                >
-                  {state.loading && <><span className="spinner" />接続中</>}
-                  {!state.loading && state.connected ? (
-                    "接続解除"
-                  ) : !state.loading ? (
-                    <>
-                      <Link2 className="h-3 w-3" />
-                      接続
-                    </>
-                  ) : null}
-                </button>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <span className="spinner" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Google Calendar（実装済み） */}
+            <div className="flex items-center gap-4 rounded-lg border border-gray-200 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-sm font-bold text-red-600">
+                G
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* メッセージングツール連携 */}
-      <MessagingIntegrationCard />
-
-      {/* 同期設定 */}
-      <div className="card">
-        <h2 className="text-md font-semibold mb-4">同期設定</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
-            <div>
-              <p className="text-sm font-medium">自動同期</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                カレンダーの変更を自動的に反映します
-              </p>
-            </div>
-            <button
-              onClick={() => setAutoSync((v) => !v)}
-              className={cn(
-                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors",
-                autoSync ? "bg-primary-500" : "bg-gray-200"
-              )}
-              role="switch"
-              aria-checked={autoSync}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm mt-0.5 transition-transform",
-                  autoSync ? "translate-x-5 ml-0.5" : "translate-x-0.5"
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">Google Calendar</h3>
+                  {calendarStatus === "connected" && (
+                    <span className="badge badge-green">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      接続済み
+                    </span>
+                  )}
+                  {calendarStatus === "error" && (
+                    <span className="badge badge-red">
+                      <AlertCircle className="mr-1 h-3 w-3" />
+                      エラー
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {calendarStatus === "connected" && googleAccount
+                    ? `${googleAccount} · ${lastSyncedText}`
+                    : calendarStatus === "error"
+                    ? "再接続が必要です"
+                    : "Googleカレンダーと同期して空き時間を自動取得します"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {calendarStatus === "connected" && (
+                  <>
+                    <button
+                      onClick={handleSync}
+                      disabled={syncing}
+                      className="btn btn-secondary btn-size-s"
+                      title="今すぐ同期"
+                    >
+                      {syncing ? (
+                        <span className="spinner" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      同期
+                    </button>
+                    <button
+                      onClick={() => setDisconnectOpen(true)}
+                      className="btn btn-ghost-danger btn-size-s"
+                    >
+                      接続解除
+                    </button>
+                  </>
                 )}
-              />
-            </button>
+                {(calendarStatus === "not_connected" ||
+                  calendarStatus === "error") && (
+                  <button
+                    onClick={handleConnect}
+                    className="btn btn-secondary btn-size-s"
+                  >
+                    <Link2 className="h-3 w-3" />
+                    {calendarStatus === "error" ? "再接続" : "接続"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Outlook Calendar（準備中） */}
+            <div className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 opacity-70">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-blue-600">
+                O
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">Outlook Calendar</h3>
+                  <span className="badge badge-gray">準備中</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Microsoft Outlookカレンダーと連携します
+                </p>
+              </div>
+              <button disabled className="btn btn-secondary btn-size-s">
+                <Link2 className="h-3 w-3" />
+                接続
+              </button>
+            </div>
+
+            {/* Apple Calendar（準備中） */}
+            <div className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 opacity-70">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-700">
+                A
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">Apple Calendar</h3>
+                  <span className="badge badge-gray">準備中</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Apple iCloudカレンダーと連携します
+                </p>
+              </div>
+              <button disabled className="btn btn-secondary btn-size-s">
+                <Link2 className="h-3 w-3" />
+                接続
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="label">同期間隔</label>
-            <select className="select mt-1 max-w-xs">
-              <option value="5">5分ごと</option>
-              <option value="15">15分ごと</option>
-              <option value="30">30分ごと</option>
-              <option value="60">1時間ごと</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">同期範囲</label>
-            <select className="select mt-1 max-w-xs">
-              <option value="7">1週間先まで</option>
-              <option value="14">2週間先まで</option>
-              <option value="30">1ヶ月先まで</option>
-              <option value="60">2ヶ月先まで</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
-          <button
-            onClick={handleSaveSyncSettings}
-            disabled={savingSyncSettings}
-            className="btn btn-primary"
-          >
-            {savingSyncSettings ? (
-              <span className="spinner" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            保存
-          </button>
-        </div>
+        )}
       </div>
+
+      {/* ツール連携 */}
+      <MessagingIntegrationCard />
 
       {/* 接続解除確認ダイアログ */}
       <ConfirmDialog
-        open={disconnectTarget !== null}
+        open={disconnectOpen}
         onClose={() => {
-          if (!disconnecting) setDisconnectTarget(null);
+          if (!disconnecting) setDisconnectOpen(false);
         }}
         onConfirm={handleDisconnectConfirm}
         title="接続を解除しますか？"
-        description={`${disconnectTarget} との連携を解除します。カレンダーの同期が停止されます。`}
+        description="Google Calendar との連携を解除します。カレンダーの同期が停止され、同期済みのデータが削除されます。"
         confirmLabel="接続解除"
         confirmVariant="danger"
         loading={disconnecting}
