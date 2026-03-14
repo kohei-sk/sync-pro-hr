@@ -675,6 +675,24 @@ function CalendarTab() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 自動同期: 接続済みの場合はマウント時に即実行 + 2分ごとにポーリング
+  useEffect(() => {
+    if (calendarStatus !== "connected") return;
+
+    async function autoSync() {
+      try {
+        const res = await fetch("/api/calendar/sync", { method: "POST" });
+        if (res.ok) setLastSyncedAt(new Date().toISOString());
+      } catch {
+        // サイレントに失敗（ユーザーに通知しない）
+      }
+    }
+
+    autoSync();
+    const id = setInterval(autoSync, 2 * 60 * 1000); // 2分ごと
+    return () => clearInterval(id);
+  }, [calendarStatus]);
+
   function handleConnect() {
     window.location.href = "/api/auth/google";
   }

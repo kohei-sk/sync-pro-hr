@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { computeAvailableSlots } from "@/lib/scheduler";
+import {
+  getValidAccessToken,
+  fetchCalendarEvents,
+  upsertCalendarEventsToDb,
+} from "@/lib/google-calendar";
 
 /**
  * GET /api/public/events/[slug]/slots?start=YYYY-MM-DD&end=YYYY-MM-DD
@@ -62,6 +67,31 @@ export async function GET(
 
     if (userIds.length === 0) {
       return NextResponse.json({ available_slots: [] });
+    }
+
+    // Google Calendar 連携済みのユーザーのカレンダーを同期（常に最新データで計算する）
+    const { data: connectedUsers } = await supabase
+      .from("profiles")
+      .select("id")
+      .in("id", userIds)
+      .eq("calendar_status", "connected");
+
+    if (connectedUsers && connectedUsers.length > 0) {
+      await Promise.all(
+        connectedUsers.map(async (u: { id: string }) => {
+          try {
+            const token = await getValidAccessToken(supabase, u.id);
+            const events = await fetchCalendarEvents(token, startDate, endDate + "T23:59:59Z");
+            await upsertCalendarEventsToDb(supabase, u.id, events, startDate);
+            await supabase
+              .from("profiles")
+              .update({ last_synced_at: new Date().toISOString() })
+              .eq("id", u.id);
+          } catch {
+            // 同期失敗しても空き枠計算は続行
+          }
+        })
+      );
     }
 
     // メンバーのカレンダーイベントを取得（DB の start_time/end_time → scheduler の start/end にマッピング）
