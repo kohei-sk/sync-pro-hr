@@ -18,7 +18,7 @@ export async function GET() {
           *,
           event_members (
             *,
-            profiles (id, full_name, avatar_url, email:id)
+            profiles (id, full_name, avatar_url)
           )
         ),
         exclusion_rules (*),

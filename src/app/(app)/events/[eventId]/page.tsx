@@ -290,7 +290,7 @@ export default function EventDetailPage() {
             <FormTab fields={customFields} eventId={eventId} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "reminder" && (
-            <ReminderTab reminders={event.reminder_settings ?? []} onDirtyChange={setIsDirty} />
+            <ReminderTab eventId={eventId} reminders={event.reminder_settings ?? []} onDirtyChange={setIsDirty} />
           )}
         </div>
       </div>
@@ -541,6 +541,20 @@ function ReceptionTab({
     accept_holidays: false,
   };
   const [settings, setSettings] = useState<ReceptionSettings>({ ...initial });
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(event.id, { reception_settings: settings });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function toggleDay(i: number) {
     const updated = [...settings.allowed_days];
@@ -602,7 +616,9 @@ function ReceptionTab({
         </div>
       </div>
       <div className="mt-6 flex justify-end">
-        <button onClick={() => { toast.success("変更を保存しました"); onDirtyChange(false); }} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -651,6 +667,7 @@ function TeamTab({
   const initialWeekdaySchedule: WeekdayScheduleEntry[] = event.weekday_schedule ?? [];
   const [weekdaySchedule, setWeekdaySchedule] = useState<WeekdayScheduleEntry[]>(initialWeekdaySchedule);
   const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Enabled days from reception settings
   const receptionAllowedDays = event.reception_settings?.allowed_days ?? [...DEFAULT_ALLOWED_DAYS];
@@ -793,9 +810,34 @@ function TeamTab({
     }
   }
 
-  function handleSave() {
-    toast.success("変更を保存しました");
-    onDirtyChange(false);
+  async function handleSave() {
+    setSaving(true);
+    try {
+      // スケジューリングモードに応じてロールを構築
+      const rolesPayload =
+        mode === "fixed"
+          ? [{ name: roles[0]?.name ?? "メンバー", required_count: 1, priority_order: 1, member_ids: fixedMemberIds }]
+          : mode === "pool"
+          ? localRoles.map((r, i) => ({
+              name: r.name,
+              required_count: r.required_count,
+              priority_order: i + 1,
+              member_ids: r.memberIds,
+            }))
+          : []; // weekday モードはロール不要
+
+      await updateEventTypeApi(event.id, {
+        scheduling_mode: mode,
+        ...(mode === "weekday" ? { weekday_schedule: weekdaySchedule } : {}),
+        roles: rolesPayload,
+      });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -1250,7 +1292,9 @@ function TeamTab({
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -1395,6 +1439,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
   const [editDraft, setEditDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
+  const [saving, setSaving] = useState(false);
 
   function handleAddSave() {
     if (!addDraft.name.trim()) return;
@@ -1454,9 +1499,17 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
     onDirtyChange(true);
   }
 
-  function handleSaveAll() {
-    toast.success("変更を保存しました");
-    onDirtyChange(false);
+  async function handleSaveAll() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(eventId, { exclusion_rules: localRules });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -1542,7 +1595,9 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -1572,6 +1627,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
   const [editDraft, setEditDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
+  const [saving, setSaving] = useState(false);
 
   const sensors = useDndSensors();
 
@@ -1640,9 +1696,17 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
     onDirtyChange(true);
   }
 
-  function handleSaveAll() {
-    toast.success("変更を保存しました");
-    onDirtyChange(false);
+  async function handleSaveAll() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(eventId, { custom_fields: localFields });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function renderFieldForm(
@@ -1843,7 +1907,9 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -1864,9 +1930,11 @@ const EMPTY_REMINDER_DRAFT: ReminderDraft = {
 };
 
 function ReminderTab({
+  eventId,
   reminders: initialReminders,
   onDirtyChange,
 }: {
+  eventId: string;
   reminders: ReminderSetting[];
   onDirtyChange: (dirty: boolean) => void;
 }) {
@@ -1876,6 +1944,7 @@ function ReminderTab({
   const [addDraft, setAddDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
+  const [saving, setSaving] = useState(false);
 
   function handleAddSave() {
     setReminders([
@@ -1913,9 +1982,17 @@ function ReminderTab({
     onDirtyChange(true);
   }
 
-  function handleSave() {
-    toast.success("リマインド設定を保存しました");
-    onDirtyChange(false);
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(eventId, { reminder_settings: reminders });
+      toast.success("リマインド設定を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function renderReminderForm(
@@ -2058,7 +2135,9 @@ function ReminderTab({
       </div>
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
