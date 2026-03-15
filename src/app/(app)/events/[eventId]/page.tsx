@@ -23,6 +23,8 @@ import {
   MessageSquare,
   Eye,
   CalendarDays,
+  Check,
+  X,
 } from "lucide-react";
 import {
   DndContext,
@@ -669,6 +671,11 @@ function TeamTab({
   const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Pool mode: role inline editing
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingRoleName, setEditingRoleName] = useState("");
+  const [editingRoleCount, setEditingRoleCount] = useState(1);
+
   // Enabled days from reception settings
   const receptionAllowedDays = event.reception_settings?.allowed_days ?? [...DEFAULT_ALLOWED_DAYS];
   const enabledDays = WEEKDAY_LABELS
@@ -718,10 +725,12 @@ function TeamTab({
     setNewRoleName("");
     setNewRoleCount(1);
     setShowAddRoleForm(false);
+    onDirtyChange(true);
   }
 
   function removeRole(roleId: string) {
     setLocalRoles(localRoles.filter((r) => r.id !== roleId));
+    onDirtyChange(true);
   }
 
   function handleRoleDragEnd(event: DragEndEvent) {
@@ -735,6 +744,7 @@ function TeamTab({
           priority_order: i + 1,
         }));
       });
+      onDirtyChange(true);
     }
   }
 
@@ -747,6 +757,7 @@ function TeamTab({
       })
     );
     setMemberPickerRoleId(null);
+    onDirtyChange(true);
   }
 
   function removeMemberFromRole(roleId: string, userId: string) {
@@ -756,6 +767,7 @@ function TeamTab({
         return { ...r, memberIds: r.memberIds.filter((id) => id !== userId) };
       })
     );
+    onDirtyChange(true);
   }
 
   function handleRoleMemberDragEnd(event: DragEndEvent, roleId: string) {
@@ -769,7 +781,30 @@ function TeamTab({
           return { ...r, memberIds: arrayMove(r.memberIds, oldIndex, newIndex) };
         })
       );
+      onDirtyChange(true);
     }
+  }
+
+  // Pool mode: role inline editing
+  function startEditingRole(role: { id: string; name: string; required_count: number }) {
+    setEditingRoleId(role.id);
+    setEditingRoleName(role.name);
+    setEditingRoleCount(role.required_count);
+  }
+
+  function confirmEditingRole() {
+    if (!editingRoleName.trim()) return;
+    setLocalRoles(localRoles.map((r) =>
+      r.id === editingRoleId
+        ? { ...r, name: editingRoleName.trim(), required_count: editingRoleCount }
+        : r
+    ));
+    setEditingRoleId(null);
+    onDirtyChange(true);
+  }
+
+  function cancelEditingRole() {
+    setEditingRoleId(null);
   }
 
   // Weekday mode: member management
@@ -808,6 +843,17 @@ function TeamTab({
       );
       onDirtyChange(true);
     }
+  }
+
+  function updateWeekdayRequiredCount(dayIndex: number, count: number) {
+    setWeekdaySchedule((prev) => {
+      const existing = prev.find((e) => e.day_index === dayIndex);
+      if (existing) {
+        return prev.map((e) => e.day_index === dayIndex ? { ...e, required_count: count } : e);
+      }
+      return [...prev, { day_index: dayIndex, member_ids: [], required_count: count }];
+    });
+    onDirtyChange(true);
   }
 
   async function handleSave() {
@@ -915,9 +961,23 @@ function TeamTab({
                 const usedIds = entry.member_ids;
                 return (
                   <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
-                      <span className="text-xs text-gray-400">{usedIds.length}人</span>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                        <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span>必要人数:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          className="input w-14 h-7 text-xs text-center px-1"
+                          value={entry.required_count ?? 1}
+                          onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span>人</span>
+                      </div>
                     </div>
                     <div className="rounded-xl border border-gray-100 divide-y divide-gray-50">
                       {usedIds.length === 0 ? (
@@ -1123,20 +1183,64 @@ function TeamTab({
                       <div className="text-sm rounded-2xl border border-gray-200 p-4">
                         {/* Role header */}
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {handle}
                             <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-1.5 text-xs font-semibold text-gray-600 shrink-0">
                               {roleIndex + 1}
                             </span>
-                            <span className="font-medium">{role.name}</span>
-                            <span className="text-sm text-gray-500">(必要人数: {role.required_count}人)</span>
+                            {editingRoleId === role.id ? (
+                              <>
+                                <input
+                                  type="text"
+                                  className="input h-8 text-sm flex-1 min-w-0"
+                                  value={editingRoleName}
+                                  onChange={(e) => setEditingRoleName(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") confirmEditingRole(); if (e.key === "Escape") cancelEditingRole(); }}
+                                  autoFocus
+                                />
+                                <input
+                                  type="number"
+                                  className="input h-8 w-16 text-sm text-center px-1 shrink-0"
+                                  min={1}
+                                  value={editingRoleCount}
+                                  onChange={(e) => setEditingRoleCount(parseInt(e.target.value) || 1)}
+                                />
+                                <span className="text-xs text-gray-500 shrink-0">人</span>
+                                <button
+                                  onClick={confirmEditingRole}
+                                  disabled={!editingRoleName.trim()}
+                                  className="text-primary-600 hover:text-primary-700 transition-colors disabled:opacity-40 shrink-0"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={cancelEditingRole}
+                                  className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-medium truncate">{role.name}</span>
+                                <span className="text-sm text-gray-500 shrink-0">（{role.required_count}人）</span>
+                                <button
+                                  onClick={() => startEditingRole(role)}
+                                  className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            )}
                           </div>
-                          <button
-                            onClick={() => removeRole(role.id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {editingRoleId !== role.id && (
+                            <button
+                              onClick={() => removeRole(role.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors ml-2 shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
 
                         {/* Members within role */}

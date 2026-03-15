@@ -35,8 +35,9 @@ export interface ReceptionSettings {
 
 // --- Weekday Schedule (曜日モード用) ---
 export interface WeekdayScheduleEntry {
-  day_index: number;    // 0=月, 1=火, 2=水, 3=木, 4=金, 5=土, 6=日
-  member_ids: string[]; // 優先順にソート済みユーザーID
+  day_index: number;       // 0=月, 1=火, 2=水, 3=木, 4=金, 5=土, 6=日
+  member_ids: string[];    // 優先順にソート済みユーザーID
+  required_count?: number; // 必要人数（省略時は 1）
 }
 
 export interface EventType {

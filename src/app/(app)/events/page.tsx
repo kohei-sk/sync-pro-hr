@@ -335,7 +335,10 @@ function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMemb
                 const label = WEEKDAY_LABELS[entry.day_index];
                 return (
                   <div key={entry.day_index}>
-                    <p className="text-xs font-semibold text-gray-600 mb-2">{label}曜日</p>
+                    <p className="text-xs font-semibold text-gray-600 mb-2">
+                      {label}曜日
+                      <span className="ml-1 font-normal text-gray-400">（{entry.required_count ?? 1}人必要）</span>
+                    </p>
                     <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {entry.member_ids.map((userId) => {
                         const fullName = userNameMap.get(userId);
