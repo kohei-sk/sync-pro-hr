@@ -60,8 +60,11 @@ export async function POST(request: Request) {
     const serviceClient = createServiceClient();
 
     // Supabase Auth の招待メールを送信
+    // 招待リンクをクリック → /auth/callback でセッション交換 → /auth/accept-invite でパスワード設定
+    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/auth/accept-invite`;
     const { data: inviteData, error: inviteError } =
       await serviceClient.auth.admin.inviteUserByEmail(email, {
+        redirectTo,
         data: {
           company_id: companyId,
           role,
