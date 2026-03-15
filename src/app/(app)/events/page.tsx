@@ -17,6 +17,7 @@ import {
   Search,
 } from "lucide-react";
 import { useEventTypes } from "@/lib/event-store";
+import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
 import { useToast } from "@/components/ui/Toast";
 import { Drawer } from "@/components/ui/Drawer";
 import { cn, copyToClipboard } from "@/lib/utils";
@@ -200,13 +201,17 @@ function EventCard({
 // ============================================================
 
 
-function EventDrawerContent({ event }: { event: EventType }) {
+function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMembers: { id: string; full_name: string }[] }) {
   const eventRoles = event.event_roles ?? [];
   const exclusionRules = event.exclusion_rules ?? [];
   const customFields = event.custom_fields ?? [];
 
-  // ユーザーIDからフルネームを引くマップ（weekday_scheduleで使用）
+  // ユーザーIDからフルネームを引くマップ
+  // event_roles のプロファイル情報を優先し、weekday モード用に teamMembers で補完
   const userNameMap = new Map<string, string>();
+  teamMembers.forEach((m) => {
+    if (m.full_name) userNameMap.set(m.id, m.full_name);
+  });
   eventRoles.forEach((role) => {
     role.event_members?.forEach((member) => {
       const name = member.profiles?.full_name;
@@ -540,6 +545,7 @@ function DrawerFooter({
 
 function EventsContent() {
   const { eventTypes, loading } = useEventTypes();
+  const { members: teamMembers } = useTeamMembers();
   const toast = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -687,10 +693,15 @@ function EventsContent() {
         ) : (
           <div className="mt-6 flex flex-col gap-3">
             {filteredEvents.map((event) => {
-              const memberCount = (event.event_roles ?? []).reduce(
-                (sum, role) => sum + (role.event_members?.length ?? 0),
-                0
-              );
+              const memberCount =
+                event.scheduling_mode === "weekday"
+                  ? new Set(
+                      (event.weekday_schedule ?? []).flatMap((e) => e.member_ids)
+                    ).size
+                  : (event.event_roles ?? []).reduce(
+                      (sum, role) => sum + (role.event_members?.length ?? 0),
+                      0
+                    );
 
               return (
                 <EventCard
@@ -724,7 +735,7 @@ function EventsContent() {
           ) : undefined
         }
       >
-        {selectedEvent && <EventDrawerContent event={selectedEvent} />}
+        {selectedEvent && <EventDrawerContent event={selectedEvent} teamMembers={teamMembers} />}
       </Drawer>
     </div >
   );
