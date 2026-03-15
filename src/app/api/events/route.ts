@@ -46,7 +46,6 @@ export async function POST(request: Request) {
 
     const {
       title,
-      slug,
       description,
       duration = 60,
       buffer_before = 0,
@@ -64,12 +63,15 @@ export async function POST(request: Request) {
       reminder_settings = [],
     } = body;
 
-    if (!title || !slug) {
+    if (!title) {
       return NextResponse.json(
-        { error: "title と slug は必須です" },
+        { error: "title は必須です" },
         { status: 400 }
       );
     }
+
+    // スラッグは自動生成（UUID の先頭8文字）
+    const slug = crypto.randomUUID().split("-")[0];
 
     // イベント作成
     const { data: event, error: eventError } = await supabase
@@ -94,15 +96,7 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (eventError) {
-      if (eventError.code === "23505") {
-        return NextResponse.json(
-          { error: "このスラッグは既に使用されています" },
-          { status: 409 }
-        );
-      }
-      throw eventError;
-    }
+    if (eventError) throw eventError;
 
     // ロール + メンバーの作成
     for (const role of roles) {

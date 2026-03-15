@@ -11,7 +11,6 @@ import {
   Link2,
   Clock,
   Shield,
-  ImagePlus,
   MessageSquare,
   ExternalLink,
   Link,
@@ -127,8 +126,6 @@ function ProfileTab() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [timezone, setTimezone] = useState("Asia/Tokyo");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
@@ -140,7 +137,6 @@ function ProfileTab() {
         setName(data.full_name ?? "");
         setEmail(data.email ?? "");
         setTimezone(data.timezone ?? "Asia/Tokyo");
-        if (data.avatar_url) setAvatarPreview(data.avatar_url);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -185,33 +181,6 @@ function ProfileTab() {
       <div className="card">
         <h2 className="text-md font-semibold mb-4">基本情報</h2>
         <div className="space-y-4">
-          {/* Avatar */}
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 overflow-hidden">
-              {avatarPreview ? (
-                <img
-                  src={avatarPreview}
-                  alt="プロフィール画像"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-xl font-bold text-primary-700">
-                  {name ? name.charAt(0) : "?"}
-                </span>
-              )}
-            </div>
-            <div>
-              <button
-                className="btn btn-secondary btn-size-s"
-                onClick={() => setUploadModalOpen(true)}
-              >
-                <ImagePlus className="h-3.5 w-3.5" />
-                画像を変更
-              </button>
-              <p className="mt-1 text-xs text-gray-400">JPG, PNG 最大 2MB</p>
-            </div>
-          </div>
-
           <div>
             <label className="label">会社名</label>
             <input
@@ -312,128 +281,7 @@ function ProfileTab() {
         </div>
       </div>
 
-      {/* 画像アップロードモーダル */}
-      <AvatarUploadModal
-        open={uploadModalOpen}
-        onClose={() => setUploadModalOpen(false)}
-        onUploaded={(dataUrl) => {
-          setAvatarPreview(dataUrl);
-          setUploadModalOpen(false);
-          toast.success("プロフィール画像を変更しました");
-        }}
-      />
     </div>
-  );
-}
-
-// ============================================================
-// AvatarUploadModal
-// ============================================================
-
-function AvatarUploadModal({
-  open,
-  onClose,
-  onUploaded,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onUploaded: (dataUrl: string) => void;
-}) {
-  const toast = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  function handleClose() {
-    if (loading) return;
-    setPreview(null);
-    onClose();
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("ファイルサイズは2MB以下にしてください");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function handleUpload() {
-    if (!preview) return;
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      onUploaded(preview);
-      setPreview(null);
-    }, 1000);
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title="プロフィール画像を変更"
-      size="sm"
-      footer={
-        <>
-          <button onClick={handleClose} disabled={loading} className="btn btn-ghost">
-            キャンセル
-          </button>
-          <button
-            onClick={handleUpload}
-            disabled={!preview || loading}
-            className="btn btn-primary"
-          >
-            {loading && <span className="spinner" />}
-            アップロード
-          </button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        {/* プレビュー */}
-        <div className="flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100 overflow-hidden ring-2 ring-gray-200">
-            {preview ? (
-              <img
-                src={preview}
-                alt="プレビュー"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl font-bold text-primary-700">田</span>
-            )}
-          </div>
-        </div>
-
-        {/* ドロップエリア */}
-        <button
-          className="add-btn !flex-col mt-5"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <div className="p-2">
-            <ImagePlus className="h-8 w-8 text-gray-400 mb-2" />
-          </div>
-          <p className="text-sm font-medium text-gray-600">
-            クリックして画像を選択
-          </p>
-          <p className="text-xs text-gray-400">JPG, PNG 最大2MB</p>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-    </Modal>
   );
 }
 

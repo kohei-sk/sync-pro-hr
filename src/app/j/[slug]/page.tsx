@@ -53,6 +53,7 @@ export default function BookingPage() {
     candidate_phone: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   // カレンダー
   const [viewMonth, setViewMonth] = useState(() => {
@@ -122,6 +123,10 @@ export default function BookingPage() {
     "ja-JP", { year: "numeric", month: "long" }
   );
 
+  const now = new Date();
+  const isPrevMonthDisabled =
+    viewMonth.year === now.getFullYear() && viewMonth.month === now.getMonth();
+
   // ── ステップ切替時にスクロールをトップにリセット ──────────
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
@@ -154,6 +159,11 @@ export default function BookingPage() {
   // 予約確定 API 呼び出し
   async function handleConfirm() {
     if (!selectedSlot || !event) return;
+    setConfirmError(null);
+    if (new Date(selectedSlot.start) < new Date()) {
+      setConfirmError("選択した時間が過去になりました。別の日時を選択してください。");
+      return;
+    }
     setSubmitting(true);
     try {
       const customFieldValues: Record<string, string> = {};
@@ -282,7 +292,8 @@ export default function BookingPage() {
                       const d = new Date(prev.year, prev.month - 1);
                       return { year: d.getFullYear(), month: d.getMonth() };
                     })}
-                    className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    disabled={isPrevMonthDisabled}
+                    className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -316,17 +327,18 @@ export default function BookingPage() {
                     if (day === null) return <div key={`pad-${i}`} />;
                     const dateStr = `${viewMonth.year}-${String(viewMonth.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                     const hasSlots = availableDates.has(dateStr);
-                    const isWeekend =
-                      new Date(viewMonth.year, viewMonth.month, day).getDay() === 0 ||
-                      new Date(viewMonth.year, viewMonth.month, day).getDay() === 6;
+                    const dayDate = new Date(viewMonth.year, viewMonth.month, day);
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    const isPast = dayDate < today;
+                    const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
                     return (
                       <button
                         key={day}
                         onClick={() => handleDateSelect(day)}
-                        disabled={!hasSlots}
+                        disabled={!hasSlots || isPast}
                         className={cn(
                           "flex h-10 w-full items-center justify-center rounded-md text-sm font-medium transition-colors",
-                          hasSlots
+                          hasSlots && !isPast
                             ? "bg-primary-50 text-primary-700 hover:bg-primary-100"
                             : isWeekend
                               ? "text-gray-300 cursor-not-allowed"
@@ -496,6 +508,9 @@ export default function BookingPage() {
                     )}
                   </dl>
                 </div>
+                {confirmError && (
+                  <p className="mb-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{confirmError}</p>
+                )}
                 <div className="space-y-3">
                   <button onClick={handleConfirm} disabled={submitting} className="btn btn-primary w-full">
                     {submitting ? "予約確定中..." : "予約を確定する"}

@@ -337,7 +337,6 @@ type BasicFormState = {
   isPublic: boolean;
   color: string;
   title: string;
-  slug: string;
   description: string;
   duration: number;
   bufferBefore: number;
@@ -352,7 +351,6 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
     isPublic: event.status === "active",
     color: EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0],
     title: event.title,
-    slug: event.slug,
     description: event.description ?? "",
     duration: event.duration,
     bufferBefore: event.buffer_before,
@@ -478,19 +476,6 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
         </div>
       </div>
 
-      <div>
-        <label className="label">URL スラグ</label>
-        <div className="input pr-0 mt-1 flex items-center">
-          <span className="text-sm text-gray-500">/j/</span>
-          <input
-            type="text"
-            className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm focus:ring-0 rounded-lg"
-            value={form.slug}
-            onChange={(e) => updateField("slug", e.target.value)}
-          />
-        </div>
-      </div>
-
       <div className="flex justify-end pt-4">
         <button
           disabled={saving}
@@ -499,7 +484,6 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
             try {
               const updated = await updateEventTypeApi(event.id, {
                 title: form.title,
-                slug: form.slug,
                 description: form.description || null,
                 duration: form.duration,
                 buffer_before: form.bufferBefore,
