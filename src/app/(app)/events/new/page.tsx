@@ -201,7 +201,7 @@ export default function NewEventPage() {
   });
 
   // 曜日モード
-  const [weekdaySchedule, setWeekdaySchedule] = useState<{ dayIndex: number; memberIds: string[] }[]>([]);
+  const [weekdaySchedule, setWeekdaySchedule] = useState<{ dayIndex: number; memberIds: string[]; requiredCount: number }[]>([]);
   const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
 
   const [roles, setRoles] = useState<NewRole[]>([
@@ -296,6 +296,7 @@ export default function NewEventPage() {
           ? weekdaySchedule.map((entry) => ({
             day_index: entry.dayIndex,
             member_ids: entry.memberIds,
+            required_count: entry.requiredCount ?? 1,
           }))
           : undefined,
         roles: formData.scheduling_mode !== "weekday"
@@ -525,9 +526,20 @@ export default function NewEventPage() {
         if (existing.memberIds.includes(userId)) return prev;
         return prev.map((e) => e.dayIndex === dayIndex ? { ...e, memberIds: [...e.memberIds, userId] } : e);
       }
-      return [...prev, { dayIndex, memberIds: [userId] }];
+      return [...prev, { dayIndex, memberIds: [userId], requiredCount: 1 }];
     });
     setWeekdayMemberDropdownOpen(null);
+  }
+
+  // 曜日モード: 必要人数更新
+  function updateWeekdayRequiredCount(dayIndex: number, count: number) {
+    setWeekdaySchedule((prev) => {
+      const existing = prev.find((e) => e.dayIndex === dayIndex);
+      if (existing) {
+        return prev.map((e) => e.dayIndex === dayIndex ? { ...e, requiredCount: count } : e);
+      }
+      return [...prev, { dayIndex, memberIds: [], requiredCount: count }];
+    });
   }
 
   // 曜日モード: メンバー削除
@@ -1002,13 +1014,27 @@ export default function NewEventPage() {
                     ) : (
                       <div className="mt-2 space-y-3">
                         {enabledDays.map(({ label, dayIndex }) => {
-                          const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] };
+                          const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] as string[], requiredCount: 1 };
                           const usedIds = entry.memberIds;
                           return (
                             <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
-                              <div className="flex items-center gap-2 mb-3">
-                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
-                                <span className="text-xs text-gray-400">{usedIds.length}人</span>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                                  <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                  <span>必要人数:</span>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    className="input w-14 h-7 text-xs text-center px-1"
+                                    value={entry.requiredCount ?? 1}
+                                    onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <span>人</span>
+                                </div>
                               </div>
                               <div className="space-y-2">
                                 <DndContext
@@ -1195,33 +1221,35 @@ export default function NewEventPage() {
                               {(handle) => (
                                 <div className="rounded-2xl border border-gray-200 p-4">
                                   {/* Role header */}
-                                  <div className="flex items-center gap-3">
-                                    {handle}
-                                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
-                                      {roleIndex + 1}
-                                    </span>
-                                    <input
-                                      type="text"
-                                      className="input flex-1"
-                                      value={role.name}
-                                      onChange={(e) =>
-                                        updateRole(role.id, { name: e.target.value })
-                                      }
-                                      placeholder="役割名（例: 面接官）"
-                                    />
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                                  <div className="flex items-center gap-6">
+                                    <div className="flex-1 flex items-center gap-3">
+                                      {handle}
+                                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
+                                        {roleIndex + 1}
+                                      </span>
                                       <input
-                                        type="number"
-                                        className="input w-16 text-center"
-                                        value={role.required_count}
+                                        type="text"
+                                        className="input flex-1"
+                                        value={role.name}
                                         onChange={(e) =>
-                                          updateRole(role.id, {
-                                            required_count: parseInt(e.target.value) || 1,
-                                          })
+                                          updateRole(role.id, { name: e.target.value })
                                         }
-                                        min={1}
+                                        placeholder="役割名（例: 面接官）"
                                       />
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                                        <input
+                                          type="number"
+                                          className="input w-16 text-center"
+                                          value={role.required_count}
+                                          onChange={(e) =>
+                                            updateRole(role.id, {
+                                              required_count: parseInt(e.target.value) || 1,
+                                            })
+                                          }
+                                          min={1}
+                                        />
+                                      </div>
                                     </div>
                                     {roles.length > 1 && (
                                       <button
@@ -2089,7 +2117,10 @@ export default function NewEventPage() {
                           const label = WEEKDAY_LABELS[entry.dayIndex];
                           return (
                             <div key={entry.dayIndex}>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">{label}曜日</p>
+                              <p className="text-xs font-semibold text-gray-600 mb-1">
+                                {label}曜日
+                                <span className="ml-1 font-normal text-gray-400">（{entry.requiredCount ?? 1}人必要）</span>
+                              </p>
                               <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                                 {entry.memberIds.map((userId) => {
                                   const user = teamMembers.find((u) => u.id === userId);
