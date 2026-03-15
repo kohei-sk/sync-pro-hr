@@ -15,6 +15,7 @@ export default function AcceptInvitePage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -32,6 +33,7 @@ export default function AcceptInvitePage() {
         router.replace("/login");
         return;
       }
+      setUserId(data.user.id);
       setEmail(data.user.email ?? "");
       setCheckingSession(false);
     });
@@ -57,6 +59,14 @@ export default function AcceptInvitePage() {
       setError("パスワードの設定に失敗しました。もう一度お試しください。");
       setIsLoading(false);
       return;
+    }
+
+    // プロフィールのステータスを active に更新
+    if (userId) {
+      await supabase
+        .from("profiles")
+        .update({ status: "active" })
+        .eq("id", userId);
     }
 
     router.replace("/events");

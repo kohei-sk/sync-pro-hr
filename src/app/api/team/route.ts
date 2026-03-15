@@ -5,6 +5,7 @@ import {
   serverErrorResponse,
 } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendInviteEmail } from "@/lib/email";
 
 /**
  * GET /api/team
@@ -46,6 +47,18 @@ export async function GET() {
  * POST /api/team
  * 認証必須。メールアドレスを指定してチームメンバーを招待する。
  * Body: { email: string; role?: "admin" | "member" }
+ *
+ * 【フロー】
+ *   1. generateLink(type:'invite') でユーザー作成（Supabase のメールは送らない）
+ *   2. 独自の invite_token (UUID) を profiles に保存（7日間有効）
+ *   3. Resend で招待メールを送信（リンク先: /auth/invite?token=TOKEN）
+ *   4. ユーザーがリンクを開く → /auth/invite ページでボタンをクリック
+ *   5. /api/auth/verify-invite でトークン検証 → 新鮮な magic link を生成
+ *   6. magic link → /auth/callback → セッション確立 → /auth/accept-invite でパスワード設定
+ *
+ *  ※ Supabase の OTP をメール本文に直接含めない理由:
+ *     メールセキュリティスキャナーが自動でリンクを開くと OTP が消費され
+ *     実際のユーザーが開く頃には otp_expired になるため。
  */
 export async function POST(request: Request) {
   try {
@@ -58,35 +71,51 @@ export async function POST(request: Request) {
     }
 
     const serviceClient = createServiceClient();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3002";
 
-    // Supabase Auth の招待メールを送信
-    // 招待リンクをクリック → /auth/callback でセッション交換 → /auth/accept-invite でパスワード設定
-    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/auth/accept-invite`;
-    const { data: inviteData, error: inviteError } =
-      await serviceClient.auth.admin.inviteUserByEmail(email, {
-        redirectTo,
-        data: {
-          company_id: companyId,
-          role,
-          full_name: email.split("@")[0],
+    // generateLink でユーザー作成（メール送信なし）
+    const { data: linkData, error: linkError } =
+      await serviceClient.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: {
+          data: { company_id: companyId, role, full_name: email.split("@")[0] },
+          redirectTo: `${appUrl}/auth/callback?next=/auth/accept-invite`,
         },
       });
 
-    if (inviteError) {
-      console.error("[Team invite] Error:", inviteError);
-      const msg = inviteError.message.includes("already registered")
-        ? "このメールアドレスは既に登録されています"
-        : "招待の送信に失敗しました";
+    if (linkError) {
+      console.error("[Team invite] generateLink error:", linkError);
+      const msg =
+        linkError.message.includes("already registered") ||
+        linkError.message.includes("User already registered")
+          ? "このメールアドレスは既に登録されています"
+          : "招待の作成に失敗しました";
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    // 招待後、プロフィールを invited ステータスに更新
-    if (inviteData?.user?.id) {
-      await serviceClient
-        .from("profiles")
-        .update({ status: "invited", role, company_id: companyId })
-        .eq("id", inviteData.user.id);
-    }
+    const userId = linkData.user.id;
+
+    // 独自の招待トークンを生成（7日間有効）
+    const inviteToken = crypto.randomUUID();
+    const inviteExpires = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    // プロフィールを invited ステータスに更新・invite_token を保存
+    await serviceClient
+      .from("profiles")
+      .update({
+        status: "invited",
+        role,
+        company_id: companyId,
+        invite_token: inviteToken,
+        invite_token_expires_at: inviteExpires,
+      })
+      .eq("id", userId);
+
+    // 招待メールを Resend 経由で送信
+    await sendInviteEmail({ to: email, inviteToken, appUrl });
 
     return NextResponse.json({ success: true });
   } catch (err) {
