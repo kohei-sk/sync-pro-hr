@@ -117,7 +117,7 @@ export interface CustomField {
 }
 
 // --- Bookings ---
-export type BookingStatus = "confirmed" | "cancelled" | "pending";
+export type BookingStatus = "confirmed" | "completed" | "cancelled";
 
 export interface Booking {
   id: string;
@@ -188,7 +188,7 @@ export interface BookingFormData {
 // --- Activity Log ---
 export interface ActivityItem {
   id: string;
-  type: "booking_created" | "booking_cancelled" | "event_created" | "member_added";
+  type: "booking_created" | "booking_cancelled" | "booking_admin_cancelled" | "booking_candidate_cancelled" | "booking_changed" | "event_created" | "member_added";
   description: string;
   timestamp: string;
   metadata?: Record<string, string>;

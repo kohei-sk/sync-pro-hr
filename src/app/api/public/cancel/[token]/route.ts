@@ -110,9 +110,9 @@ export async function POST(
     if (companyId) {
       await supabase.from("activity_log").insert({
         company_id: companyId,
-        type: "booking_cancelled",
+        type: "booking_candidate_cancelled",
         description: `${booking.candidate_name} さんが ${eventTitle} の予約をキャンセルしました`,
-        metadata: { booking_id: booking.id },
+        metadata: { booking_id: booking.id, cancelled_by: "candidate" },
       });
     }
 

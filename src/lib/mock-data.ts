@@ -487,7 +487,7 @@ export const mockBookings: Booking[] = [
     candidate_email: "nakamura@candidate.com",
     start_time: "2026-02-22T11:00:00",
     end_time: "2026-02-22T11:30:00",
-    status: "pending",
+    status: "confirmed",
     assigned_members: [{ user_id: "u1", role_id: "r6" }],
     created_at: "2026-02-16T09:00:00Z",
   },
