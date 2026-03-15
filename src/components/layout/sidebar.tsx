@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/lib/notification-store";
+import { useCurrentUser } from "@/lib/user-store";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { createClient } from "@/lib/supabase/client";
 
 const baseNavigation = [
   { name: "イベント", href: "/events", icon: CalendarPlus },
@@ -31,14 +33,19 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { unreadCount } = useNotificationStore();
+  const currentUser = useCurrentUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  function handleLogout() {
-    document.cookie = "auth_token=; path=/; max-age=0";
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     router.push("/login");
   }
 
   const isExpanded = !isCollapsed;
+  const displayName = currentUser?.full_name || "...";
+  const displayCompany = currentUser?.company_name || "";
+  const avatarLetter = currentUser?.full_name ? currentUser.full_name.charAt(0) : "?";
 
   return (
     <div
@@ -128,9 +135,17 @@ export function Sidebar() {
       {/* User section */}
       <div className="border-t border-gray-100 p-2">
         <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-            田
-          </div>
+          {currentUser?.avatar_url ? (
+            <img
+              src={currentUser.avatar_url}
+              alt={displayName}
+              className="h-8 w-8 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+              {avatarLetter}
+            </div>
+          )}
           <div
             className={cn(
               "flex-1 min-w-0 transition-all duration-200",
@@ -138,10 +153,10 @@ export function Sidebar() {
             )}
           >
             <p className="truncate text-sm font-medium">
-              田中 太郎
+              {displayName}
             </p>
             <p className="truncate text-xs text-gray-500">
-              株式会社サンプル
+              {displayCompany}
             </p>
           </div>
           {isExpanded && (

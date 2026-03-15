@@ -35,8 +35,9 @@ export interface ReceptionSettings {
 
 // --- Weekday Schedule (曜日モード用) ---
 export interface WeekdayScheduleEntry {
-  day_index: number;    // 0=月, 1=火, 2=水, 3=木, 4=金, 5=土, 6=日
-  member_ids: string[]; // 優先順にソート済みユーザーID
+  day_index: number;       // 0=月, 1=火, 2=水, 3=木, 4=金, 5=土, 6=日
+  member_ids: string[];    // 優先順にソート済みユーザーID
+  required_count?: number; // 必要人数（省略時は 1）
 }
 
 export interface EventType {
@@ -56,6 +57,10 @@ export interface EventType {
   reminder_settings?: ReminderSetting[];
   reception_settings?: ReceptionSettings;
   weekday_schedule?: WeekdayScheduleEntry[];
+  // APIからネストで返ってくるフィールド
+  event_roles?: EventRole[];
+  exclusion_rules?: ExclusionRule[];
+  custom_fields?: CustomField[];
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +72,7 @@ export interface EventRole {
   name: string;
   required_count: number;
   priority_order: number;
+  event_members?: EventMember[]; // APIからネストで返ってくる場合
 }
 
 // --- Event Members ---
@@ -75,6 +81,11 @@ export interface EventMember {
   role_id: string;
   user_id: string;
   user?: User;
+  profiles?: {             // APIのJOINで返ってくる場合
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
 }
 
 // --- Exclusion Rules ---

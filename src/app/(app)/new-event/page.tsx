@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,18 +15,14 @@ import {
   Mail,
   CheckCircle2,
 } from "lucide-react";
-import { getEventTypes, subscribe } from "@/lib/event-store";
+import { useEventTypes } from "@/lib/event-store";
 import { cn } from "@/lib/utils";
-
-function useEventTypes() {
-  return useSyncExternalStore(subscribe, getEventTypes, getEventTypes);
-}
 
 type Step = "select" | "details" | "confirm";
 
 export default function NewEventPage() {
   const router = useRouter();
-  const eventTypes = useEventTypes();
+  const { eventTypes } = useEventTypes();
   const activeEventTypes = eventTypes.filter((e) => e.status === "active");
 
   const [step, setStep] = useState<Step>("select");

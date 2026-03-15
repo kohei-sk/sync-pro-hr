@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   Mail,
-  Calendar,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -21,112 +20,119 @@ import {
   ChevronDown,
   CalendarSync,
 } from "lucide-react";
-import {
-  mockUsers,
-  mockEventTypes,
-  mockRoles,
-  mockMembers,
-  mockBookings,
-} from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
-import type { User } from "@/types";
+
+// ============================================================
+// 型定義（API レスポンス形式）
+// ============================================================
+type TeamMember = {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string;
+  role: "admin" | "member";
+  status: "active" | "invited";
+  calendar_status?: "connected" | "error" | "not_connected";
+  last_synced_at?: string;
+};
 
 export default function TeamPage() {
   const toast = useToast();
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "connected" | "error" | "invited" | "not_connected">("all");
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "connected" | "error" | "invited" | "not_connected"
+  >("all");
 
   // モーダル・ダイアログの開閉状態
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
-  const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailUser, setDetailUser] = useState<User | null>(null);
+  const [detailMember, setDetailMember] = useState<TeamMember | null>(null);
   const [permissionOpen, setPermissionOpen] = useState(false);
-  const [permissionUser, setPermissionUser] = useState<User | null>(null);
+  const [permissionMember, setPermissionMember] = useState<TeamMember | null>(null);
   const [newRole, setNewRole] = useState<"admin" | "member">("member");
   const [savingPermission, setSavingPermission] = useState(false);
-
-  // ローディング状態
   const [reconnectingId, setReconnectingId] = useState<string | null>(null);
-  const [connectingId, setConnectingId] = useState<string | null>(null);
-  const [reinvitingId, setReinvitingId] = useState<string | null>(null);
 
-  const filteredUsers = users.filter((u) => {
+  // チームメンバー取得
+  useEffect(() => {
+    fetchMembers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchMembers() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/team");
+      if (res.ok) {
+        const data = await res.json();
+        setMembers(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      toast.error("メンバーの取得に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // フィルタリング
+  const filteredMembers = members.filter((m) => {
     const matchesSearch =
       !searchQuery ||
-      u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+      m.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "invited" && u.status === "invited") ||
-      (statusFilter !== "invited" && u.status !== "invited" && u.calendar_status === statusFilter);
+      (statusFilter === "invited" && m.status === "invited") ||
+      (statusFilter !== "invited" &&
+        m.status !== "invited" &&
+        m.calendar_status === statusFilter);
     return matchesSearch && matchesStatus;
   });
 
-  function getUserStats(userId: string) {
-    const memberEntries = mockMembers.filter((m) => m.user_id === userId);
-    const roleIds = memberEntries.map((m) => m.role_id);
-    const eventIds = new Set(
-      mockRoles
-        .filter((r) => roleIds.includes(r.id))
-        .map((r) => r.event_id)
-    );
-    const upcomingBookings = mockBookings.filter(
-      (b) =>
-        b.status === "confirmed" &&
-        b.assigned_members?.some((am) => am.user_id === userId) &&
-        new Date(b.start_time) >= new Date("2026-02-18")
-    );
-    return {
-      eventCount: eventIds.size,
-      upcomingBookings: upcomingBookings.length,
-    };
-  }
+  // サマリーカウント
+  const connectedCount = members.filter(
+    (m) => m.status !== "invited" && m.calendar_status === "connected"
+  ).length;
+  const errorCount = members.filter(
+    (m) => m.status !== "invited" && m.calendar_status === "error"
+  ).length;
+  const invitedCount = members.filter((m) => m.status === "invited").length;
+  const notConnectedCount = members.filter(
+    (m) => !m.calendar_status || m.calendar_status === "not_connected"
+  ).length;
 
   const calendarStatusConfig: Record<
-    NonNullable<User["calendar_status"]>,
+    NonNullable<TeamMember["calendar_status"]>,
     { label: string; icon: typeof CheckCircle2; className: string }
   > = {
-    connected: {
-      label: "接続済",
-      icon: CheckCircle2,
-      className: "badge-green",
-    },
-    error: {
-      label: "エラー",
-      icon: AlertTriangle,
-      className: "badge-red",
-    },
-    not_connected: {
-      label: "未接続",
-      icon: XCircle,
-      className: "badge-gray",
-    },
+    connected: { label: "接続済", icon: CheckCircle2, className: "badge-green" },
+    error: { label: "エラー", icon: AlertTriangle, className: "badge-red" },
+    not_connected: { label: "未接続", icon: XCircle, className: "badge-gray" },
   };
 
-  const connectedCount = users.filter(
-    (u) => u.status !== "invited" && u.calendar_status === "connected"
-  ).length;
-  const errorCount = users.filter(
-    (u) => u.status !== "invited" && u.calendar_status === "error"
-  ).length;
-  const invitedCount = users.filter((u) => u.status === "invited").length;
-  const notConnectedCount = users.filter((u) => u.calendar_status === "not_connected").length;
+  // 招待完了後にリストをリロード
+  function handleInvited(email: string) {
+    setInviteOpen(false);
+    toast.success(`${email} に招待メールを送信しました`);
+    fetchMembers();
+  }
 
-  // カレンダー再接続
-  function handleReconnect(userId: string) {
-    setReconnectingId(userId);
+  // カレンダー再接続（フロントのみのモック操作 — Phase 4 で実装予定）
+  function handleReconnect(memberId: string) {
+    setReconnectingId(memberId);
     setTimeout(() => {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId
-            ? { ...u, calendar_status: "connected", last_synced_at: new Date().toISOString() }
-            : u
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.id === memberId
+            ? { ...m, calendar_status: "connected", last_synced_at: new Date().toISOString() }
+            : m
         )
       );
       toast.success("カレンダーを再接続しました");
@@ -134,66 +140,63 @@ export default function TeamPage() {
     }, 1500);
   }
 
-  // カレンダー接続
-  function handleConnect(userId: string) {
-    setConnectingId(userId);
-    setTimeout(() => {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId
-            ? { ...u, calendar_status: "connected", last_synced_at: new Date().toISOString() }
-            : u
-        )
-      );
-      toast.success("カレンダーを接続しました");
-      setConnectingId(null);
-    }, 1500);
-  }
-
-  // 再招待
-  function handleReinvite(user: User) {
-    setReinvitingId(user.id);
-    setTimeout(() => {
-      setReinvitingId(null);
-      toast.success(`${user.email} に招待メールを再送しました`);
-    }, 1000);
-  }
-
-  // メンバー削除確認
-  function handleDeleteConfirm() {
-    if (!deleteTargetUser) return;
-    setDeletingUser(true);
-    setTimeout(() => {
-      const name = deleteTargetUser.full_name;
-      setUsers((prev) => prev.filter((u) => u.id !== deleteTargetUser.id));
-      setDeleteTargetUser(null);
-      setDeletingUser(false);
-      toast.success(`${name} をチームから削除しました`);
-    }, 1000);
+  // メンバー削除
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/team/${deleteTarget.id}`, { method: "DELETE" });
+      if (res.ok) {
+        const name = deleteTarget.full_name;
+        setMembers((prev) => prev.filter((m) => m.id !== deleteTarget.id));
+        setDeleteTarget(null);
+        toast.success(`${name} をチームから削除しました`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error ?? "削除に失敗しました");
+      }
+    } catch {
+      toast.error("通信エラーが発生しました");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   // 権限変更モーダルを開く
-  function openPermissionModal(user: User) {
-    setNewRole(user.role ?? "member");
-    setPermissionUser(user);
+  function openPermissionModal(member: TeamMember) {
+    setNewRole(member.role ?? "member");
+    setPermissionMember(member);
     setPermissionOpen(true);
   }
 
   // 権限変更保存
-  function handlePermissionSave() {
-    if (!permissionUser) return;
+  async function handlePermissionSave() {
+    if (!permissionMember) return;
     setSavingPermission(true);
-    setTimeout(() => {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === permissionUser.id ? { ...u, role: newRole } : u
-        )
-      );
-      const label = newRole === "admin" ? "管理者" : "メンバー";
-      toast.success(`${permissionUser.full_name} の権限を「${label}」に変更しました`);
+    try {
+      const res = await fetch(`/api/team/${permissionMember.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (res.ok) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === permissionMember.id ? { ...m, role: newRole } : m
+          )
+        );
+        const label = newRole === "admin" ? "管理者" : "メンバー";
+        toast.success(`${permissionMember.full_name} の権限を「${label}」に変更しました`);
+        setPermissionOpen(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error ?? "権限の変更に失敗しました");
+      }
+    } catch {
+      toast.error("通信エラーが発生しました");
+    } finally {
       setSavingPermission(false);
-      setPermissionOpen(false);
-    }, 800);
+    }
   }
 
   return (
@@ -242,7 +245,6 @@ export default function TeamPage() {
 
       <div className="sticky-wrap py-3 mb-1">
         <div className="flex items-center gap-3">
-          {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -253,8 +255,6 @@ export default function TeamPage() {
               className="input pl-9"
             />
           </div>
-
-          {/* Filter */}
           <div className="relative">
             <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <select
@@ -274,245 +274,200 @@ export default function TeamPage() {
       </div>
 
       {/* Member List */}
-      <div className="space-y-3">
-        {filteredUsers.map((user) => {
-          const isInvited = user.status === "invited";
-          const stats = getUserStats(user.id);
-          const calStatus =
-            calendarStatusConfig[user.calendar_status || "not_connected"];
-          const CalStatusIcon = calStatus.icon;
-          const initial = user.full_name.charAt(0);
-          const syncTimeStr = user.last_synced_at
-            ? formatSyncTime(user.last_synced_at)
-            : null;
-          const isReconnecting = reconnectingId === user.id;
-          const isConnecting = connectingId === user.id;
-          const isReinviting = reinvitingId === user.id;
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
+          <div className="h-8 w-8 rounded-full border-2 border-gray-200 border-t-primary-600 animate-spin" />
+          <p className="text-sm">読み込み中...</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredMembers.map((member) => {
+            const isInvited = member.status === "invited";
+            const calStatus =
+              calendarStatusConfig[member.calendar_status || "not_connected"];
+            const CalStatusIcon = calStatus.icon;
+            const initial = member.full_name.charAt(0);
+            const syncTimeStr = member.last_synced_at
+              ? formatSyncTime(member.last_synced_at)
+              : null;
+            const isReconnecting = reconnectingId === member.id;
 
-          return (
-            <div
-              key={user.id}
-              role="button"
-              tabIndex={0}
-              aria-label={`${user.full_name} の詳細を見る`}
-              onClick={() => { setDetailUser(user); setDetailOpen(true); }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setDetailUser(user);
-                  setDetailOpen(true);
-                }
-              }}
-              className="card card-clickable !p-0 transition-shadow hover:shadow-card-hover"
-            >
-              <div className="flex items-center gap-4 p-4">
-                {/* Avatar */}
-                <div
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
-                    isInvited
-                      ? "bg-purple-100 text-purple-700"
-                      : "bg-primary-100 text-primary-700"
-                  )}
-                >
-                  {initial}
-                </div>
+            return (
+              <div
+                key={member.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${member.full_name} の詳細を見る`}
+                onClick={() => { setDetailMember(member); setDetailOpen(true); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setDetailMember(member);
+                    setDetailOpen(true);
+                  }
+                }}
+                className="card card-clickable !p-0 transition-shadow hover:shadow-card-hover"
+              >
+                <div className="flex items-center gap-4 p-4">
+                  {/* Avatar */}
+                  <div
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                      isInvited
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-primary-100 text-primary-700"
+                    )}
+                  >
+                    {initial}
+                  </div>
 
-                {/* Info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold">
-                      {user.full_name}
-                    </h3>
-                    {user.role === "admin" && !isInvited && (
-                      <span className="badge badge-blue">管理者</span>
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold">{member.full_name}</h3>
+                      {member.role === "admin" && !isInvited && (
+                        <span className="badge badge-blue">管理者</span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                      <Mail className="h-3 w-3 text-gray-400" />
+                      {member.email}
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="w-[70px] flex justify-center">
+                    {isInvited ? (
+                      <div className="badge badge-purple">
+                        <Clock className="h-3 w-3" />
+                        招待中
+                      </div>
+                    ) : (
+                      <div className={cn("badge", calStatus.className)}>
+                        <CalStatusIcon className="h-3 w-3" />
+                        {calStatus.label}
+                      </div>
                     )}
                   </div>
-                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                    <Mail className="h-3 w-3 text-gray-400" />
-                    {user.email}
+
+                  {/* Actions */}
+                  <div
+                    className="flex items-center gap-1 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <DropdownMenu
+                      align="right"
+                      trigger={
+                        <button
+                          className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
+                          disabled={isReconnecting}
+                        >
+                          {isReconnecting ? (
+                            <span className="spinner h-4 w-4" />
+                          ) : (
+                            <MoreVertical className="h-4 w-4" />
+                          )}
+                        </button>
+                      }
+                      items={
+                        isInvited
+                          ? [
+                              {
+                                label: "招待を取り消す",
+                                icon: XCircle,
+                                variant: "danger" as const,
+                                onClick: () => setDeleteTarget(member),
+                              },
+                            ]
+                          : [
+                              ...(member.calendar_status === "error"
+                                ? [
+                                    {
+                                      label: "カレンダーを再接続",
+                                      icon: RefreshCw,
+                                      onClick: () => handleReconnect(member.id),
+                                    },
+                                  ]
+                                : []),
+                              ...(member.calendar_status === "not_connected"
+                                ? [
+                                    {
+                                      label: "カレンダーを接続",
+                                      icon: CalendarPlus,
+                                      onClick: () => handleReconnect(member.id),
+                                    },
+                                  ]
+                                : []),
+                              ...((member.calendar_status === "error" ||
+                                member.calendar_status === "not_connected")
+                                ? [{ separator: true as const }]
+                                : []),
+                              {
+                                label: "権限を変更",
+                                icon: Shield,
+                                onClick: () => openPermissionModal(member),
+                              },
+                              { separator: true as const },
+                              {
+                                label: "メンバーを削除",
+                                icon: Trash2,
+                                variant: "danger" as const,
+                                onClick: () => setDeleteTarget(member),
+                              },
+                            ]
+                      }
+                    />
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="hidden sm:flex items-center gap-5 shrink-0 mr-3">
-                  {isInvited ? (
-                    <>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-300">0</p>
-                        <p className="text-xs text-gray-300">イベント</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-300">0</p>
-                        <p className="text-xs text-gray-300">予定面接</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-700">
-                          {stats.eventCount}
-                        </p>
-                        <p className="text-xs text-gray-400">イベント</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-700">
-                          {stats.upcomingBookings}
-                        </p>
-                        <p className="text-xs text-gray-400">予定面接</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Status Badge */}
-                <div className="w-[70px] flex justify-center">
-                  {isInvited ? (
-                    <div className="badge badge-purple">
-                      <Clock className="h-3 w-3" />
-                      招待中
-                    </div>
-                  ) : (
-                    <div
-                      className={cn(
-                        "badge",
-                        calStatus.className
-                      )}
-                    >
-                      <CalStatusIcon className="h-3 w-3" />
-                      {calStatus.label}
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions — カードクリックへの伝播を防ぐ */}
-                <div
-                  className="flex items-center gap-1 shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
-                  {/* ドロップダウンメニュー */}
-                  <DropdownMenu
-                    align="right"
-                    trigger={
-                      <button
-                        className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
-                        disabled={isReconnecting || isConnecting || isReinviting}
-                      >
-                        {isReconnecting || isConnecting || isReinviting ? (
-                          <span className="spinner h-4 w-4" />
-                        ) : (
-                          <MoreVertical className="h-4 w-4" />
-                        )}
-                      </button>
-                    }
-                    items={
-                      isInvited
-                        ? [
-                          {
-                            label: "招待メールを再送",
-                            icon: Mail,
-                            onClick: () => handleReinvite(user),
-                          },
-                          { separator: true as const },
-                          {
-                            label: "招待を取り消す",
-                            icon: XCircle,
-                            variant: "danger" as const,
-                            onClick: () => setDeleteTargetUser(user),
-                          },
-                        ]
-                        : [
-                          ...(user.calendar_status === "error"
-                            ? [{
-                              label: "カレンダーを再接続",
-                              icon: RefreshCw,
-                              onClick: () => handleReconnect(user.id),
-                            }]
-                            : []),
-                          ...(user.calendar_status === "not_connected"
-                            ? [{
-                              label: "カレンダーを接続",
-                              icon: CalendarPlus,
-                              onClick: () => handleConnect(user.id),
-                            }]
-                            : []),
-                          ...((user.calendar_status === "error" || user.calendar_status === "not_connected")
-                            ? [{ separator: true as const }]
-                            : []),
-                          {
-                            label: "権限を変更",
-                            icon: Shield,
-                            onClick: () => openPermissionModal(user),
-                          },
-                          { separator: true as const },
-                          {
-                            label: "メンバーを削除",
-                            icon: Trash2,
-                            variant: "danger" as const,
-                            onClick: () => setDeleteTargetUser(user),
-                          },
-                        ]
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Sync info bar */}
-              {
-                syncTimeStr && !isInvited && (
+                {/* Sync info bar */}
+                {syncTimeStr && !isInvited && (
                   <div className="flex items-center gap-1.5 border-t border-gray-100 px-4 py-2 text-xs text-gray-400">
                     <CalendarSync className="h-3 w-3" />
                     {syncTimeStr}
                   </div>
-                )
-              }
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })}
 
-        {filteredUsers.length === 0 && (
-          <div className="card flex flex-col items-center justify-center py-12">
-            <Users className="h-10 w-10 text-gray-300 mb-3" />
-            <p className="text-sm font-medium text-gray-500">
-              該当するメンバーが見つかりません
-            </p>
-          </div>
-        )}
-      </div>
+          {filteredMembers.length === 0 && (
+            <div className="card flex flex-col items-center justify-center py-12">
+              <Users className="h-10 w-10 text-gray-300 mb-3" />
+              <p className="text-sm font-medium text-gray-500">
+                該当するメンバーが見つかりません
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* メンバー招待モーダル */}
       <InviteMemberModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        onInvited={(email) => {
-          setInviteOpen(false);
-          toast.success(`${email} に招待メールを送信しました`);
-        }}
+        onInvited={handleInvited}
       />
 
       {/* メンバー削除/招待取り消し確認ダイアログ */}
       <ConfirmDialog
-        open={deleteTargetUser !== null}
-        onClose={() => {
-          if (!deletingUser) setDeleteTargetUser(null);
-        }}
+        open={deleteTarget !== null}
+        onClose={() => { if (!deleting) setDeleteTarget(null); }}
         onConfirm={handleDeleteConfirm}
         title={
-          deleteTargetUser?.status === "invited"
+          deleteTarget?.status === "invited"
             ? "招待を取り消しますか？"
             : "メンバーを削除しますか？"
         }
         description={
-          deleteTargetUser?.status === "invited"
-            ? `${deleteTargetUser?.full_name} への招待を取り消します。この操作は取り消せません。`
-            : `${deleteTargetUser?.full_name} をチームから削除します。この操作は取り消せません。`
+          deleteTarget?.status === "invited"
+            ? `${deleteTarget?.full_name} への招待を取り消します。この操作は取り消せません。`
+            : `${deleteTarget?.full_name} をチームから削除します。この操作は取り消せません。`
         }
-        confirmLabel={
-          deleteTargetUser?.status === "invited" ? "取り消す" : "削除する"
-        }
+        confirmLabel={deleteTarget?.status === "invited" ? "取り消す" : "削除する"}
         confirmVariant="danger"
-        loading={deletingUser}
+        loading={deleting}
       />
 
       {/* メンバー詳細モーダル */}
@@ -527,24 +482,24 @@ export default function TeamPage() {
           </button>
         }
       >
-        {detailUser && (
+        {detailMember && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div
                 className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-md font-bold",
-                  detailUser.status === "invited"
+                  detailMember.status === "invited"
                     ? "bg-purple-100 text-purple-700"
                     : "bg-primary-100 text-primary-700"
                 )}
               >
-                {detailUser.full_name.charAt(0)}
+                {detailMember.full_name.charAt(0)}
               </div>
               <div>
-                <p className="font-semibold">{detailUser.full_name}</p>
+                <p className="font-semibold">{detailMember.full_name}</p>
                 <p className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
                   <Mail className="w-3 h-3" />
-                  {detailUser.email}
+                  {detailMember.email}
                 </p>
               </div>
             </div>
@@ -552,40 +507,28 @@ export default function TeamPage() {
               <div className="flex justify-between">
                 <dt className="text-gray-500">権限</dt>
                 <dd className="font-medium">
-                  {detailUser.role === "admin" ? "管理者" : "メンバー"}
+                  {detailMember.role === "admin" ? "管理者" : "メンバー"}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">ステータス</dt>
                 <dd className="font-medium">
-                  {detailUser.status === "invited" ? "招待中" : "参加済み"}
+                  {detailMember.status === "invited" ? "招待中" : "参加済み"}
                 </dd>
               </div>
-              {detailUser.status !== "invited" && (
+              {detailMember.status !== "invited" && (
                 <>
                   <div className="flex justify-between">
                     <dt className="text-gray-500">カレンダー</dt>
                     <dd className="font-medium">
-                      {calendarStatusConfig[detailUser.calendar_status || "not_connected"].label}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">担当イベント</dt>
-                    <dd className="font-medium">
-                      {getUserStats(detailUser.id).eventCount}件
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">予定面接</dt>
-                    <dd className="font-medium">
-                      {getUserStats(detailUser.id).upcomingBookings}件
+                      {calendarStatusConfig[detailMember.calendar_status || "not_connected"].label}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-gray-500">最終同期</dt>
                     <dd className="font-medium">
-                      {detailUser.last_synced_at
-                        ? formatSyncTime(detailUser.last_synced_at)
+                      {detailMember.last_synced_at
+                        ? formatSyncTime(detailMember.last_synced_at)
                         : "未同期"}
                     </dd>
                   </div>
@@ -622,10 +565,11 @@ export default function TeamPage() {
           </>
         }
       >
-        {permissionUser && (
+        {permissionMember && (
           <div className="space-y-4">
             <p className="text-sm">
-              <strong className="text-gray-500">{permissionUser.full_name}</strong> の権限を変更します。
+              <strong className="text-gray-500">{permissionMember.full_name}</strong>{" "}
+              の権限を変更します。
             </p>
             <div>
               <label className="label">権限</label>
@@ -644,7 +588,7 @@ export default function TeamPage() {
           </div>
         )}
       </Modal>
-    </div >
+    </div>
   );
 }
 
@@ -674,7 +618,7 @@ function InviteMemberModal({
     onClose();
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setError("");
     if (!email.trim()) {
       setError("メールアドレスを入力してください");
@@ -685,12 +629,25 @@ function InviteMemberModal({
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), role }),
+      });
+      if (res.ok) {
+        onInvited(email.trim());
+        setEmail("");
+        setRole("member");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error ?? "招待の送信に失敗しました");
+      }
+    } catch {
+      setError("通信エラーが発生しました");
+    } finally {
       setLoading(false);
-      onInvited(email.trim());
-      setEmail("");
-      setRole("member");
-    }, 1200);
+    }
   }
 
   return (
@@ -702,18 +659,10 @@ function InviteMemberModal({
       size="md"
       footer={
         <>
-          <button
-            onClick={handleClose}
-            disabled={loading}
-            className="btn btn-ghost"
-          >
+          <button onClick={handleClose} disabled={loading} className="btn btn-ghost">
             キャンセル
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="btn btn-primary"
-          >
+          <button onClick={handleSubmit} disabled={loading} className="btn btn-primary">
             {loading && <span className="spinner" />}
             招待を送る
           </button>
@@ -728,18 +677,13 @@ function InviteMemberModal({
           <input
             type="email"
             value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError("");
-            }}
+            onChange={(e) => { setEmail(e.target.value); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             placeholder="recruit@example.com"
             className={cn("input mt-1", error && "ring-red-400 focus:ring-red-500")}
             autoFocus
           />
-          {error && (
-            <p className="mt-1 text-xs text-red-500">{error}</p>
-          )}
+          {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
         </div>
         <div>
           <label className="label">権限</label>
@@ -765,9 +709,8 @@ function InviteMemberModal({
 // ============================================================
 
 function formatSyncTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString("ja-JP", {
-    year: 'numeric',
+  return new Date(timestamp).toLocaleDateString("ja-JP", {
+    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",

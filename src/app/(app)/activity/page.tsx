@@ -11,7 +11,6 @@ import {
   ChevronDown,
   Filter,
 } from "lucide-react";
-import { mockNotifications } from "@/lib/mock-data";
 import { useNotificationStore } from "@/lib/notification-store";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
@@ -26,7 +25,6 @@ const notificationConfig: Record<
     icon: typeof CalendarCheck;
     iconColor: string;
     iconBg: string;
-    badgeClass: string;
   }
 > = {
   booking_received: {
@@ -34,28 +32,25 @@ const notificationConfig: Record<
     icon: CalendarCheck,
     iconColor: "text-green-700",
     iconBg: "bg-green-50",
-    badgeClass: "badge-green",
   },
   booking_changed: {
     label: "予約変更",
     icon: RefreshCw,
     iconColor: "text-primary-700",
     iconBg: "bg-primary-50",
-    badgeClass: "badge-blue",
   },
   booking_cancelled: {
     label: "予約キャンセル",
     icon: XCircle,
     iconColor: "text-red-700",
     iconBg: "bg-red-50",
-    badgeClass: "badge-red",
   },
 };
 
 function getRelativeTime(timestamp: string): string {
-  const now = new Date("2026-02-21T10:00:00Z");
-  const then = new Date(timestamp);
-  const diffMs = now.getTime() - then.getTime();
+  const now = Date.now();
+  const then = new Date(timestamp).getTime();
+  const diffMs = now - then;
   const diffMin = Math.floor(diffMs / 60000);
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
@@ -73,29 +68,32 @@ function getRelativeTime(timestamp: string): string {
 export default function NotificationsPage() {
   const router = useRouter();
   const toast = useToast();
-  const { isRead, markAsRead, markAllAsRead } = useNotificationStore();
+  const { notifications, isRead, markAsRead, markAllAsRead } = useNotificationStore();
   const [activeTab, setActiveTab] = useState<NotificationTab>("unread");
   const [filterType, setFilterType] = useState<"all" | NotificationType>("all");
 
-  const unreadNotifications = mockNotifications.filter((n) => !isRead(n.id));
-  const readNotifications = mockNotifications.filter((n) => isRead(n.id));
-  const displayedNotifications = (activeTab === "unread" ? unreadNotifications : readNotifications)
-    .filter((n) => filterType === "all" || n.type === filterType);
+  const unreadNotifications = notifications.filter((n) => !n.is_read);
+  const readNotifications = notifications.filter((n) => n.is_read);
+  const displayedNotifications = (
+    activeTab === "unread" ? unreadNotifications : readNotifications
+  ).filter((n) => filterType === "all" || n.type === filterType);
 
   // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
   const prevTabRef = useRef(activeTab);
   useEffect(() => {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
-    document.querySelector('main')?.scrollTo({
-      top: 96,
-      left: 0,
-    });
+    document.querySelector("main")?.scrollTo({ top: 96, left: 0 });
   }, [activeTab]);
 
-  function handleNotificationClick(notificationId: string, bookingId: string) {
-    markAsRead(notificationId);
+  async function handleNotificationClick(notificationId: string, bookingId: string) {
+    await markAsRead(notificationId);
     router.push(`/bookings/${bookingId}`);
+  }
+
+  async function handleMarkAllAsRead() {
+    await markAllAsRead();
+    toast.success("すべて既読にしました");
   }
 
   return (
@@ -112,28 +110,19 @@ export default function NotificationsPage() {
         <div className="tab">
           {(["unread", "read"] as NotificationTab[]).map((tab) => {
             const count =
-              tab === "unread"
-                ? unreadNotifications.length
-                : readNotifications.length;
+              tab === "unread" ? unreadNotifications.length : readNotifications.length;
             const label = tab === "unread" ? "未読" : "既読";
             return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "tab-item",
-                  activeTab === tab
-                    ? "tab-item-active"
-                    : ""
-                )}
+                className={cn("tab-item", activeTab === tab ? "tab-item-active" : "")}
               >
                 {label}
                 <span
                   className={cn(
                     "tab-badge",
-                    activeTab === tab
-                      ? "tab-badge-active"
-                      : ""
+                    activeTab === tab ? "tab-badge-active" : ""
                   )}
                 >
                   {count}
@@ -146,7 +135,7 @@ export default function NotificationsPage() {
             {/* All Read Btn */}
             {activeTab === "unread" && unreadNotifications.length > 0 && (
               <button
-                onClick={() => { markAllAsRead(); toast.success("すべて既読にしました"); }}
+                onClick={handleMarkAllAsRead}
                 className="btn btn-ghost btn-size-s ml-auto"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
@@ -178,35 +167,28 @@ export default function NotificationsPage() {
         <div className="card flex flex-col items-center justify-center py-16">
           <Bell className="mb-3 h-10 w-10 text-gray-300" />
           <p className="text-sm font-medium text-gray-500">
-            {activeTab === "unread"
-              ? "未読の通知はありません"
-              : "既読の通知はありません"}
+            {activeTab === "unread" ? "未読の通知はありません" : "既読の通知はありません"}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {displayedNotifications.map((notification) => {
             const read = isRead(notification.id);
-            const cfg = notificationConfig[notification.type];
+            const cfg = notificationConfig[notification.type] ?? notificationConfig.booking_received;
             const Icon = cfg.icon;
 
             return (
               <button
                 key={notification.id}
                 onClick={() =>
-                  handleNotificationClick(
-                    notification.id,
-                    notification.booking_id
-                  )
+                  handleNotificationClick(notification.id, notification.booking_id)
                 }
                 className={cn(
                   "card card-clickable",
-                  "transition-shadow hover:shadow-card-hover w-full text-left !p-0 transition-shadow hover:shadow-card-hover",
+                  "transition-shadow hover:shadow-card-hover w-full text-left !p-0"
                 )}
               >
-                <div
-                  className={"flex items-center gap-5 px-5 py-4"}
-                >
+                <div className="flex items-center gap-5 px-5 py-4">
                   {/* Icon */}
                   <div
                     className={cn(
@@ -221,7 +203,7 @@ export default function NotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center justify-between gap-3">
                       <span className="shrink-0 text-xs text-gray-400">
-                        {getRelativeTime(notification.timestamp)}
+                        {getRelativeTime(notification.created_at)}
                       </span>
                     </div>
                     <p

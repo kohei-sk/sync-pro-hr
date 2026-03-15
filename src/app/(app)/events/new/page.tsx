@@ -39,9 +39,9 @@ import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { cn, generateId } from "@/lib/utils";
-import { addEventType } from "@/lib/event-store";
+import { createEventTypeApi } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
-import { mockUsers } from "@/lib/mock-data";
+import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
 import { WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
 import type { ExclusionRule, CustomField } from "@/types";
 
@@ -177,6 +177,7 @@ function SortableRow({
 export default function NewEventPage() {
   const router = useRouter();
   const toast = useToast();
+  const { members: teamMembers } = useTeamMembers();
   const [step, setStep] = useState<Step>("basic");
   const [formData, setFormData] = useState({
     title: "",
@@ -200,7 +201,7 @@ export default function NewEventPage() {
   });
 
   // 曜日モード
-  const [weekdaySchedule, setWeekdaySchedule] = useState<{ dayIndex: number; memberIds: string[] }[]>([]);
+  const [weekdaySchedule, setWeekdaySchedule] = useState<{ dayIndex: number; memberIds: string[]; requiredCount: number }[]>([]);
   const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
 
   const [roles, setRoles] = useState<NewRole[]>([
@@ -272,36 +273,56 @@ export default function NewEventPage() {
     document.querySelector('main')?.scrollTo(0, 0);
   }, [step]);
 
-  function handleCreate() {
-    const now = new Date().toISOString();
-    addEventType({
-      id: `evt-${Date.now()}`,
-      user_id: "u1",
-      title: formData.title,
-      slug: formData.slug,
-      description: formData.description || undefined,
-      duration: formData.duration,
-      buffer_before: formData.buffer_before,
-      buffer_after: formData.buffer_after,
-      location_type: formData.location_type,
-      location_detail: formData.location_detail || undefined,
-      status: formData.isPublic ? "active" : "draft",
-      scheduling_mode: formData.scheduling_mode,
-      color: formData.color,
-      reminder_settings: reminders.length > 0
-        ? reminders.map((r) => ({
-          id: r.id,
+  async function handleCreate() {
+    try {
+      await createEventTypeApi({
+        title: formData.title,
+        slug: formData.slug,
+        description: formData.description || undefined,
+        duration: formData.duration,
+        buffer_before: formData.buffer_before,
+        buffer_after: formData.buffer_after,
+        location_type: formData.location_type,
+        location_detail: formData.location_detail || undefined,
+        status: formData.isPublic ? "active" : "draft",
+        scheduling_mode: formData.scheduling_mode,
+        color: formData.color,
+        reception_settings: {
+          exclude_outside_hours: receptionSettings.excludeOutsideHours,
+          allowed_days: receptionSettings.allowedDays,
+          accept_holidays: receptionSettings.acceptHolidays,
+        },
+        weekday_schedule: formData.scheduling_mode === "weekday"
+          ? weekdaySchedule.map((entry) => ({
+            day_index: entry.dayIndex,
+            member_ids: entry.memberIds,
+            required_count: entry.requiredCount ?? 1,
+          }))
+          : undefined,
+        roles: formData.scheduling_mode !== "weekday"
+          ? (formData.scheduling_mode === "fixed"
+            ? [{ name: "面接官", required_count: fixedMemberIds.length || 1, priority_order: 1, member_ids: fixedMemberIds }]
+            : roles.map((r, idx) => ({
+              name: r.name || "面接官",
+              required_count: r.required_count,
+              priority_order: idx + 1,
+              member_ids: r.memberIds,
+            })))
+          : [],
+        exclusion_rules: newExclusionRules,
+        custom_fields: formFields,
+        reminder_settings: reminders.map((r) => ({
           channel: r.channel,
           timing: { value: r.timing_value, unit: r.timing_unit },
           message: r.message,
           is_enabled: r.is_enabled,
-        }))
-        : undefined,
-      created_at: now,
-      updated_at: now,
-    });
-    toast.success("イベントを作成しました");
-    router.push("/events");
+        })),
+      });
+      toast.success("イベントを作成しました");
+      router.push("/events");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "作成に失敗しました");
+    }
   }
 
   function generateSlug(title: string): string {
@@ -505,9 +526,20 @@ export default function NewEventPage() {
         if (existing.memberIds.includes(userId)) return prev;
         return prev.map((e) => e.dayIndex === dayIndex ? { ...e, memberIds: [...e.memberIds, userId] } : e);
       }
-      return [...prev, { dayIndex, memberIds: [userId] }];
+      return [...prev, { dayIndex, memberIds: [userId], requiredCount: 1 }];
     });
     setWeekdayMemberDropdownOpen(null);
+  }
+
+  // 曜日モード: 必要人数更新
+  function updateWeekdayRequiredCount(dayIndex: number, count: number) {
+    setWeekdaySchedule((prev) => {
+      const existing = prev.find((e) => e.dayIndex === dayIndex);
+      if (existing) {
+        return prev.map((e) => e.dayIndex === dayIndex ? { ...e, requiredCount: count } : e);
+      }
+      return [...prev, { dayIndex, memberIds: [], requiredCount: count }];
+    });
   }
 
   // 曜日モード: メンバー削除
@@ -982,13 +1014,27 @@ export default function NewEventPage() {
                     ) : (
                       <div className="mt-2 space-y-3">
                         {enabledDays.map(({ label, dayIndex }) => {
-                          const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] };
+                          const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] as string[], requiredCount: 1 };
                           const usedIds = entry.memberIds;
                           return (
                             <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
-                              <div className="flex items-center gap-2 mb-3">
-                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
-                                <span className="text-xs text-gray-400">{usedIds.length}人</span>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                                  <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                  <span>必要人数:</span>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    className="input w-14 text-center px-1"
+                                    value={entry.requiredCount ?? 1}
+                                    onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <span>人</span>
+                                </div>
                               </div>
                               <div className="space-y-2">
                                 <DndContext
@@ -1001,7 +1047,7 @@ export default function NewEventPage() {
                                     strategy={verticalListSortingStrategy}
                                   >
                                     {usedIds.map((userId, memberIndex) => {
-                                      const user = mockUsers.find((u) => u.id === userId);
+                                      const user = teamMembers.find((u) => u.id === userId);
                                       return (
                                         <SortableRow key={`${dayIndex}-${userId}`} id={`${dayIndex}-${userId}`}>
                                           {(handle) => (
@@ -1037,7 +1083,7 @@ export default function NewEventPage() {
                                   </button>
                                   {weekdayMemberDropdownOpen === dayIndex && (
                                     <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                      {mockUsers
+                                      {teamMembers
                                         .filter((u) => !usedIds.includes(u.id))
                                         .map((user) => (
                                           <button
@@ -1054,7 +1100,7 @@ export default function NewEventPage() {
                                             </div>
                                           </button>
                                         ))}
-                                      {mockUsers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
+                                      {teamMembers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
                                         <p className="px-3 py-2 text-sm text-gray-400">追加できるメンバーがいません</p>
                                       )}
                                     </div>
@@ -1085,7 +1131,7 @@ export default function NewEventPage() {
                             strategy={verticalListSortingStrategy}
                           >
                             {fixedMemberIds.map((userId, index) => {
-                              const user = mockUsers.find((u) => u.id === userId);
+                              const user = teamMembers.find((u) => u.id === userId);
                               return (
                                 <SortableRow key={userId} id={userId}>
                                   {(handle) => (
@@ -1124,7 +1170,7 @@ export default function NewEventPage() {
 
                           {fixedMemberDropdownOpen && (
                             <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                              {mockUsers
+                              {teamMembers
                                 .filter((u) => !fixedMemberIds.includes(u.id))
                                 .map((user) => (
                                   <button
@@ -1141,7 +1187,7 @@ export default function NewEventPage() {
                                     </div>
                                   </button>
                                 ))}
-                              {mockUsers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
+                              {teamMembers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
                                 <p className="px-3 py-2 text-sm text-gray-400">
                                   追加できるメンバーがいません
                                 </p>
@@ -1175,33 +1221,35 @@ export default function NewEventPage() {
                               {(handle) => (
                                 <div className="rounded-2xl border border-gray-200 p-4">
                                   {/* Role header */}
-                                  <div className="flex items-center gap-3">
-                                    {handle}
-                                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
-                                      {roleIndex + 1}
-                                    </span>
-                                    <input
-                                      type="text"
-                                      className="input flex-1"
-                                      value={role.name}
-                                      onChange={(e) =>
-                                        updateRole(role.id, { name: e.target.value })
-                                      }
-                                      placeholder="役割名（例: 面接官）"
-                                    />
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                                  <div className="flex items-center gap-6">
+                                    <div className="flex-1 flex items-center gap-3">
+                                      {handle}
+                                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
+                                        {roleIndex + 1}
+                                      </span>
                                       <input
-                                        type="number"
-                                        className="input w-16 text-center"
-                                        value={role.required_count}
+                                        type="text"
+                                        className="input flex-1"
+                                        value={role.name}
                                         onChange={(e) =>
-                                          updateRole(role.id, {
-                                            required_count: parseInt(e.target.value) || 1,
-                                          })
+                                          updateRole(role.id, { name: e.target.value })
                                         }
-                                        min={1}
+                                        placeholder="役割名（例: 面接官）"
                                       />
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                                        <input
+                                          type="number"
+                                          className="input w-16 text-center"
+                                          value={role.required_count}
+                                          onChange={(e) =>
+                                            updateRole(role.id, {
+                                              required_count: parseInt(e.target.value) || 1,
+                                            })
+                                          }
+                                          min={1}
+                                        />
+                                      </div>
                                     </div>
                                     {roles.length > 1 && (
                                       <button
@@ -1225,7 +1273,7 @@ export default function NewEventPage() {
                                         strategy={verticalListSortingStrategy}
                                       >
                                         {role.memberIds.map((userId, memberIndex) => {
-                                          const user = mockUsers.find((u) => u.id === userId);
+                                          const user = teamMembers.find((u) => u.id === userId);
                                           return (
                                             <SortableRow key={userId} id={userId}>
                                               {(memberHandle) => (
@@ -1272,7 +1320,7 @@ export default function NewEventPage() {
 
                                       {memberDropdownOpen === role.id && (
                                         <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                          {mockUsers
+                                          {teamMembers
                                             .filter(
                                               (u) => !role.memberIds.includes(u.id)
                                             )
@@ -1293,7 +1341,7 @@ export default function NewEventPage() {
                                                 </div>
                                               </button>
                                             ))}
-                                          {mockUsers.filter(
+                                          {teamMembers.filter(
                                             (u) => !role.memberIds.includes(u.id)
                                           ).length === 0 && (
                                               <p className="px-3 py-2 text-sm text-gray-400">
@@ -2069,10 +2117,13 @@ export default function NewEventPage() {
                           const label = WEEKDAY_LABELS[entry.dayIndex];
                           return (
                             <div key={entry.dayIndex}>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">{label}曜日</p>
+                              <p className="text-xs font-semibold text-gray-600 mb-1">
+                                {label}曜日
+                                <span className="ml-1 font-normal text-gray-400">（{entry.requiredCount ?? 1}人必要）</span>
+                              </p>
                               <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                                 {entry.memberIds.map((userId) => {
-                                  const user = mockUsers.find((u) => u.id === userId);
+                                  const user = teamMembers.find((u) => u.id === userId);
                                   return (
                                     <li key={userId} className="flex flex-wrap items-center gap-2">
                                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
@@ -2094,7 +2145,7 @@ export default function NewEventPage() {
                   fixedMemberIds.length > 0 ? (
                     <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {fixedMemberIds.slice(0, 4).map((userId) => {
-                        const user = mockUsers.find((u) => u.id === userId);
+                        const user = teamMembers.find((u) => u.id === userId);
                         return (
                           <li
                             key={userId}
@@ -2128,7 +2179,7 @@ export default function NewEventPage() {
                         </div>
                         <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                           {role.memberIds.slice(0, 4).map((userId) => {
-                            const user = mockUsers.find((u) => u.id === userId);
+                            const user = teamMembers.find((u) => u.id === userId);
                             return (
                               <li
                                 key={userId}

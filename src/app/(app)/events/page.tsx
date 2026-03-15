@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSyncExternalStore, useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,32 +14,16 @@ import {
   Edit,
   Phone,
   Video,
-  Mail,
-  MessageSquare,
-  Ban,
-  FileText,
   Search,
-  ChevronDown,
-  Filter,
 } from "lucide-react";
-import {
-  mockRoles,
-  mockMembers,
-  mockUsers,
-  mockExclusionRules,
-  mockCustomFields,
-} from "@/lib/mock-data";
-import { getEventTypes, subscribe } from "@/lib/event-store";
+import { useEventTypes } from "@/lib/event-store";
+import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
 import { useToast } from "@/components/ui/Toast";
 import { Drawer } from "@/components/ui/Drawer";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { EventStatusBadge } from "@/components/ui/EventStatusBadge";
 import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/constants";
 import type { EventType } from "@/types";
-
-function useEventTypes() {
-  return useSyncExternalStore(subscribe, getEventTypes, getEventTypes);
-}
 
 // ============================================================
 // Helper components
@@ -217,16 +201,23 @@ function EventCard({
 // ============================================================
 
 
-function EventDrawerContent({ event }: { event: EventType }) {
-  const eventRoles = mockRoles.filter((r) => r.event_id === event.id);
-  const roleIds = eventRoles.map((r) => r.id);
-  const eventMembers = mockMembers.filter((m) => roleIds.includes(m.role_id));
-  const exclusionRules = mockExclusionRules.filter(
-    (r) => r.event_id === event.id
-  );
-  const customFields = mockCustomFields.filter(
-    (f) => f.event_id === event.id
-  );
+function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMembers: { id: string; full_name: string }[] }) {
+  const eventRoles = event.event_roles ?? [];
+  const exclusionRules = event.exclusion_rules ?? [];
+  const customFields = event.custom_fields ?? [];
+
+  // ユーザーIDからフルネームを引くマップ
+  // event_roles のプロファイル情報を優先し、weekday モード用に teamMembers で補完
+  const userNameMap = new Map<string, string>();
+  teamMembers.forEach((m) => {
+    if (m.full_name) userNameMap.set(m.id, m.full_name);
+  });
+  eventRoles.forEach((role) => {
+    role.event_members?.forEach((member) => {
+      const name = member.profiles?.full_name;
+      if (name) userNameMap.set(member.user_id, name);
+    });
+  });
 
   return (
     <div className="space-y-4 divide-y divide-gray-100">
@@ -344,16 +335,19 @@ function EventDrawerContent({ event }: { event: EventType }) {
                 const label = WEEKDAY_LABELS[entry.day_index];
                 return (
                   <div key={entry.day_index}>
-                    <p className="text-xs font-semibold text-gray-600 mb-2">{label}曜日</p>
+                    <p className="text-xs font-semibold text-gray-600 mb-2">
+                      {label}曜日
+                      <span className="ml-1 font-normal text-gray-400">（{entry.required_count ?? 1}人）</span>
+                    </p>
                     <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {entry.member_ids.map((userId) => {
-                        const user = mockUsers.find((u) => u.id === userId);
+                        const fullName = userNameMap.get(userId);
                         return (
                           <li key={userId} className="flex flex-wrap items-center gap-2">
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                              {user?.full_name.charAt(0) ?? "?"}
+                              {fullName?.charAt(0) ?? "?"}
                             </div>
-                            <span className="text-sm whitespace-nowrap">{user?.full_name ?? "不明"}</span>
+                            <span className="text-sm whitespace-nowrap">{fullName ?? "不明"}</span>
                           </li>
                         );
                       })}
@@ -370,9 +364,7 @@ function EventDrawerContent({ event }: { event: EventType }) {
         ) : (
           <div className="space-y-4">
             {eventRoles.map((role) => {
-              const roleMembers = eventMembers.filter(
-                (m) => m.role_id === role.id
-              );
+              const roleMembers = role.event_members ?? [];
               return (
                 <div key={role.id}>
                   {event.scheduling_mode !== "fixed" &&
@@ -389,19 +381,17 @@ function EventDrawerContent({ event }: { event: EventType }) {
                     <ul
                       className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {roleMembers.map((member) => {
-                        const user = mockUsers.find(
-                          (u) => u.id === member.user_id
-                        );
+                        const fullName = member.profiles?.full_name ?? userNameMap.get(member.user_id);
                         return (
                           <li
                             key={member.id}
                             className="flex flex-wrap items-center gap-2"
                           >
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                              {user?.full_name.charAt(0) ?? "?"}
+                              {fullName?.charAt(0) ?? "?"}
                             </div>
                             <span className="text-sm whitespace-nowrap">
-                              {user?.full_name ?? "不明"}
+                              {fullName ?? "不明"}
                             </span>
                           </li>
                         );
@@ -557,7 +547,8 @@ function DrawerFooter({
 // ============================================================
 
 function EventsContent() {
-  const eventTypes = useEventTypes();
+  const { eventTypes, loading } = useEventTypes();
+  const { members: teamMembers } = useTeamMembers();
   const toast = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -573,7 +564,7 @@ function EventsContent() {
   }, [activeTab]);
 
   const selectedEventId = searchParams.get("id");
-  const selectedEvent = selectedEventId
+  const selectedEvent = selectedEventId && !loading
     ? (eventTypes.find((e) => e.id === selectedEventId) ?? null)
     : null;
 
@@ -604,6 +595,23 @@ function EventsContent() {
   const countAll = eventTypes.length;
   const countActive = eventTypes.filter((e) => e.status === "active").length;
   const countDraft = eventTypes.filter((e) => e.status === "draft").length;
+
+  if (loading) {
+    return (
+      <div>
+        <div className="header mb-6">
+          <div className="header-col">
+            <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200" />
+          </div>
+        </div>
+        <div className="mt-6 flex flex-col gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card h-24 animate-pulse bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -688,13 +696,15 @@ function EventsContent() {
         ) : (
           <div className="mt-6 flex flex-col gap-3">
             {filteredEvents.map((event) => {
-              const eventRoles = mockRoles.filter(
-                (r) => r.event_id === event.id
-              );
-              const roleIds = eventRoles.map((r) => r.id);
-              const memberCount = mockMembers.filter((m) =>
-                roleIds.includes(m.role_id)
-              ).length;
+              const memberCount =
+                event.scheduling_mode === "weekday"
+                  ? new Set(
+                    (event.weekday_schedule ?? []).flatMap((e) => e.member_ids)
+                  ).size
+                  : (event.event_roles ?? []).reduce(
+                    (sum, role) => sum + (role.event_members?.length ?? 0),
+                    0
+                  );
 
               return (
                 <EventCard
@@ -728,7 +738,7 @@ function EventsContent() {
           ) : undefined
         }
       >
-        {selectedEvent && <EventDrawerContent event={selectedEvent} />}
+        {selectedEvent && <EventDrawerContent event={selectedEvent} teamMembers={teamMembers} />}
       </Drawer>
     </div >
   );

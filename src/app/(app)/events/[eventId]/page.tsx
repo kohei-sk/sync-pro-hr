@@ -23,6 +23,8 @@ import {
   MessageSquare,
   Eye,
   CalendarDays,
+  Check,
+  X,
 } from "lucide-react";
 import {
   DndContext,
@@ -39,15 +41,8 @@ import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, generateId } from "@/lib/utils";
 import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
-import {
-  mockEventTypes,
-  mockRoles,
-  mockMembers,
-  mockExclusionRules,
-  mockCustomFields,
-  mockUsers,
-} from "@/lib/mock-data";
-import { deleteEventType } from "@/lib/event-store";
+import { deleteEventTypeApi, updateEventTypeApi } from "@/lib/event-store";
+import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
@@ -132,17 +127,31 @@ export default function EventDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const { navigate, pendingHref, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty);
+  const { members: teamMembers } = useTeamMembers();
 
-  const event = mockEventTypes.find((e) => e.id === eventId);
-  const roles = mockRoles.filter((r) => r.event_id === eventId);
-  const roleIds = roles.map((r) => r.id);
-  const members = mockMembers.filter((m) => roleIds.includes(m.role_id));
-  const exclusionRules = mockExclusionRules.filter(
-    (r) => r.event_id === eventId
-  );
-  const customFields = mockCustomFields.filter(
-    (f) => f.event_id === eventId
-  );
+  const [event, setEvent] = useState<EventType | null | undefined>(undefined);
+  const [roles, setRoles] = useState<EventRole[]>([]);
+  const [members, setMembers] = useState<EventMember[]>([]);
+  const [exclusionRules, setExclusionRules] = useState<ExclusionRule[]>([]);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/events/${eventId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) { setEvent(null); return; }
+        setEvent(data);
+        setRoles(data.event_roles ?? []);
+        const allMembers = (data.event_roles ?? []).flatMap(
+          (r: EventRole) => r.event_members ?? []
+        );
+        setMembers(allMembers);
+        setExclusionRules(data.exclusion_rules ?? []);
+        setCustomFields(data.custom_fields ?? []);
+      })
+      .catch(() => setEvent(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
 
   // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
   const prevTabRef = useRef(activeTab);
@@ -155,13 +164,25 @@ export default function EventDetailPage() {
     });
   }, [activeTab]);
 
-  function handleDelete() {
-    deleteEventType(eventId);
-    toast.success("イベントを削除しました");
-    router.push("/events");
+  async function handleDelete() {
+    try {
+      await deleteEventTypeApi(eventId);
+      toast.success("イベントを削除しました");
+      router.push("/events");
+    } catch {
+      toast.error("削除に失敗しました");
+    }
   }
 
-  if (!event) {
+  if (event === undefined) {
+    return (
+      <div className="text-center py-12">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-200 mx-auto" />
+      </div>
+    );
+  }
+
+  if (event === null) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">イベントが見つかりません</p>
@@ -256,7 +277,7 @@ export default function EventDetailPage() {
         {/* Tab Content */}
         <div className="card max-w-3xl">
           {activeTab === "basic" && (
-            <BasicTab event={event} onDirtyChange={setIsDirty} />
+            <BasicTab event={event} onDirtyChange={setIsDirty} onSaved={setEvent} />
           )}
           {activeTab === "reception" && (
             <ReceptionTab event={event} onDirtyChange={setIsDirty} />
@@ -271,7 +292,7 @@ export default function EventDetailPage() {
             <FormTab fields={customFields} eventId={eventId} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "reminder" && (
-            <ReminderTab reminders={event.reminder_settings ?? []} onDirtyChange={setIsDirty} />
+            <ReminderTab eventId={eventId} reminders={event.reminder_settings ?? []} onDirtyChange={setIsDirty} />
           )}
         </div>
       </div>
@@ -323,8 +344,10 @@ type BasicFormState = {
   bufferAfter: number;
 };
 
-function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; onDirtyChange: (dirty: boolean) => void }) {
+function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirtyChange: (dirty: boolean) => void; onSaved?: (updated: EventType) => void }) {
   const toast = useToast();
+  const { members: teamMembers } = useTeamMembers();
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<BasicFormState>({
     isPublic: event.status === "active",
     color: EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0],
@@ -469,7 +492,34 @@ function BasicTab({ event, onDirtyChange }: { event: typeof mockEventTypes[0]; o
       </div>
 
       <div className="flex justify-end pt-4">
-        <button onClick={() => { toast.success("変更を保存しました"); onDirtyChange(false); }} className="btn btn-primary">変更を保存</button>
+        <button
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            try {
+              const updated = await updateEventTypeApi(event.id, {
+                title: form.title,
+                slug: form.slug,
+                description: form.description || null,
+                duration: form.duration,
+                buffer_before: form.bufferBefore,
+                buffer_after: form.bufferAfter,
+                color: form.color,
+                status: form.isPublic ? "active" : "draft",
+              });
+              onSaved?.(updated);
+              onDirtyChange(false);
+              toast.success("変更を保存しました");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+            } finally {
+              setSaving(false);
+            }
+          }}
+          className="btn btn-primary"
+        >
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -493,6 +543,20 @@ function ReceptionTab({
     accept_holidays: false,
   };
   const [settings, setSettings] = useState<ReceptionSettings>({ ...initial });
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(event.id, { reception_settings: settings });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function toggleDay(i: number) {
     const updated = [...settings.allowed_days];
@@ -554,7 +618,9 @@ function ReceptionTab({
         </div>
       </div>
       <div className="mt-6 flex justify-end">
-        <button onClick={() => { toast.success("変更を保存しました"); onDirtyChange(false); }} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -574,6 +640,7 @@ function TeamTab({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const toast = useToast();
+  const { members: teamMembers } = useTeamMembers();
   const [mode, setMode] = useState(initialMode);
 
   // Fixed mode: ordered list of user IDs
@@ -602,6 +669,12 @@ function TeamTab({
   const initialWeekdaySchedule: WeekdayScheduleEntry[] = event.weekday_schedule ?? [];
   const [weekdaySchedule, setWeekdaySchedule] = useState<WeekdayScheduleEntry[]>(initialWeekdaySchedule);
   const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Pool mode: role inline editing
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingRoleName, setEditingRoleName] = useState("");
+  const [editingRoleCount, setEditingRoleCount] = useState(1);
 
   // Enabled days from reception settings
   const receptionAllowedDays = event.reception_settings?.allowed_days ?? [...DEFAULT_ALLOWED_DAYS];
@@ -652,10 +725,12 @@ function TeamTab({
     setNewRoleName("");
     setNewRoleCount(1);
     setShowAddRoleForm(false);
+    onDirtyChange(true);
   }
 
   function removeRole(roleId: string) {
     setLocalRoles(localRoles.filter((r) => r.id !== roleId));
+    onDirtyChange(true);
   }
 
   function handleRoleDragEnd(event: DragEndEvent) {
@@ -669,6 +744,7 @@ function TeamTab({
           priority_order: i + 1,
         }));
       });
+      onDirtyChange(true);
     }
   }
 
@@ -681,6 +757,7 @@ function TeamTab({
       })
     );
     setMemberPickerRoleId(null);
+    onDirtyChange(true);
   }
 
   function removeMemberFromRole(roleId: string, userId: string) {
@@ -690,6 +767,7 @@ function TeamTab({
         return { ...r, memberIds: r.memberIds.filter((id) => id !== userId) };
       })
     );
+    onDirtyChange(true);
   }
 
   function handleRoleMemberDragEnd(event: DragEndEvent, roleId: string) {
@@ -703,7 +781,30 @@ function TeamTab({
           return { ...r, memberIds: arrayMove(r.memberIds, oldIndex, newIndex) };
         })
       );
+      onDirtyChange(true);
     }
+  }
+
+  // Pool mode: role inline editing
+  function startEditingRole(role: { id: string; name: string; required_count: number }) {
+    setEditingRoleId(role.id);
+    setEditingRoleName(role.name);
+    setEditingRoleCount(role.required_count);
+  }
+
+  function confirmEditingRole() {
+    if (!editingRoleName.trim()) return;
+    setLocalRoles(localRoles.map((r) =>
+      r.id === editingRoleId
+        ? { ...r, name: editingRoleName.trim(), required_count: editingRoleCount }
+        : r
+    ));
+    setEditingRoleId(null);
+    onDirtyChange(true);
+  }
+
+  function cancelEditingRole() {
+    setEditingRoleId(null);
   }
 
   // Weekday mode: member management
@@ -744,9 +845,45 @@ function TeamTab({
     }
   }
 
-  function handleSave() {
-    toast.success("変更を保存しました");
-    onDirtyChange(false);
+  function updateWeekdayRequiredCount(dayIndex: number, count: number) {
+    setWeekdaySchedule((prev) => {
+      const existing = prev.find((e) => e.day_index === dayIndex);
+      if (existing) {
+        return prev.map((e) => e.day_index === dayIndex ? { ...e, required_count: count } : e);
+      }
+      return [...prev, { day_index: dayIndex, member_ids: [], required_count: count }];
+    });
+    onDirtyChange(true);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      // スケジューリングモードに応じてロールを構築
+      const rolesPayload =
+        mode === "fixed"
+          ? [{ name: roles[0]?.name ?? "メンバー", required_count: 1, priority_order: 1, member_ids: fixedMemberIds }]
+          : mode === "pool"
+            ? localRoles.map((r, i) => ({
+              name: r.name,
+              required_count: r.required_count,
+              priority_order: i + 1,
+              member_ids: r.memberIds,
+            }))
+            : []; // weekday モードはロール不要
+
+      await updateEventTypeApi(event.id, {
+        scheduling_mode: mode,
+        ...(mode === "weekday" ? { weekday_schedule: weekdaySchedule } : {}),
+        roles: rolesPayload,
+      });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -824,9 +961,23 @@ function TeamTab({
                 const usedIds = entry.member_ids;
                 return (
                   <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
-                      <span className="text-xs text-gray-400">{usedIds.length}人</span>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                        <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span>必要人数:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          className="input w-14 text-center px-1"
+                          value={entry.required_count ?? 1}
+                          onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span>人</span>
+                      </div>
                     </div>
                     <div className="rounded-xl border border-gray-100 divide-y divide-gray-50">
                       {usedIds.length === 0 ? (
@@ -842,7 +993,7 @@ function TeamTab({
                             strategy={verticalListSortingStrategy}
                           >
                             {usedIds.map((userId, memberIndex) => {
-                              const user = mockUsers.find((u) => u.id === userId);
+                              const user = teamMembers.find((u) => u.id === userId);
                               return (
                                 <SortableRow key={`wd-${dayIndex}-${userId}`} id={`wd-${dayIndex}-${userId}`}>
                                   {(handle) => (
@@ -880,7 +1031,7 @@ function TeamTab({
                         </button>
                         {weekdayMemberDropdownOpen === dayIndex && (
                           <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                            {mockUsers
+                            {teamMembers
                               .filter((u) => !usedIds.includes(u.id))
                               .map((user) => (
                                 <button
@@ -897,7 +1048,7 @@ function TeamTab({
                                   </div>
                                 </button>
                               ))}
-                            {mockUsers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
+                            {teamMembers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
                               <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">追加できるメンバーがいません</p>
                             )}
                           </div>
@@ -938,7 +1089,7 @@ function TeamTab({
                   strategy={verticalListSortingStrategy}
                 >
                   {fixedMemberIds.map((userId, index) => {
-                    const user = mockUsers.find((u) => u.id === userId);
+                    const user = teamMembers.find((u) => u.id === userId);
                     return (
                       <SortableRow key={userId} id={userId}>
                         {(handle) => (
@@ -980,7 +1131,7 @@ function TeamTab({
               </button>
               {showMemberPicker && (
                 <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                  {mockUsers
+                  {teamMembers
                     .filter((u) => !fixedMemberIds.includes(u.id))
                     .map((user) => (
                       <button
@@ -997,7 +1148,7 @@ function TeamTab({
                         </div>
                       </button>
                     ))}
-                  {mockUsers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
+                  {teamMembers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
                     <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
                       追加できるメンバーがいません
                     </p>
@@ -1032,20 +1183,68 @@ function TeamTab({
                       <div className="text-sm rounded-2xl border border-gray-200 p-4">
                         {/* Role header */}
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {handle}
                             <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-1.5 text-xs font-semibold text-gray-600 shrink-0">
                               {roleIndex + 1}
                             </span>
-                            <span className="font-medium">{role.name}</span>
-                            <span className="text-sm text-gray-500">(必要人数: {role.required_count}人)</span>
+                            {editingRoleId === role.id ? (
+                              <>
+                                <input
+                                  type="text"
+                                  className="input text-sm flex-1 min-w-0"
+                                  value={editingRoleName}
+                                  onChange={(e) => setEditingRoleName(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") confirmEditingRole(); if (e.key === "Escape") cancelEditingRole(); }}
+                                  autoFocus
+                                />
+                                <input
+                                  type="number"
+                                  className="input w-16 text-center px-1 shrink-0"
+                                  min={1}
+                                  value={editingRoleCount}
+                                  onChange={(e) => setEditingRoleCount(parseInt(e.target.value) || 1)}
+                                />
+                                <span className="text-xs text-gray-500 shrink-0">人</span>
+                                <div className="flex justify-end gap-2 pt-1  ml-5">
+                                  <button
+                                    onClick={cancelEditingRole}
+                                    className="btn btn-ghost"
+                                  >
+                                    キャンセル
+                                  </button>
+                                  <button
+                                    onClick={confirmEditingRole}
+                                    disabled={!editingRoleName.trim()}
+                                    className="btn btn-primary"
+                                  >
+                                    保存
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex-1">
+                                  <span className="font-medium truncate">{role.name}</span>
+                                  <span className="text-sm text-gray-500 shrink-0">（{role.required_count}人）</span>
+                                </div>
+                                <button
+                                  onClick={() => startEditingRole(role)}
+                                  className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
-                          <button
-                            onClick={() => removeRole(role.id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {editingRoleId !== role.id && (
+                            <button
+                              onClick={() => removeRole(role.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors ml-4 shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
 
                         {/* Members within role */}
@@ -1065,7 +1264,7 @@ function TeamTab({
                                 strategy={verticalListSortingStrategy}
                               >
                                 {role.memberIds.map((userId, memberIndex) => {
-                                  const user = mockUsers.find((u) => u.id === userId);
+                                  const user = teamMembers.find((u) => u.id === userId);
                                   return (
                                     <SortableRow key={userId} id={userId}>
                                       {(memberHandle) => (
@@ -1108,7 +1307,7 @@ function TeamTab({
                             </button>
                             {memberPickerRoleId === role.id && (
                               <div className="absolute left-0 top-full z-10 mt-0.5 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                {mockUsers
+                                {teamMembers
                                   .filter((u) => !role.memberIds.includes(u.id))
                                   .map((user) => (
                                     <button
@@ -1125,7 +1324,7 @@ function TeamTab({
                                       </div>
                                     </button>
                                   ))}
-                                {mockUsers.filter((u) => !role.memberIds.includes(u.id)).length === 0 && (
+                                {teamMembers.filter((u) => !role.memberIds.includes(u.id)).length === 0 && (
                                   <p className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
                                     追加できるメンバーがいません
                                   </p>
@@ -1201,7 +1400,9 @@ function TeamTab({
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -1346,6 +1547,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
   const [editDraft, setEditDraft] = useState<ExclusionDraft>({ ...EMPTY_EXCLUSION_DRAFT });
+  const [saving, setSaving] = useState(false);
 
   function handleAddSave() {
     if (!addDraft.name.trim()) return;
@@ -1405,9 +1607,17 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
     onDirtyChange(true);
   }
 
-  function handleSaveAll() {
-    toast.success("変更を保存しました");
-    onDirtyChange(false);
+  async function handleSaveAll() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(eventId, { exclusion_rules: localRules });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -1493,7 +1703,9 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -1523,6 +1735,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
   const [editDraft, setEditDraft] = useState<FieldDraft>({ ...EMPTY_FIELD_DRAFT });
+  const [saving, setSaving] = useState(false);
 
   const sensors = useDndSensors();
 
@@ -1591,9 +1804,17 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
     onDirtyChange(true);
   }
 
-  function handleSaveAll() {
-    toast.success("変更を保存しました");
-    onDirtyChange(false);
+  async function handleSaveAll() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(eventId, { custom_fields: localFields });
+      toast.success("変更を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function renderFieldForm(
@@ -1794,7 +2015,9 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSaveAll} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
@@ -1815,9 +2038,11 @@ const EMPTY_REMINDER_DRAFT: ReminderDraft = {
 };
 
 function ReminderTab({
+  eventId,
   reminders: initialReminders,
   onDirtyChange,
 }: {
+  eventId: string;
   reminders: ReminderSetting[];
   onDirtyChange: (dirty: boolean) => void;
 }) {
@@ -1827,6 +2052,7 @@ function ReminderTab({
   const [addDraft, setAddDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
+  const [saving, setSaving] = useState(false);
 
   function handleAddSave() {
     setReminders([
@@ -1864,9 +2090,17 @@ function ReminderTab({
     onDirtyChange(true);
   }
 
-  function handleSave() {
-    toast.success("リマインド設定を保存しました");
-    onDirtyChange(false);
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateEventTypeApi(eventId, { reminder_settings: reminders });
+      toast.success("リマインド設定を保存しました");
+      onDirtyChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function renderReminderForm(
@@ -2009,7 +2243,9 @@ function ReminderTab({
       </div>
 
       <div className="mt-6 flex justify-end">
-        <button onClick={handleSave} className="btn btn-primary">変更を保存</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving ? "保存中..." : "変更を保存"}
+        </button>
       </div>
     </div>
   );
