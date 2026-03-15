@@ -28,6 +28,15 @@ export async function GET(
       );
     }
 
+    // 過去の日付からスロットを返さないよう、start を今日以降に補正
+    const today = new Date().toISOString().split("T")[0];
+    const effectiveStart = startDate < today ? today : startDate;
+
+    // 補正後に end より後になる場合はスロットなしで返す
+    if (effectiveStart > endDate) {
+      return NextResponse.json({ available_slots: [] });
+    }
+
     const supabase = createServiceClient();
 
     // イベント情報（ロール・メンバー・除外ルール含む）を取得
@@ -78,8 +87,8 @@ export async function GET(
 
     if (connectedUsers && connectedUsers.length > 0) {
       // Google Calendar API は ISO 8601 完全形式が必要（"YYYY-MM-DD" のみは不可）
-      const syncTimeMin = startDate + "T00:00:00.000Z";
-      const syncTimeMax = endDate   + "T23:59:59.999Z";
+      const syncTimeMin = effectiveStart + "T00:00:00.000Z";
+      const syncTimeMax = endDate        + "T23:59:59.999Z";
 
       await Promise.all(
         connectedUsers.map(async (u: { id: string }) => {
@@ -105,7 +114,7 @@ export async function GET(
       .from("calendar_events")
       .select("id, user_id, title, start_time, end_time")
       .in("user_id", userIds)
-      .gte("start_time", startDate)
+      .gte("start_time", effectiveStart)
       .lte("end_time", endDate + "T23:59:59Z");
 
     const calendarEvents = (calendarEventsDB || []).map((e: any) => ({
@@ -142,7 +151,7 @@ export async function GET(
       members: members as any,
       exclusion_rules: (event.exclusion_rules as any[]) || [],
       calendar_events: allBusyEvents,
-      date_range: { start: startDate, end: endDate },
+      date_range: { start: effectiveStart, end: endDate },
       working_hours: { start: "09:00", end: "18:00" },
     });
 

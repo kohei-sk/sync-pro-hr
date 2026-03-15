@@ -75,6 +75,7 @@ export async function PATCH(request: Request, { params }: Params) {
       exclusion_rules,
       custom_fields,
       reminder_settings,
+      slug: _slug, // スラッグは変更不可
       ...eventFields
     } = body;
 

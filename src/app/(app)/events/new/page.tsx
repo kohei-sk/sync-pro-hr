@@ -181,7 +181,6 @@ export default function NewEventPage() {
   const [step, setStep] = useState<Step>("basic");
   const [formData, setFormData] = useState({
     title: "",
-    slug: "",
     description: "",
     duration: 60,
     buffer_before: 15,
@@ -277,7 +276,6 @@ export default function NewEventPage() {
     try {
       await createEventTypeApi({
         title: formData.title,
-        slug: formData.slug,
         description: formData.description || undefined,
         duration: formData.duration,
         buffer_before: formData.buffer_before,
@@ -325,12 +323,6 @@ export default function NewEventPage() {
     }
   }
 
-  function generateSlug(title: string): string {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]+/g, "-")
-      .replace(/^-|-$/g, "");
-  }
 
   function addRole() {
     setRoles([
@@ -664,7 +656,6 @@ export default function NewEventPage() {
                       setFormData({
                         ...formData,
                         title: e.target.value,
-                        slug: generateSlug(e.target.value),
                       });
                     }}
                     placeholder="例: エンジニア一次面接"
@@ -842,21 +833,6 @@ export default function NewEventPage() {
                         <p className="text-xs text-gray-500">下書き状態で保存します</p>
                       </div>
                     </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="label">URL スラグ</label>
-                  <div className="input pr-0 mt-1 flex items-center">
-                    <span className="text-sm text-gray-500">/j/</span>
-                    <input
-                      type="text"
-                      className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-sm focus:ring-0 rounded-lg"
-                      value={formData.slug}
-                      onChange={(e) =>
-                        setFormData({ ...formData, slug: e.target.value })
-                      }
-                      placeholder="engineer-first"
-                    />
                   </div>
                 </div>
               </div>

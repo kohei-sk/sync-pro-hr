@@ -39,6 +39,13 @@ export async function POST(
       );
     }
 
+    if (new Date(selected_slot.start) < new Date()) {
+      return NextResponse.json(
+        { error: "過去の日時には予約できません" },
+        { status: 400 }
+      );
+    }
+
     const supabase = createServiceClient();
 
     // イベント取得（ロール・メンバー・リマインド設定含む）
