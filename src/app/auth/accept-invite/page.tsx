@@ -105,75 +105,78 @@ export default function AcceptInvitePage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="label">
-                  新しいパスワード
-                </label>
-                <div className="relative mt-1">
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    className="input pr-10"
-                    placeholder="8文字以上"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
 
-              {/* Confirm */}
-              <div>
-                <label htmlFor="confirm" className="label">
-                  パスワード（確認）
-                </label>
-                <div className="relative mt-1">
-                  <input
-                    id="confirm"
-                    type={showConfirm ? "text" : "password"}
-                    autoComplete="new-password"
-                    className="input pr-10"
-                    placeholder="同じパスワードを再入力"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    disabled={isLoading}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    tabIndex={-1}
-                  >
-                    {showConfirm ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                {/* Password */}
+                <div>
+                  <label htmlFor="password" className="label">
+                    新しいパスワード
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="input pr-10"
+                      placeholder="8文字以上"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm */}
+                <div>
+                  <label htmlFor="confirm" className="label">
+                    パスワード（確認）
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      id="confirm"
+                      type={showConfirm ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="input pr-10"
+                      placeholder="同じパスワードを再入力"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showConfirm ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary w-full justify-center"
+                className="btn btn-primary w-full justify-center mt-6"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -185,7 +188,7 @@ export default function AcceptInvitePage() {
             </form>
           </div>
         </div>
-      </div>
+      </div >
       <p className="fixed bottom-4 w-full text-center text-xs text-gray-400">
         © 2026 Pitasuke. All rights reserved.
       </p>

@@ -42,7 +42,7 @@ export default function InvitePage() {
       if (!res.ok || !data.url) {
         setError(
           data.error ??
-            "招待リンクが無効または期限切れです。管理者に再招待を依頼してください。"
+          "招待リンクが無効または期限切れです。管理者に再招待を依頼してください。"
         );
         setIsLoading(false);
         return;

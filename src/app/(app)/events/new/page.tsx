@@ -1028,7 +1028,7 @@ export default function NewEventPage() {
                                   <input
                                     type="number"
                                     min={1}
-                                    className="input w-14 h-7 text-xs text-center px-1"
+                                    className="input w-14 text-center px-1"
                                     value={entry.requiredCount ?? 1}
                                     onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
                                     onClick={(e) => e.stopPropagation()}

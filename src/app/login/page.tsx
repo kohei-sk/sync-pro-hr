@@ -93,52 +93,54 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="label">
-                  メールアドレス
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className="input mt-1"
-                  placeholder="your@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading || isGoogleLoading}
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="label">
-                  パスワード
-                </label>
-                <div className="relative mt-1">
+            <form onSubmit={handleLogin}>
+              <div className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label htmlFor="email" className="label">
+                    メールアドレス
+                  </label>
                   <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    className="input pr-10"
-                    placeholder="パスワードを入力"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className="input mt-1"
+                    placeholder="your@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading || isGoogleLoading}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label htmlFor="password" className="label">
+                    パスワード
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      className="input pr-10"
+                      placeholder="パスワードを入力"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading || isGoogleLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -146,7 +148,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || isGoogleLoading}
-                className="btn btn-primary w-full justify-center"
+                className="btn btn-primary w-full justify-center mt-6"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

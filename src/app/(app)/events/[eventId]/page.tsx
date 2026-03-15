@@ -150,7 +150,7 @@ export default function EventDetailPage() {
         setCustomFields(data.custom_fields ?? []);
       })
       .catch(() => setEvent(null));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   // タブ切替時にスクロール位置をリセット（初回訪問時はスキップ）
@@ -864,13 +864,13 @@ function TeamTab({
         mode === "fixed"
           ? [{ name: roles[0]?.name ?? "メンバー", required_count: 1, priority_order: 1, member_ids: fixedMemberIds }]
           : mode === "pool"
-          ? localRoles.map((r, i) => ({
+            ? localRoles.map((r, i) => ({
               name: r.name,
               required_count: r.required_count,
               priority_order: i + 1,
               member_ids: r.memberIds,
             }))
-          : []; // weekday モードはロール不要
+            : []; // weekday モードはロール不要
 
       await updateEventTypeApi(event.id, {
         scheduling_mode: mode,
@@ -963,7 +963,7 @@ function TeamTab({
                   <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
                         <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -971,7 +971,7 @@ function TeamTab({
                         <input
                           type="number"
                           min={1}
-                          className="input w-14 h-7 text-xs text-center px-1"
+                          className="input w-14 text-center px-1"
                           value={entry.required_count ?? 1}
                           onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
                           onClick={(e) => e.stopPropagation()}
@@ -1192,7 +1192,7 @@ function TeamTab({
                               <>
                                 <input
                                   type="text"
-                                  className="input h-8 text-sm flex-1 min-w-0"
+                                  className="input text-sm flex-1 min-w-0"
                                   value={editingRoleName}
                                   onChange={(e) => setEditingRoleName(e.target.value)}
                                   onKeyDown={(e) => { if (e.key === "Enter") confirmEditingRole(); if (e.key === "Escape") cancelEditingRole(); }}
@@ -1200,35 +1200,39 @@ function TeamTab({
                                 />
                                 <input
                                   type="number"
-                                  className="input h-8 w-16 text-sm text-center px-1 shrink-0"
+                                  className="input w-16 text-center px-1 shrink-0"
                                   min={1}
                                   value={editingRoleCount}
                                   onChange={(e) => setEditingRoleCount(parseInt(e.target.value) || 1)}
                                 />
                                 <span className="text-xs text-gray-500 shrink-0">人</span>
-                                <button
-                                  onClick={confirmEditingRole}
-                                  disabled={!editingRoleName.trim()}
-                                  className="text-primary-600 hover:text-primary-700 transition-colors disabled:opacity-40 shrink-0"
-                                >
-                                  <Check className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={cancelEditingRole}
-                                  className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
+                                <div className="flex justify-end gap-2 pt-1  ml-5">
+                                  <button
+                                    onClick={cancelEditingRole}
+                                    className="btn btn-ghost"
+                                  >
+                                    キャンセル
+                                  </button>
+                                  <button
+                                    onClick={confirmEditingRole}
+                                    disabled={!editingRoleName.trim()}
+                                    className="btn btn-primary"
+                                  >
+                                    保存
+                                  </button>
+                                </div>
                               </>
                             ) : (
                               <>
-                                <span className="font-medium truncate">{role.name}</span>
-                                <span className="text-sm text-gray-500 shrink-0">（{role.required_count}人）</span>
+                                <div className="flex-1">
+                                  <span className="font-medium truncate">{role.name}</span>
+                                  <span className="text-sm text-gray-500 shrink-0">（{role.required_count}人）</span>
+                                </div>
                                 <button
                                   onClick={() => startEditingRole(role)}
                                   className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
                                 >
-                                  <Pencil className="h-3.5 w-3.5" />
+                                  <Pencil className="h-4 w-4" />
                                 </button>
                               </>
                             )}
@@ -1236,7 +1240,7 @@ function TeamTab({
                           {editingRoleId !== role.id && (
                             <button
                               onClick={() => removeRole(role.id)}
-                              className="text-gray-400 hover:text-red-500 transition-colors ml-2 shrink-0"
+                              className="text-gray-400 hover:text-red-500 transition-colors ml-4 shrink-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>

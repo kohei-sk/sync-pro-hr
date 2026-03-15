@@ -165,7 +165,7 @@ function ToastCard({
 
   return (
     <div
-      className={cn("toast", exiting ? "animate-slide-out" : "animate-slide-up")}
+      className={cn("toast", exiting ? "animate-slide-out" : "animate-slide-in")}
       role="alert"
       aria-live="polite"
     >

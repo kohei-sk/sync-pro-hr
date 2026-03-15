@@ -337,7 +337,7 @@ function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMemb
                   <div key={entry.day_index}>
                     <p className="text-xs font-semibold text-gray-600 mb-2">
                       {label}曜日
-                      <span className="ml-1 font-normal text-gray-400">（{entry.required_count ?? 1}人必要）</span>
+                      <span className="ml-1 font-normal text-gray-400">（{entry.required_count ?? 1}人）</span>
                     </p>
                     <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
                       {entry.member_ids.map((userId) => {
@@ -699,12 +699,12 @@ function EventsContent() {
               const memberCount =
                 event.scheduling_mode === "weekday"
                   ? new Set(
-                      (event.weekday_schedule ?? []).flatMap((e) => e.member_ids)
-                    ).size
+                    (event.weekday_schedule ?? []).flatMap((e) => e.member_ids)
+                  ).size
                   : (event.event_roles ?? []).reduce(
-                      (sum, role) => sum + (role.event_members?.length ?? 0),
-                      0
-                    );
+                    (sum, role) => sum + (role.event_members?.length ?? 0),
+                    0
+                  );
 
               return (
                 <EventCard
