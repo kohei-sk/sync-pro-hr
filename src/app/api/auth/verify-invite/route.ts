@@ -63,12 +63,17 @@ export async function POST(request: Request) {
 
     // その場で新鮮な magic link を生成
     // ユーザーがボタンをクリックした後に生成するため、メールスキャナーの影響なし
+    //
+    // ※ generateLink(type:'magiclink') は implicit flow を使う。
+    //   tokens が URL ハッシュ(#) に入って返るため、サーバーサイドの
+    //   /auth/callback/route.ts ではなく、クライアントサイドの
+    //   /auth/magic-link/page.tsx で setSession() する。
     const { data: linkData, error: linkError } =
       await serviceClient.auth.admin.generateLink({
         type: "magiclink",
         email,
         options: {
-          redirectTo: `${appUrl}/auth/callback?next=/auth/accept-invite`,
+          redirectTo: `${appUrl}/auth/magic-link?next=/auth/accept-invite`,
         },
       });
 
