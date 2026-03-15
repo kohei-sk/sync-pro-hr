@@ -110,11 +110,11 @@ export default function TeamPage() {
 
   const calendarStatusConfig: Record<
     NonNullable<TeamMember["calendar_status"]>,
-    { label: string; icon: typeof CheckCircle2; className: string }
+    { label: string; className: string }
   > = {
-    connected: { label: "接続済", icon: CheckCircle2, className: "badge-green" },
-    error: { label: "エラー", icon: AlertTriangle, className: "badge-red" },
-    not_connected: { label: "未接続", icon: XCircle, className: "badge-gray" },
+    connected: { label: "接続済", className: "badge-green" },
+    error: { label: "エラー", className: "badge-red" },
+    not_connected: { label: "未接続", className: "badge-gray" },
   };
 
   // 招待完了後にリストをリロード
@@ -285,7 +285,6 @@ export default function TeamPage() {
             const isInvited = member.status === "invited";
             const calStatus =
               calendarStatusConfig[member.calendar_status || "not_connected"];
-            const CalStatusIcon = calStatus.icon;
             const initial = member.full_name.charAt(0);
             const syncTimeStr = member.last_synced_at
               ? formatSyncTime(member.last_synced_at)
@@ -339,12 +338,10 @@ export default function TeamPage() {
                   <div className="w-[70px] flex justify-center">
                     {isInvited ? (
                       <div className="badge badge-purple">
-                        <Clock className="h-3 w-3" />
                         招待中
                       </div>
                     ) : (
                       <div className={cn("badge", calStatus.className)}>
-                        <CalStatusIcon className="h-3 w-3" />
                         {calStatus.label}
                       </div>
                     )}
@@ -373,49 +370,49 @@ export default function TeamPage() {
                       items={
                         isInvited
                           ? [
-                              {
-                                label: "招待を取り消す",
-                                icon: XCircle,
-                                variant: "danger" as const,
-                                onClick: () => setDeleteTarget(member),
-                              },
-                            ]
+                            {
+                              label: "招待を取り消す",
+                              icon: XCircle,
+                              variant: "danger" as const,
+                              onClick: () => setDeleteTarget(member),
+                            },
+                          ]
                           : [
-                              ...(member.calendar_status === "error"
-                                ? [
-                                    {
-                                      label: "カレンダーを再接続",
-                                      icon: RefreshCw,
-                                      onClick: () => handleReconnect(member.id),
-                                    },
-                                  ]
-                                : []),
-                              ...(member.calendar_status === "not_connected"
-                                ? [
-                                    {
-                                      label: "カレンダーを接続",
-                                      icon: CalendarPlus,
-                                      onClick: () => handleReconnect(member.id),
-                                    },
-                                  ]
-                                : []),
-                              ...((member.calendar_status === "error" ||
-                                member.calendar_status === "not_connected")
-                                ? [{ separator: true as const }]
-                                : []),
-                              {
-                                label: "権限を変更",
-                                icon: Shield,
-                                onClick: () => openPermissionModal(member),
-                              },
-                              { separator: true as const },
-                              {
-                                label: "メンバーを削除",
-                                icon: Trash2,
-                                variant: "danger" as const,
-                                onClick: () => setDeleteTarget(member),
-                              },
-                            ]
+                            ...(member.calendar_status === "error"
+                              ? [
+                                {
+                                  label: "カレンダーを再接続",
+                                  icon: RefreshCw,
+                                  onClick: () => handleReconnect(member.id),
+                                },
+                              ]
+                              : []),
+                            ...(member.calendar_status === "not_connected"
+                              ? [
+                                {
+                                  label: "カレンダーを接続",
+                                  icon: CalendarPlus,
+                                  onClick: () => handleReconnect(member.id),
+                                },
+                              ]
+                              : []),
+                            ...((member.calendar_status === "error" ||
+                              member.calendar_status === "not_connected")
+                              ? [{ separator: true as const }]
+                              : []),
+                            {
+                              label: "権限を変更",
+                              icon: Shield,
+                              onClick: () => openPermissionModal(member),
+                            },
+                            { separator: true as const },
+                            {
+                              label: "メンバーを削除",
+                              icon: Trash2,
+                              variant: "danger" as const,
+                              onClick: () => setDeleteTarget(member),
+                            },
+                          ]
                       }
                     />
                   </div>

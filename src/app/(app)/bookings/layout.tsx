@@ -8,7 +8,6 @@ import {
   Filter,
   Calendar,
   CheckCircle2,
-  AlertCircle,
   XCircle,
   ChevronDown,
 } from "lucide-react";
@@ -32,12 +31,19 @@ type EventOption = { id: string; title: string };
 
 const statusConfig: Record<
   BookingStatus,
-  { label: string; icon: typeof CheckCircle2; className: string }
+  { label: string; className: string }
 > = {
-  confirmed: { label: "確定",       icon: CheckCircle2, className: "badge badge-green"  },
-  pending:   { label: "保留",       icon: AlertCircle,  className: "badge badge-yellow" },
-  cancelled: { label: "キャンセル", icon: XCircle,      className: "badge badge-red"    },
+  confirmed: { label: "予約確定", className: "badge badge-green" },
+  completed: { label: "面接完了", className: "badge badge-blue" },
+  cancelled: { label: "キャンセル", className: "badge badge-red" },
 };
+
+function computeDisplayStatus(b: BookingWithEvent): BookingStatus {
+  if (b.status === "confirmed" && new Date(b.end_time) < new Date()) {
+    return "completed";
+  }
+  return b.status;
+}
 
 function formatListDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ja-JP", {
@@ -53,12 +59,12 @@ function formatListTime(startStr: string, endStr: string) {
 export default function BookingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const [bookings, setBookings]   = useState<BookingWithEvent[]>([]);
-  const [events, setEvents]       = useState<EventOption[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [bookings, setBookings] = useState<BookingWithEvent[]>([]);
+  const [events, setEvents] = useState<EventOption[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [filterEvent, setFilterEvent]   = useState<string>("all");
-  const [searchQuery, setSearchQuery]   = useState("");
+  const [filterEvent, setFilterEvent] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     document.querySelector("#booking-list-scroll-top")?.scrollTo({ top: 0, left: 0 });
@@ -74,7 +80,7 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
         setBookings(Array.isArray(bookingsData) ? bookingsData : []);
         setEvents(Array.isArray(eventsData) ? eventsData : []);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -82,16 +88,23 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
     ? pathname.split("/").pop() ?? null
     : null;
 
-  const statusCounts = useMemo(() => {
-    const counts: Record<FilterStatus, number> = { all: bookings.length, confirmed: 0, pending: 0, cancelled: 0 };
-    bookings.forEach((b) => { if (b.status in counts) counts[b.status]++; });
-    return counts;
+  // 表示ステータスに変換した予約リスト（メモ化）
+  const bookingsWithDisplayStatus = useMemo(() => {
+    return bookings.map((b) => ({ ...b, displayStatus: computeDisplayStatus(b) }));
   }, [bookings]);
 
+  const statusCounts = useMemo(() => {
+    const counts: Record<FilterStatus, number> = { all: bookings.length, confirmed: 0, completed: 0, cancelled: 0 };
+    bookingsWithDisplayStatus.forEach((b) => {
+      if (b.displayStatus in counts) counts[b.displayStatus]++;
+    });
+    return counts;
+  }, [bookings, bookingsWithDisplayStatus]);
+
   const filteredBookings = useMemo(() => {
-    return bookings
+    return bookingsWithDisplayStatus
       .filter((b) => {
-        if (filterStatus !== "all" && b.status !== filterStatus) return false;
+        if (filterStatus !== "all" && b.displayStatus !== filterStatus) return false;
         if (filterEvent !== "all" && b.event_id !== filterEvent) return false;
         if (
           searchQuery &&
@@ -102,7 +115,7 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
         return true;
       })
       .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
-  }, [bookings, filterStatus, filterEvent, searchQuery]);
+  }, [bookingsWithDisplayStatus, filterStatus, filterEvent, searchQuery]);
 
   return (
     <div className="flex h-full flex-col">
@@ -115,7 +128,7 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
       {/* Filters */}
       <div className="sticky-wrap mb-6">
         <div className="tab">
-          {(["all", "confirmed", "pending", "cancelled"] as FilterStatus[]).map((status) => {
+          {(["all", "confirmed", "completed", "cancelled"] as FilterStatus[]).map((status) => {
             const label = status === "all" ? "すべて" : statusConfig[status as BookingStatus].label;
             return (
               <button
@@ -180,7 +193,7 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
               <ul className="divide-y divide-gray-100">
                 {filteredBookings.map((booking) => {
                   const event = booking.event_types;
-                  const statusInfo = statusConfig[booking.status];
+                  const statusInfo = statusConfig[booking.displayStatus];
                   const StatusIcon = statusInfo.icon;
                   const isSelected = selectedId === booking.id;
 
@@ -199,7 +212,6 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-semibold">{booking.candidate_name}</span>
                             <span className={statusInfo.className}>
-                              <StatusIcon className="h-3 w-3" />
                               {statusInfo.label}
                             </span>
                           </div>

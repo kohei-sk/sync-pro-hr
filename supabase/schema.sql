@@ -339,6 +339,14 @@ CREATE POLICY "company members can update bookings"
     )
   );
 
+CREATE POLICY "company members can delete bookings"
+  ON bookings FOR DELETE
+  USING (
+    event_id IN (
+      SELECT id FROM event_types WHERE company_id = get_my_company_id()
+    )
+  );
+
 CREATE POLICY "public cancel token read"
   ON bookings FOR SELECT
   USING (cancel_token IS NOT NULL);
@@ -391,6 +399,10 @@ CREATE POLICY "users can update their own notifications"
 CREATE POLICY "company members can view activity"
   ON activity_log FOR SELECT
   USING (company_id = get_my_company_id());
+
+CREATE POLICY "company members can insert activity"
+  ON activity_log FOR INSERT
+  WITH CHECK (company_id = get_my_company_id());
 
 -- user_settings
 CREATE POLICY "users can manage their own settings"

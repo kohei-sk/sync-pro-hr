@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -11,15 +11,25 @@ import {
   Phone,
   ExternalLink,
   CheckCircle2,
-  AlertCircle,
   XCircle,
   MapPin,
   Users,
+  History,
+  Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import type { BookingStatus } from "@/types";
+
+// 変更履歴エントリ
+type BookingHistoryEntry = {
+  id: string;
+  type: string;
+  description: string;
+  created_at: string;
+};
 
 // API レスポンス型
 type BookingDetail = {
@@ -33,6 +43,7 @@ type BookingDetail = {
   status: BookingStatus;
   meeting_url?: string;
   custom_field_values?: Record<string, string>;
+  booking_history: BookingHistoryEntry[];
   event_types: {
     id: string;
     title: string;
@@ -70,17 +81,24 @@ type BookingDetail = {
 
 const statusConfig: Record<
   BookingStatus,
-  { label: string; icon: typeof CheckCircle2; className: string }
+  { label: string; className: string }
 > = {
-  confirmed: { label: "確定",       icon: CheckCircle2, className: "badge badge-green"  },
-  pending:   { label: "保留",       icon: AlertCircle,  className: "badge badge-yellow" },
-  cancelled: { label: "キャンセル", icon: XCircle,      className: "badge badge-red"    },
+  confirmed: { label: "予約確定", className: "badge badge-green" },
+  completed: { label: "面接完了", className: "badge badge-blue" },
+  cancelled: { label: "キャンセル", className: "badge badge-red" },
+};
+
+const historyTypeConfig: Record<string, { label: string; dotClass: string }> = {
+  booking_created: { label: "予約確定", dotClass: "bg-green-500" },
+  booking_changed: { label: "予約変更", dotClass: "bg-blue-500" },
+  booking_admin_cancelled: { label: "管理者キャンセル", dotClass: "bg-red-500" },
+  booking_candidate_cancelled: { label: "候補者キャンセル", dotClass: "bg-orange-500" },
 };
 
 const locationConfig: Record<string, { icon: typeof Video; label: string }> = {
-  online:      { icon: Video,     label: "オンライン" },
-  "in-person": { icon: Building2, label: "対面"       },
-  phone:       { icon: Phone,     label: "電話"       },
+  online: { icon: Video, label: "オンライン" },
+  "in-person": { icon: Building2, label: "対面" },
+  phone: { icon: Phone, label: "電話" },
 };
 
 function formatDate(dateStr: string) {
@@ -96,34 +114,40 @@ function formatTime(startStr: string, endStr: string) {
 function formatDuration(startStr: string, endStr: string) {
   return `${(new Date(endStr).getTime() - new Date(startStr).getTime()) / 60000}分`;
 }
+function formatHistoryDate(dateStr: string) {
+  return new Date(dateStr).toLocaleString("ja-JP", {
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function computeDisplayStatus(status: BookingStatus, endTime: string): BookingStatus {
+  if (status === "confirmed" && new Date(endTime) < new Date()) return "completed";
+  return status;
+}
 
 export default function BookingDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const toast = useToast();
   const bookingId = params.bookingId as string;
 
   const [booking, setBooking] = useState<BookingDetail | null | undefined>(undefined);
-  const [currentStatus, setCurrentStatus] = useState<BookingStatus | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
-  const [newDate, setNewDate] = useState("");
-  const [newTime, setNewTime] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // 予約詳細取得
   useEffect(() => {
-    setBooking(undefined); // ローディング状態へ
+    setBooking(undefined);
     fetch(`/api/bookings/${bookingId}`)
       .then((r) => {
         if (r.status === 404) { setBooking(null); return null; }
         return r.json();
       })
-      .then((data) => {
-        if (data) {
-          setBooking(data);
-          setCurrentStatus(data.status);
-        }
-      })
+      .then((data) => { if (data) setBooking(data); })
       .catch(() => setBooking(null));
   }, [bookingId]);
 
@@ -137,7 +161,7 @@ export default function BookingDetailPage() {
         body: JSON.stringify({ status: "cancelled" }),
       });
       if (res.ok) {
-        setCurrentStatus("cancelled");
+        setBooking((prev) => prev ? { ...prev, status: "cancelled" } : prev);
         setCancelOpen(false);
         toast.success("予約をキャンセルしました");
       } else {
@@ -150,11 +174,23 @@ export default function BookingDetailPage() {
     }
   }
 
-  function handleReschedule() {
-    setRescheduleOpen(false);
-    setNewDate("");
-    setNewTime("");
-    toast.success("リスケジュールの依頼を送信しました");
+  async function handleDelete() {
+    if (!booking) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("予約を削除しました");
+        router.push("/bookings");
+      } else {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body.error || "削除に失敗しました");
+      }
+    } catch {
+      toast.error("通信エラーが発生しました");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   // ローディング
@@ -177,9 +213,8 @@ export default function BookingDetailPage() {
     );
   }
 
-  const status = currentStatus ?? booking.status;
+  const status = computeDisplayStatus(booking.status, booking.end_time);
   const statusInfo = statusConfig[status];
-  const StatusIcon = statusInfo.icon;
   const event = booking.event_types;
   const locKey = event?.location_type || "online";
   const locCfg = locationConfig[locKey] ?? locationConfig.online;
@@ -197,7 +232,6 @@ export default function BookingDetailPage() {
                 {booking.candidate_name}
               </h1>
               <span className={statusInfo.className}>
-                <StatusIcon className="h-3 w-3" />
                 {statusInfo.label}
               </span>
             </div>
@@ -215,13 +249,23 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
-      {/* Cancelled notice */}
+      {/* Status notices */}
       {status === "cancelled" && (
         <div className="p-6 pb-0">
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
             <div className="flex items-center gap-2">
               <XCircle className="h-4 w-4 shrink-0 text-red-500" />
               <p className="text-sm font-medium text-red-700">この予約はキャンセルされています</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {status === "completed" && (
+        <div className="p-6 pb-0">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+              <p className="text-sm font-medium text-blue-700">この面接は完了しています</p>
             </div>
           </div>
         </div>
@@ -314,7 +358,6 @@ export default function BookingDetailPage() {
             const dayIndex = (new Date(booking.start_time).getDay() + 6) % 7;
             const dayEntry = event.weekday_schedule?.find((e) => e.day_index === dayIndex);
             const dayMemberIds = dayEntry?.member_ids ?? [];
-            // booking_members の profiles から該当 user_id を検索（見つかったもののみ）
             const dayMembers = dayMemberIds
               .map((uid) => booking.booking_members.find((bm) => bm.user_id === uid))
               .filter((bm): bm is NonNullable<typeof bm> => bm != null);
@@ -425,19 +468,70 @@ export default function BookingDetailPage() {
             </dl>
           </section>
         )}
+
+        {/* 変更履歴 */}
+        <section className="py-4">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((o) => !o)}
+            className="section-label mb-0 flex gap-1 items-center cursor-pointer select-none"
+          >
+            <span className="flex items-center gap-1.5">
+              変更履歴
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 text-gray-400 transition-transform duration-200",
+                historyOpen && "rotate-180"
+              )}
+            />
+          </button>
+          {historyOpen && (
+            <div className="mt-3">
+              {booking.booking_history.length === 0 ? (
+                <p className="text-sm text-gray-400">履歴がありません</p>
+              ) : (
+                <ol className="relative border-l border-gray-200 ml-1.5 space-y-4">
+                  {booking.booking_history.map((entry) => {
+                    const cfg = historyTypeConfig[entry.type] ?? { label: entry.type, dotClass: "bg-gray-400" };
+                    return (
+                      <li key={entry.id} className="ml-4">
+                        <div className={cn(
+                          "absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-white",
+                          cfg.dotClass
+                        )} />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium">{cfg.label}</span>
+                          <span className="text-xs text-gray-400">{formatHistoryDate(entry.created_at)}</span>
+                          {entry.description && (
+                            <span className="text-xs text-gray-500 mt-0.5">{entry.description}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
+          )}
+        </section>
       </div>
 
       {/* Actions */}
-      {status !== "cancelled" && (
+      {(status === "confirmed" || status === "completed" || status === "cancelled") && (
         <div className="p-4 flex gap-2 border-t border-gray-100">
-          <button className="btn btn-ghost btn-size-s" onClick={() => setRescheduleOpen(true)}>
-            <MapPin className="h-3 w-3" />
-            リスケジュール
-          </button>
-          <button className="btn btn-ghost-danger btn-size-s" onClick={() => setCancelOpen(true)}>
-            <XCircle className="h-3 w-3" />
-            キャンセル
-          </button>
+          {status === "confirmed" && (
+            <button className="btn btn-ghost-danger btn-size-s" onClick={() => setCancelOpen(true)}>
+              <XCircle className="h-3 w-3" />
+              キャンセル
+            </button>
+          )}
+          {(status === "completed" || status === "cancelled") && (
+            <button className="btn btn-ghost-danger btn-size-s" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-3 w-3" />
+              削除
+            </button>
+          )}
         </div>
       )}
 
@@ -452,44 +546,16 @@ export default function BookingDetailPage() {
         confirmVariant="danger"
       />
 
-      {/* Reschedule modal */}
-      <Modal
-        open={rescheduleOpen}
-        onClose={() => { setRescheduleOpen(false); setNewDate(""); setNewTime(""); }}
-        title="リスケジュール"
-        description="新しい日時を選択して候補者にリスケジュールを依頼します"
-        size="sm"
-        footer={
-          <>
-            <button
-              onClick={() => { setRescheduleOpen(false); setNewDate(""); setNewTime(""); }}
-              className="btn btn-ghost"
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={handleReschedule}
-              disabled={!newDate || !newTime}
-              className="btn btn-primary"
-            >
-              依頼を送信
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="label">新しい日付</label>
-            <input type="date" className="input mt-1" value={newDate}
-              onChange={(e) => setNewDate(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">新しい時刻</label>
-            <input type="time" className="input mt-1" value={newTime}
-              onChange={(e) => setNewTime(e.target.value)} />
-          </div>
-        </div>
-      </Modal>
+      {/* Delete confirm */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="予約を削除しますか？"
+        description={`${booking.candidate_name} さんの予約データを完全に削除します。この操作は取り消せません。`}
+        confirmLabel={deleting ? "処理中..." : "削除する"}
+        confirmVariant="danger"
+      />
     </div>
   );
 }
