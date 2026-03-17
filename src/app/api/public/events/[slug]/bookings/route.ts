@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendBookingConfirmationEmail } from "@/lib/email";
+import { sendSlackMessage } from "@/lib/slack";
 import type { TimeSlot } from "@/types";
 
 /**
@@ -188,6 +189,16 @@ export async function POST(
       metadata: { booking_id: booking.id },
     });
 
+    // Slack 通知（fire-and-forget）
+    if (assignedMembers.length > 0) {
+      sendSlackBookingNotification(
+        supabase,
+        assignedMembers.map((m) => m.user_id),
+        "new",
+        `【新規予約】${candidate_name} さんが「${event.title}」を予約しました\n日時: ${new Date(selected_slot.start).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}`
+      ).catch((e) => console.error("[Booking] Slack notification error:", e));
+    }
+
     // 確認メール送信（失敗しても予約は成功とする）
     await sendBookingConfirmationEmail({
       to: candidate_email,
@@ -207,5 +218,39 @@ export async function POST(
   } catch (err) {
     console.error("[Booking] Error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+/**
+ * 指定ユーザーたちの Slack 通知設定を確認し、該当する通知を送信する。
+ * notifyType: "new" → slack_notify_booking_new, "cancel" → slack_notify_booking_cancel
+ */
+async function sendSlackBookingNotification(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userIds: string[],
+  notifyType: "new" | "cancel",
+  text: string
+): Promise<void> {
+  const settingsField = notifyType === "new" ? "slack_notify_booking_new" : "slack_notify_booking_cancel";
+
+  for (const userId of userIds) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("slack_status, slack_webhook_url")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.slack_status !== "connected" || !profile.slack_webhook_url) continue;
+
+    const { data: settings } = await supabase
+      .from("user_settings")
+      .select(settingsField)
+      .eq("user_id", userId)
+      .single();
+
+    if (!settings?.[settingsField]) continue;
+
+    await sendSlackMessage(profile.slack_webhook_url, text);
   }
 }

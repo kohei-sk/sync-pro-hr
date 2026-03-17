@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendSlackMessage } from "@/lib/slack";
 
 /**
  * GET /api/public/cancel/[token]
@@ -116,8 +117,42 @@ export async function POST(
       });
     }
 
+    // Slack 通知（fire-and-forget）
+    if (assignedMembers && assignedMembers.length > 0) {
+      const text = `【キャンセル】${booking.candidate_name} さんが「${eventTitle}」の予約をキャンセルしました`;
+      sendSlackCancelNotification(supabase, assignedMembers.map((m) => m.user_id), text)
+        .catch((e) => console.error("[Cancel] Slack notification error:", e));
+    }
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+async function sendSlackCancelNotification(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userIds: string[],
+  text: string
+): Promise<void> {
+  for (const userId of userIds) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("slack_status, slack_webhook_url")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.slack_status !== "connected" || !profile.slack_webhook_url) continue;
+
+    const { data: settings } = await supabase
+      .from("user_settings")
+      .select("slack_notify_booking_cancel")
+      .eq("user_id", userId)
+      .single();
+
+    if (!settings?.slack_notify_booking_cancel) continue;
+
+    await sendSlackMessage(profile.slack_webhook_url, text);
   }
 }
