@@ -4,14 +4,10 @@ import { useRef, useState, useEffect } from "react";
 import {
   User,
   Bell,
-  Calendar,
   Globe,
   Save,
   CheckCircle2,
   Link2,
-  Clock,
-  Shield,
-  MessageSquare,
   ExternalLink,
   Link,
   RefreshCw,
@@ -20,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 import { useToast } from "@/components/ui/Toast";
-import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/Modal";
 import { invalidateUser } from "@/lib/user-store";
 
 // ============================================================
@@ -28,11 +24,6 @@ import { invalidateUser } from "@/lib/user-store";
 // ============================================================
 
 type Tab = "profile" | "notifications" | "calendar" | "general";
-
-interface MessagingIntegrationState {
-  connected: boolean;
-  loading: boolean;
-}
 
 // ============================================================
 // Tab 定義
@@ -296,8 +287,11 @@ function NotificationsTab() {
   const [emailReminder, setEmailReminder] = useState(true);
   const [emailDigest, setEmailDigest] = useState(false);
   const [reminderTime, setReminderTime] = useState("30");
-  const [slackNotify, setSlackNotify] = useState(false);
-  const [chatworkNotify, setChatworkNotify] = useState(false);
+  const [slackConnected, setSlackConnected] = useState(false);
+  const [slackNotifyBookingNew, setSlackNotifyBookingNew] = useState(false);
+  const [slackNotifyBookingCancel, setSlackNotifyBookingCancel] = useState(false);
+  const [slackNotifyReminder, setSlackNotifyReminder] = useState(false);
+  const [slackNotifyDigest, setSlackNotifyDigest] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -308,6 +302,17 @@ function NotificationsTab() {
         setEmailBookingCancel(data.notify_booking_cancel ?? true);
         setEmailReminder(data.notify_reminder ?? true);
         setEmailDigest(data.notify_digest ?? false);
+        setSlackNotifyBookingNew(data.slack_notify_booking_new ?? false);
+        setSlackNotifyBookingCancel(data.slack_notify_booking_cancel ?? false);
+        setSlackNotifyReminder(data.slack_notify_reminder ?? false);
+        setSlackNotifyDigest(data.slack_notify_digest ?? false);
+      })
+      .catch(() => {});
+
+    fetch("/api/settings/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        setSlackConnected(data.slack_status === "connected");
       })
       .catch(() => {});
   }, []);
@@ -343,20 +348,34 @@ function NotificationsTab() {
     },
   ];
 
-  const messagingNotifications = [
+  const slackNotifications = [
     {
-      id: "slack",
-      label: "Slack通知",
-      description: "SlackチャンネルにもNotifyします（連携設定が必要）",
-      checked: slackNotify,
-      onChange: setSlackNotify,
+      id: "slack-new",
+      label: "新規予約通知",
+      description: "候補者が面接を予約した際にSlackへ通知します",
+      checked: slackNotifyBookingNew,
+      onChange: setSlackNotifyBookingNew,
     },
     {
-      id: "chatwork",
-      label: "Chatwork通知",
-      description: "ChatworkルームにもNotifyします（連携設定が必要）",
-      checked: chatworkNotify,
-      onChange: setChatworkNotify,
+      id: "slack-cancel",
+      label: "キャンセル通知",
+      description: "予約がキャンセルされた際にSlackへ通知します",
+      checked: slackNotifyBookingCancel,
+      onChange: setSlackNotifyBookingCancel,
+    },
+    {
+      id: "slack-reminder",
+      label: "面接リマインダー",
+      description: "面接開始前にSlackへリマインダーを送信します",
+      checked: slackNotifyReminder,
+      onChange: setSlackNotifyReminder,
+    },
+    {
+      id: "slack-digest",
+      label: "デイリーダイジェスト",
+      description: "毎朝、当日の面接スケジュールをSlackへまとめて通知します",
+      checked: slackNotifyDigest,
+      onChange: setSlackNotifyDigest,
     },
   ];
 
@@ -367,10 +386,14 @@ function NotificationsTab() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          notify_booking_new: emailBookingNew,
-          notify_booking_cancel: emailBookingCancel,
-          notify_reminder: emailReminder,
-          notify_digest: emailDigest,
+          notify_booking_new:          emailBookingNew,
+          notify_booking_cancel:       emailBookingCancel,
+          notify_reminder:             emailReminder,
+          notify_digest:               emailDigest,
+          slack_notify_booking_new:    slackNotifyBookingNew,
+          slack_notify_booking_cancel: slackNotifyBookingCancel,
+          slack_notify_reminder:       slackNotifyReminder,
+          slack_notify_digest:         slackNotifyDigest,
         }),
       });
       if (!res.ok) throw new Error();
@@ -411,16 +434,36 @@ function NotificationsTab() {
         </div>
       </div>
 
-      {/* メッセージ通知 */}
-      <div className="card">
-        <h2 className="textmdm font-semibold">メッセージ通知</h2>
-        <p className="text-xs text-gray-500 mb-4 mt-1">
-          連携設定は「カレンダー連携」タブから設定できます
-        </p>
+      {/* Slack通知 */}
+      <div className={cn("card", !slackConnected && "opacity-70")}>
+        <div className="flex items-center gap-2 mb-1">
+          <h2 className="text-md font-semibold">Slack通知</h2>
+          {slackConnected ? (
+            <span className="badge badge-green">
+              <CheckCircle2 className="mr-1 h-3 w-3" />
+              接続済み
+            </span>
+          ) : (
+            <span className="badge badge-gray">未接続</span>
+          )}
+        </div>
+        {!slackConnected ? (
+          <p className="text-xs text-gray-500 mb-4 mt-1">
+            Slack通知を利用するには「連携設定」タブでSlackを接続してください
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 mb-4 mt-1">
+            Slackチャンネルへ通知する内容を選択してください
+          </p>
+        )}
 
         <div className="space-y-3">
-          {messagingNotifications.map((n) => (
-            <NotificationToggleRow key={n.id} {...n} />
+          {slackNotifications.map((n) => (
+            <NotificationToggleRow
+              key={n.id}
+              {...n}
+              disabled={!slackConnected}
+            />
           ))}
         </div>
       </div>
@@ -444,11 +487,13 @@ function NotificationToggleRow({
   description,
   checked,
   onChange,
+  disabled = false,
 }: {
   label: string;
   description: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
@@ -457,9 +502,11 @@ function NotificationToggleRow({
         <p className="text-xs text-gray-500 mt-0.5">{description}</p>
       </div>
       <button
-        onClick={() => onChange(!checked)}
+        onClick={() => !disabled && onChange(!checked)}
+        disabled={disabled}
         className={cn(
-          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors",
+          "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors",
+          disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
           checked ? "bg-primary-500" : "bg-gray-200"
         )}
         role="switch"
@@ -734,53 +781,66 @@ function CalendarTab() {
 // MessagingIntegrationCard
 // ============================================================
 
-const MESSAGING_INTEGRATIONS = [
-  {
-    name: "Slack",
-    icon: "S",
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-700",
-    description: "Slackのワークスペースと連携して、予約通知を自動送信します",
-    authButtonLabel: "Slackで認証",
-  },
-  {
-    name: "Chatwork",
-    icon: "C",
-    iconBg: "bg-green-50",
-    iconColor: "text-green-700",
-    description: "Chatworkのルームと連携して、予約通知を自動送信します",
-    authButtonLabel: "Chatworkで認証",
-  },
-] as const;
-
 function MessagingIntegrationCard() {
   const toast = useToast();
-  const [states, setStates] = useState<Record<string, MessagingIntegrationState>>({
-    Slack: { connected: false, loading: false },
-    Chatwork: { connected: false, loading: false },
-  });
-  const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [slackStatus, setSlackStatus] = useState<"connected" | "not_connected">("not_connected");
+  const [slackChannelName, setSlackChannelName] = useState<string | null>(null);
+  const [slackLoading, setSlackLoading] = useState(false);
+  const [slackDisconnectOpen, setSlackDisconnectOpen] = useState(false);
+  const [slackDisconnecting, setSlackDisconnecting] = useState(false);
 
-  function handleConnect(name: string) {
-    setStates((prev) => ({ ...prev, [name]: { ...prev[name], loading: true } }));
-    // 実際の実装では外部の OAuth 認証画面にリダイレクトする
-    setTimeout(() => {
-      setStates((prev) => ({ ...prev, [name]: { connected: true, loading: false } }));
-      toast.success(`${name} を接続しました`);
-    }, 1500);
+  useEffect(() => {
+    fetch("/api/settings/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        setSlackStatus(data.slack_status === "connected" ? "connected" : "not_connected");
+        setSlackChannelName(data.slack_channel_name ?? null);
+      })
+      .catch(() => {});
+
+    // OAuthコールバック後のURLパラメータを処理
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("slack_connected") === "true") {
+      toast.success("Slack を接続しました");
+      history.replaceState({}, "", window.location.pathname + "?tab=calendar");
+      // 接続状態を再取得
+      fetch("/api/settings/profile")
+        .then((r) => r.json())
+        .then((data) => {
+          setSlackStatus(data.slack_status === "connected" ? "connected" : "not_connected");
+          setSlackChannelName(data.slack_channel_name ?? null);
+        })
+        .catch(() => {});
+    } else if (params.get("slack_error")) {
+      const err = params.get("slack_error");
+      toast.error(
+        err === "access_denied"
+          ? "Slack 接続がキャンセルされました"
+          : "Slack の接続に失敗しました"
+      );
+      history.replaceState({}, "", window.location.pathname + "?tab=calendar");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleSlackConnect() {
+    setSlackLoading(true);
+    window.location.href = "/api/auth/slack";
   }
 
-  function handleDisconnectConfirm() {
-    if (!disconnectTarget) return;
-    setDisconnecting(true);
-    setTimeout(() => {
-      const name = disconnectTarget;
-      setStates((prev) => ({ ...prev, [name]: { connected: false, loading: false } }));
-      setDisconnectTarget(null);
-      setDisconnecting(false);
-      toast.success(`${name} の接続を解除しました`);
-    }, 1000);
+  async function handleSlackDisconnectConfirm() {
+    setSlackDisconnecting(true);
+    try {
+      const res = await fetch("/api/slack/disconnect", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setSlackStatus("not_connected");
+      setSlackChannelName(null);
+      setSlackDisconnectOpen(false);
+      toast.success("Slack の接続を解除しました");
+    } catch {
+      toast.error("接続解除に失敗しました");
+    } finally {
+      setSlackDisconnecting(false);
+    }
   }
 
   return (
@@ -792,88 +852,91 @@ function MessagingIntegrationCard() {
         </p>
 
         <div className="space-y-4">
-          {MESSAGING_INTEGRATIONS.map((integration) => {
-            const state = states[integration.name];
-            return (
-              <div
-                key={integration.name}
-                className="rounded-lg border border-gray-200 p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
-                      integration.iconBg,
-                      integration.iconColor
-                    )}
-                  >
-                    {integration.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold">
-                        {integration.name}
-                      </h3>
-                      {state.connected && (
-                        <span className="badge badge-green">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          接続済み
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {integration.description}
-                    </p>
-                  </div>
-                  {state.connected && (
-                    <button
-                      onClick={() => setDisconnectTarget(integration.name)}
-                      disabled={state.loading}
-                      className="btn btn-ghost-danger btn-size-s shrink-0"
-                    >
-                      接続解除
-                    </button>
-                  )}
-                  {/* 未接続時: OAuth ボタン */}
-                  {!state.connected && (
-                    <button
-                      onClick={() => handleConnect(integration.name)}
-                      disabled={state.loading}
-                      className="btn btn-secondary btn-size-s"
-                    >
-                      {state.loading ? (
-                        <>
-                          <span className="spinner" />
-                          認証中...
-                        </>
-                      ) : (
-                        <>
-                          <ExternalLink className="h-3 w-3" />
-                          {integration.authButtonLabel}
-                        </>
-                      )}
-                    </button>
+          {/* Slack（実装済み） */}
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-sm font-bold text-purple-700">
+                S
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">Slack</h3>
+                  {slackStatus === "connected" && (
+                    <span className="badge badge-green">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      接続済み
+                    </span>
                   )}
                 </div>
-
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {slackStatus === "connected" && slackChannelName
+                    ? `チャンネル: ${slackChannelName}`
+                    : "Slackのワークスペースと連携して、予約通知を自動送信します"}
+                </p>
               </div>
-            );
-          })}
+              {slackStatus === "connected" ? (
+                <button
+                  onClick={() => setSlackDisconnectOpen(true)}
+                  className="btn btn-ghost-danger btn-size-s shrink-0"
+                >
+                  接続解除
+                </button>
+              ) : (
+                <button
+                  onClick={handleSlackConnect}
+                  disabled={slackLoading}
+                  className="btn btn-secondary btn-size-s shrink-0"
+                >
+                  {slackLoading ? (
+                    <>
+                      <span className="spinner" />
+                      認証中...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-3 w-3" />
+                      Slackで認証
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Chatwork（準備中） */}
+          <div className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 opacity-70">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 text-sm font-bold text-green-700">
+              C
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Chatwork</h3>
+                <span className="badge badge-gray">準備中</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Chatworkのルームと連携して、予約通知を自動送信します
+              </p>
+            </div>
+            <button disabled className="btn btn-secondary btn-size-s">
+              <ExternalLink className="h-3 w-3" />
+              Chatworkで認証
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 接続解除確認ダイアログ */}
+      {/* Slack 接続解除確認ダイアログ */}
       <ConfirmDialog
-        open={disconnectTarget !== null}
+        open={slackDisconnectOpen}
         onClose={() => {
-          if (!disconnecting) setDisconnectTarget(null);
+          if (!slackDisconnecting) setSlackDisconnectOpen(false);
         }}
-        onConfirm={handleDisconnectConfirm}
-        title="接続を解除しますか？"
-        description={`${disconnectTarget} との連携を解除します。通知の送信が停止されます。`}
+        onConfirm={handleSlackDisconnectConfirm}
+        title="Slack の接続を解除しますか？"
+        description="Slack との連携を解除します。Slack への通知送信が停止されます。"
         confirmLabel="接続解除"
         confirmVariant="danger"
-        loading={disconnecting}
+        loading={slackDisconnecting}
       />
     </>
   );

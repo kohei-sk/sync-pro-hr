@@ -17,7 +17,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("user_settings")
       .select(
-        "working_hours_start, working_hours_end, notify_booking_new, notify_booking_cancel, notify_reminder, notify_digest"
+        "working_hours_start, working_hours_end, notify_booking_new, notify_booking_cancel, notify_reminder, notify_digest, slack_notify_booking_new, slack_notify_booking_cancel, slack_notify_reminder, slack_notify_digest"
       )
       .eq("user_id", user.id)
       .single();
@@ -25,12 +25,16 @@ export async function GET() {
     // PGRST116 = no rows found → return defaults
     if (error && error.code === "PGRST116") {
       return NextResponse.json({
-        working_hours_start: "09:00",
-        working_hours_end: "18:00",
-        notify_booking_new: true,
-        notify_booking_cancel: true,
-        notify_reminder: true,
-        notify_digest: false,
+        working_hours_start:         "09:00",
+        working_hours_end:           "18:00",
+        notify_booking_new:          true,
+        notify_booking_cancel:       true,
+        notify_reminder:             true,
+        notify_digest:               false,
+        slack_notify_booking_new:    false,
+        slack_notify_booking_cancel: false,
+        slack_notify_reminder:       false,
+        slack_notify_digest:         false,
       });
     }
 

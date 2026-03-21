@@ -16,7 +16,7 @@ export async function GET() {
     const [profileResult, companyResult] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, timezone, role, calendar_status, google_account_email, last_synced_at")
+        .select("id, full_name, avatar_url, timezone, role, calendar_status, google_account_email, last_synced_at, slack_status, slack_channel_name")
         .eq("id", user.id)
         .single(),
       supabase
