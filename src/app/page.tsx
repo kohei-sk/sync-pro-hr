@@ -65,49 +65,58 @@ function Nav() {
 // Hero
 // ─────────────────────────────────────────────
 function Hero() {
+  const points = [
+    {
+      icon: Users,
+      text: "複数面接官の予定に対応",
+    },
+    {
+      icon: Calendar,
+      text: "Google カレンダー連携",
+    },
+    {
+      icon: Bell,
+      text: "チーム・候補者にリマインド",
+    },
+  ];
   return (
     <section className="relative overflow-hidden bg-white">
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center px-6 pb-24 pt-20 text-center md:pt-28">
-        {/* badge */}
-        <span className="mb-6 inline-flex items-center rounded-full border border-brandPrimary-200 bg-brandPrimary-50 px-4 py-1.5 text-sm font-medium text-brandPrimary-600">
-          採用チーム特化の日程調整
-        </span>
-
+      <div className="relative mx-auto flex max-w-7xl flex-col items-center px-10 py-20 text-center md:py-28">
         <h1 className="max-w-3xl text-5xl font-black !leading-tight tracking-tight text-brandNavy sm:text-7xl">
-          面接官の予定を
+          面接官<span className="text-5xl">と</span>候補者<span className="text-5xl">の</span>予定<span className="text-5xl">を</span>
           <br />
           <span className="text-brandPrimary-500">ピッタリ合わせる</span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-brandGray">
-          候補者にURLを送るだけ。空いている日時が自動で表示されます。
+        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-brandNavy">
+          Pitasukeは、採用チーム特化型の面接フォローアップツールです。
           <br className="hidden sm:block" />
-          カレンダー連携で、ダブルブッキングもゼロ。
+          チーム運用も、候補者対応も、すべてがスムーズになります。
         </p>
 
-        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center gap-8 sm:flex-row">
           <Link
             href="/login"
-            className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
           >
             無料で14日間試す
             <ArrowRight className="h-4 w-4" />
           </Link>
           <a
             href="#機能"
-            className="flex items-center gap-1 text-base font-medium text-brandGray hover:text-brandNavy"
+            className="flex items-center gap-1 text-base font-bold text-brandGray hover:text-brandNavy"
           >
             機能を見る →
           </a>
         </div>
 
         {/* social proof */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-brandGray">
-          {["クレジットカード不要", "設定5分", "いつでも解約可"].map((t) => (
-            <span key={t} className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-brandSecondary-500" />
-              {t}
-            </span>
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
+          {points.map((p) => (
+            <div key={p.text} className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+              <p.icon className="h-5 w-5 text-brandSecondary-500" />
+              <span className="text-md text-brandGray tracking-[0.5px]">{p.text}</span>
+            </div>
           ))}
         </div>
       </div>
