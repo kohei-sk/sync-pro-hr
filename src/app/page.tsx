@@ -185,19 +185,19 @@ function HowItWorks() {
   const steps = [
     {
       num: "01",
-      image: "/lp/img_step_1.png",
-      title: "イベントを作成",
-      body: "面接を登録。参加する面接官と役割・人数を設定するだけ。",
+      image: "/lp/img_step_1.svg",
+      title: "予約可能な日時を自動抽出",
+      body: "複数面接官のスケジュールから、予約可能な日時を自動抽出。役割・人数などの様々な設定も可能。",
     },
     {
       num: "02",
-      image: "/lp/img_step_1.png",
-      title: "URLを候補者に送る",
-      body: "専用の予約ページURLを候補者に送信。全員のカレンダーを照合して空き枠だけを表示。",
+      image: "/lp/img_step_2.svg",
+      title: "URLを候補者に送るだけ",
+      body: "専用の予約ページURLを候補者に送信。候補者は空き枠から選択するだけ。",
     },
     {
       num: "03",
-      image: "/lp/img_step_1.png",
+      image: "/lp/img_step_1.svg",
       title: "自動で確定・通知",
       body: "候補者が予約すると、面接官のカレンダーに自動で予定が入る。リマインドメールで通知。",
     },
@@ -210,19 +210,15 @@ function HowItWorks() {
           How to
         </p>
         <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
-          <span className="tracking-tight">Pitasuke</span>なら、3ステップで解決
+          <span className="tracking-tight">Pitasuke</span>なら、解決できます
         </h2>
         <div className="mt-16 grid gap-10 md:grid-cols-3">
           {steps.map((s, i) => (
-            <div key={s.num} className="relative text-center">
-              {i < steps.length - 1 && (
-                <div className="absolute left-[calc(50%+60px)] top-8 hidden w-[calc(100%-80px)] border-t-2 border-dashed border-brandPrimary-100 md:block" />
-              )}
-              <div className="relative mx-auto mb-6 flex flex-col gap-0 h-[72px] w-[72px] items-center justify-center rounded-full bg-brandPrimary-50 text-2xl font-black text-brandPrimary-500 leading-tight">
-                <span className="text-[10px]">Step</span>
-                {s.num}
+            <div key={s.num} className="relative text-center flex flex-col items-center">
+              <div className="relative mb-6 pb-2 text-xl font-black leading-tight tracking-tight text-brandPrimary-500 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-brandPrimary-500 after:content-['']">
+                {"Point " + s.num}
               </div>
-              <div>
+              <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                 <Image
                   className="w-full"
                   src={s.image}
