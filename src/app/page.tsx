@@ -81,44 +81,55 @@ function Hero() {
   ];
   return (
     <section className="relative overflow-hidden bg-white">
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center px-10 py-20 text-center md:py-28">
-        <h1 className="max-w-3xl text-5xl font-black !leading-tight tracking-tight text-brandNavy sm:text-7xl">
-          面接官<span className="text-5xl">と</span>候補者<span className="text-5xl">の</span>予定<span className="text-5xl">を</span>
-          <br />
-          <span className="text-brandPrimary-500">ピッタリ合わせる</span>
-        </h1>
+      <div className="flex items-center justify-center mx-auto max-w-6xl px-10">
+        <div className="relative flex flex-1 flex-col py-16 md:py-24">
+          <h1 className="max-w-3xl text-5xl font-black !leading-tight tracking-tight text-brandNavy sm:text-7xl">
+            複数面接官<span className="text-5xl">の</span>予定<span className="text-5xl">を</span>
+            <br />
+            <span className="text-brandPrimary-500">ピッタリ合わせる</span>
+          </h1>
 
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-brandNavy">
-          Pitasukeは、採用チーム特化型の面接フォローアップツールです。
-          <br className="hidden sm:block" />
-          チーム運用も、候補者対応も、すべてがスムーズになります。
-        </p>
+          <p className="mt-6 max-w-2xl text-lg text-brandNavy !leading-relaxed">
+            Pitasuke（ピタスケ）は、採用チーム特化型の面接フォローアップツールです。
+            <br className="hidden sm:block" />
+            スケジューリングから候補者対応まで、すべてがスムーズになります。
+          </p>
 
-        <div className="mt-10 flex flex-col items-center gap-8 sm:flex-row">
-          <Link
-            href="/login"
-            className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
-          >
-            無料で14日間試す
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <a
-            href="#機能"
-            className="flex items-center gap-1 text-base font-bold text-brandGray hover:text-brandNavy"
-          >
-            機能を見る →
-          </a>
+          <div className="mt-10 flex flex-col items-center gap-8 sm:flex-row">
+            <Link
+              href="/login"
+              className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
+            >
+              無料で14日間試す
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a
+              href="#機能"
+              className="flex items-center gap-1 text-base font-bold text-brandGray hover:text-brandNavy"
+            >
+              機能を見る →
+            </a>
+          </div>
         </div>
-
-        {/* social proof */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-          {points.map((p) => (
-            <div key={p.text} className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+        <div>
+          <Image
+            src="/lp/kv.svg"
+            alt="Pitasuke"
+            width={400}
+            height={160}
+          />
+        </div>
+      </div>
+      {/* social proof */}
+      <div className="pb-24 flex flex-wrap items-center justify-center gap-[50px]">
+        {points.map((p) => (
+          <div key={p.text} className="flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brandSecondary-50">
               <p.icon className="h-5 w-5 text-brandSecondary-500" />
-              <span className="text-md text-brandGray tracking-[0.5px]">{p.text}</span>
             </div>
-          ))}
-        </div>
+            <span className="text-lg text-brandGray tracking-[0.5px]">{p.text}</span>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -197,7 +208,7 @@ function HowItWorks() {
     },
     {
       num: "03",
-      image: "/lp/img_step_1.svg",
+      image: "/lp/img_step_3.svg",
       title: "自動で確定・通知",
       body: "候補者が予約すると、面接官のカレンダーに自動で予定が入る。リマインドメールで通知。",
     },
