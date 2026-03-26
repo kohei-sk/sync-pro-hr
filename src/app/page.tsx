@@ -89,13 +89,13 @@ function Hero() {
             <span className="text-brandPrimary-500">ピッタリ合わせる</span>
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg text-brandNavy !leading-relaxed">
-            Pitasuke（ピタスケ）は、採用チーム特化型の面接フォローアップツールです。
+          <p className="mt-7 max-w-2xl text-lg text-brandNavy !leading-relaxed">
+            Pitasuke（ピタスケ）は、採用チーム特化型の面接サポートツール。
             <br className="hidden sm:block" />
-            スケジューリングから候補者対応まで、すべてがスムーズになります。
+            日程調整から候補者対応まで、すべてがスムーズに。
           </p>
 
-          <div className="mt-10 flex flex-col items-center gap-8 sm:flex-row">
+          <div className="mt-11 flex flex-col items-center gap-8 sm:flex-row">
             <Link
               href="/login"
               className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
@@ -163,18 +163,18 @@ function ProblemSection() {
         <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
           こんなお悩み、ありませんか？
         </h2>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-12 md:grid-cols-3">
           {pains.map((p) => (
             <div
               key={p.title}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col items-center"
+              className="flex flex-col items-center"
             >
               <div>
                 <Image
                   src={p.image}
                   alt={p.title}
-                  width={160}
-                  height={160}
+                  width={170}
+                  height={170}
                 />
               </div>
               <h3 className="mt-5 text-lg font-bold text-brandNavy">
@@ -223,13 +223,13 @@ function HowItWorks() {
         <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
           <span className="tracking-tight">Pitasuke</span>なら、解決できます
         </h2>
-        <div className="mt-16 grid gap-10 md:grid-cols-3">
+        <div className="mt-12 grid gap-12 md:grid-cols-3">
           {steps.map((s, i) => (
             <div key={s.num} className="relative text-center flex flex-col items-center">
               <div className="relative mb-6 pb-2 text-xl font-black leading-tight tracking-tight text-brandPrimary-500 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-brandPrimary-500 after:content-['']">
                 {"Point " + s.num}
               </div>
-              <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+              <div className="rounded-2xl overflow-hidden w-full">
                 <Image
                   className="w-full"
                   src={s.image}
@@ -314,7 +314,7 @@ function DifferentiatorSection() {
           他のツールと、何が違うの？
         </h2>
 
-        <div className="mt-12 overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="mt-12 rounded-2xl bg-white">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-150">
@@ -427,7 +427,7 @@ function FeaturesSection() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+              className="rounded-2xl bg-white p-6"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-brandPrimary-50">
                 <f.icon className="h-5.5 w-5.5 text-brandPrimary-500" />
@@ -450,6 +450,7 @@ function FeaturesSection() {
 function TestimonialsSection() {
   const cards = [
     {
+      title: "週5時間の削減に成功",
       rate: 4,
       quote:
         "面接官3人の日程調整が、URLを送るだけになりました。週に5時間は削減できています。もっと多くの人事担当者に使ってもらいたいです！",
@@ -457,6 +458,7 @@ function TestimonialsSection() {
       role: "人事部長 / IT企業（従業員300名）",
     },
     {
+      title: "役員面接の調整もスムーズに",
       rate: 3,
       quote:
         "最終面接で役員4名の予定を合わせるのが一番大変でしたが、Pitasukeで一発解決しました。今後も使い続けたいです！",
@@ -464,6 +466,7 @@ function TestimonialsSection() {
       role: "採用リーダー / スタートアップ",
     },
     {
+      title: "候補者とのコミュニケーションが最適に",
       rate: 5,
       quote:
         "候補者からの「日程が選びやすい」という声が増えました。候補者とのコミュニケーションがスムーズになった体感があります！",
@@ -481,13 +484,14 @@ function TestimonialsSection() {
         <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
           採用チームに選ばれています
         </h2>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-16 grid md:grid-cols-3">
           {cards.map((c) => (
             <div
               key={c.name}
-              className="rounded-2xl bg-white p-6 shadow-sm flex flex-col"
+              className="px-6 flex flex-col border-r-[1px] border-gray-150 last:border-r-0"
             >
-              <div className="flex gap-0.5">
+              <div className="text-lg font-bold text-brandNavy">{c.title}</div>
+              <div className="mt-5 flex gap-0.5">
                 {Array.from({ length: c.rate }).map((_, i) => (
                   <span key={i}><Star className="w-5 h-5 text-brandSecondary-500 fill-brandSecondary-500" /></span>
                 ))}
@@ -495,31 +499,14 @@ function TestimonialsSection() {
                   <span key={i}><Star className="w-5 h-5 text-brandSecondary-500 fill-white" /></span>
                 ))}
               </div>
-              <p className="mt-4 text-base leading-relaxed text-brandNavy flex-1">
+              <p className="mt-3 text-sm leading-relaxed text-brandGray">
                 {c.quote}
               </p>
               <div>
-                <div className="mt-6 text-base font-semibold text-brandNavy">
+                <div className="mt-5 text-base font-semibold text-brandNavy">
                   {c.name}
                 </div>
                 <div className="text-sm text-brandGray">{c.role}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* stats */}
-        <div className="mt-12 grid grid-cols-3 divide-x divide-gray-150 rounded-2xl border-2 border-brandPrimary-100 bg-white py-8">
-          {[
-            { label: "導入企業数", value: "500社", sub: " 以上" },
-            { label: "平均削減時間", value: "月40時間", sub: " / チーム" },
-            { label: "顧客満足度", value: "4.8", sub: " / 5.0" },
-          ].map((s) => (
-            <div key={s.label} className="px-8 text-center">
-              <div className="text-base text-brandGray">{s.label}</div>
-              <div className="mt-1 text-2xl font-bold text-brandPrimary-500 sm:text-3xl">
-                {s.value}
-                <span className="font-semibold text-xl">{s.sub}</span>
               </div>
             </div>
           ))}
@@ -536,7 +523,7 @@ function PricingSection() {
   const plans = [
     {
       name: "スターター",
-      price: "無料",
+      price: "¥0",
       period: "",
       description: "個人での利用に最適",
       features: [
@@ -552,7 +539,7 @@ function PricingSection() {
     {
       name: "チーム",
       price: "¥5,000",
-      period: "/ 月〜",
+      period: "/ 月",
       description: "採用チームにおすすめ",
       features: [
         "ユーザー：10名まで",
@@ -569,8 +556,8 @@ function PricingSection() {
     },
     {
       name: "エンタープライズ",
-      price: "要相談",
-      period: "",
+      price: "¥100,000~",
+      period: "/ 月",
       description: "大規模な採用チーム向け",
       features: [
         "ユーザー：無制限",
@@ -586,7 +573,7 @@ function PricingSection() {
   ];
 
   return (
-    <section id="料金" className="bg-white py-24">
+    <section id="料金" className="bg-gray-50 py-24">
       <div className="mx-auto max-w-7xl px-6">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           Price
@@ -598,9 +585,9 @@ function PricingSection() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative rounded-2xl p-8 ${plan.highlight
-                ? "border-2 border-brandPrimary-500 bg-white shadow-xl"
-                : "border border-gray-200 bg-white shadow-sm"
+              className={`relative rounded-2xl p-8 bg-white ${plan.highlight
+                ? "border-2 border-brandPrimary-500"
+                : ""
                 }`}
             >
               {plan.highlight && (
@@ -610,16 +597,16 @@ function PricingSection() {
                   </span>
                 </div>
               )}
-              <div className="mb-1 text-lg font-bold text-brandNavy">
+              <div className="mb-1 text-lg font-bold text-brandNavy text-center">
                 {plan.name}
               </div>
-              <div className="mb-2 flex items-end gap-1">
-                <span className="text-4xl font-bold text-brandNavy">
+              <div className="mb-2 flex items-end justify-center gap-1">
+                <span className="tracking-tight text-4xl font-bold text-brandNavy">
                   {plan.price}
                 </span>
                 <span className="mb-1 text-sm text-brandGray">{plan.period}</span>
               </div>
-              <div className="mb-6 text-sm text-brandGray">
+              <div className="mb-6 text-sm text-brandGray text-center">
                 {plan.description}
               </div>
               <Link
@@ -661,7 +648,7 @@ function PricingSection() {
 // ─────────────────────────────────────────────
 function FAQSection() {
   return (
-    <section id="よくある質問" className="bg-gray-50 py-24">
+    <section id="よくある質問" className="bg-white py-24">
       <div className="mx-auto max-w-3xl px-6">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           FAQ
@@ -669,7 +656,7 @@ function FAQSection() {
         <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
           よくある質問
         </h2>
-        <div className="mt-12 rounded-2xl border border-gray-200 bg-white px-6 shadow-sm">
+        <div className="mt-12">
           <FAQAccordion />
         </div>
       </div>
