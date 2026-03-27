@@ -53,7 +53,7 @@ function Nav() {
             href="/login"
             className="rounded-lg bg-brandPrimary-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-brandPrimary-600 transition-colors"
           >
-            無料で始める
+            お問い合わせ
           </Link>
         </div>
       </div>
@@ -98,16 +98,17 @@ function Hero() {
           <div className="mt-11 flex flex-col items-center gap-8 sm:flex-row">
             <Link
               href="/login"
-              className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-10 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
             >
-              無料で14日間試す
+              お問い合わせ
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#機能"
               className="flex items-center gap-1 text-base font-bold text-brandGray hover:text-brandNavy"
             >
-              機能を見る →
+              くわしく見る
+              <ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </div>
@@ -124,10 +125,10 @@ function Hero() {
       <div className="pb-24 flex flex-wrap items-center justify-center gap-[50px]">
         {points.map((p) => (
           <div key={p.text} className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brandSecondary-50">
-              <p.icon className="h-5 w-5 text-brandSecondary-500" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brandSecondary-50">
+              <p.icon className="h-[18px] w-[18px]] text-brandSecondary-500" />
             </div>
-            <span className="text-lg text-brandGray tracking-[0.5px]">{p.text}</span>
+            <span className="text-md text-brandGray tracking-[0.5px]">{p.text}</span>
           </div>
         ))}
       </div>
@@ -173,8 +174,8 @@ function ProblemSection() {
                 <Image
                   src={p.image}
                   alt={p.title}
-                  width={170}
-                  height={170}
+                  width={160}
+                  height={160}
                 />
               </div>
               <h3 className="mt-5 text-lg font-bold text-brandNavy">
@@ -488,7 +489,7 @@ function TestimonialsSection() {
           {cards.map((c) => (
             <div
               key={c.name}
-              className="px-6 flex flex-col border-r-[1px] border-gray-150 last:border-r-0"
+              className="px-6 flex flex-col border-r-[1px] border-gray-100 last:border-r-0"
             >
               <div className="text-lg font-bold text-brandNavy">{c.title}</div>
               <div className="mt-5 flex gap-0.5">
@@ -511,133 +512,6 @@ function TestimonialsSection() {
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Pricing
-// ─────────────────────────────────────────────
-function PricingSection() {
-  const plans = [
-    {
-      name: "スターター",
-      price: "¥0",
-      period: "",
-      description: "個人での利用に最適",
-      features: [
-        "ユーザー：1名",
-        "イベントタイプ：3つまで",
-        "Googleカレンダー連携",
-        "公開予約ページ",
-      ],
-      unavailable: ["チームメンバー追加", "Slack通知", "ロールアサイン"],
-      cta: "無料で始める",
-      highlight: false,
-    },
-    {
-      name: "チーム",
-      price: "¥5,000",
-      period: "/ 月",
-      description: "採用チームにおすすめ",
-      features: [
-        "ユーザー：10名まで",
-        "イベントタイプ：無制限",
-        "Googleカレンダー連携",
-        "Slack通知",
-        "ロールベースアサイン",
-        "曜日別担当者設定",
-        "リマインドメール",
-      ],
-      unavailable: [],
-      cta: "14日間無料で試す",
-      highlight: true,
-    },
-    {
-      name: "エンタープライズ",
-      price: "¥100,000~",
-      period: "/ 月",
-      description: "大規模な採用チーム向け",
-      features: [
-        "ユーザー：無制限",
-        "チームプランの全機能",
-        "専任サポート",
-        "SLA保証",
-        "ATS連携（準備中）",
-      ],
-      unavailable: [],
-      cta: "お問い合わせ",
-      highlight: false,
-    },
-  ];
-
-  return (
-    <section id="料金" className="bg-gray-50 py-24">
-      <div className="mx-auto max-w-7xl px-6">
-        <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
-          Price
-        </p>
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
-          シンプルな料金プラン
-        </h2>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-2xl p-8 bg-white ${plan.highlight
-                ? "border-2 border-brandPrimary-500"
-                : ""
-                }`}
-            >
-              {plan.highlight && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-brandPrimary-500 px-4 py-1 text-xs font-bold text-white">
-                    おすすめ
-                  </span>
-                </div>
-              )}
-              <div className="mb-1 text-lg font-bold text-brandNavy text-center">
-                {plan.name}
-              </div>
-              <div className="mb-2 flex items-end justify-center gap-1">
-                <span className="tracking-tight text-4xl font-bold text-brandNavy">
-                  {plan.price}
-                </span>
-                <span className="mb-1 text-sm text-brandGray">{plan.period}</span>
-              </div>
-              <div className="mb-6 text-sm text-brandGray text-center">
-                {plan.description}
-              </div>
-              <Link
-                href="/login"
-                className={`mb-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors ${plan.highlight
-                  ? "bg-brandPrimary-500 text-white hover:bg-brandPrimary-600"
-                  : "border border-gray-300 text-brandNavy hover:bg-gray-50"
-                  }`}
-              >
-                {plan.cta}
-              </Link>
-              <ul className="space-y-3">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-3 text-sm text-brandNavy">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brandSecondary-500" />
-                    {f}
-                  </li>
-                ))}
-                {plan.unavailable.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-gray-400">
-                    <X className="mt-0.5 h-4 w-4 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <p className="mt-8 text-center text-sm text-brandGray">
-          すべてのプランでクレジットカード不要・いつでも解約可能
-        </p>
       </div>
     </section>
   );
@@ -685,21 +559,12 @@ function FinalCTA() {
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/login"
-            className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-bold text-brandPrimary-600 shadow hover:shadow-md transition-shadow"
+            className="flex items-center gap-2 rounded-lg bg-white px-10 py-4 text-base font-bold text-brandPrimary-600"
           >
-            無料で14日間試す
+            お問い合わせ
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link
-            href="/login"
-            className="rounded-lg border border-white px-6 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors"
-          >
-            デモを予約する
-          </Link>
         </div>
-        <p className="mt-6 text-sm text-white/70">
-          クレジットカード不要 · 設定5分 · いつでも解約可能
-        </p>
       </div>
     </section>
   );
@@ -760,7 +625,6 @@ export default function Home() {
       <DifferentiatorSection />
       <FeaturesSection />
       <TestimonialsSection />
-      <PricingSection />
       <FAQSection />
       <FinalCTA />
       <Footer />

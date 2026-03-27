@@ -30,24 +30,23 @@ export default function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <div className="divide-y divide-gray-200">
+    <div className="divide-y divide-gray-100">
       {faqs.map((faq, i) => (
         <div key={i}>
           <button
             className="flex w-full items-center justify-between py-5 text-left"
             onClick={() => setOpenIndex(openIndex === i ? null : i)}
           >
-            <span className="text-base font-medium text-[#1A2744]">
+            <span className="text-base text-brandNavy">
               {faq.q}
             </span>
             <ChevronDown
-              className={`ml-4 h-5 w-5 shrink-0 text-[#435460] transition-transform duration-200 ${
-                openIndex === i ? "rotate-180" : ""
-              }`}
+              className={`ml-4 h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ${openIndex === i ? "rotate-180" : ""
+                }`}
             />
           </button>
           {openIndex === i && (
-            <div className="pb-5 text-sm leading-relaxed text-[#435460]">
+            <div className="pb-5 text-sm leading-relaxed text-brandGray">
               {faq.a}
             </div>
           )}
