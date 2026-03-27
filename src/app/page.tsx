@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ContactButton } from "@/components/landing/ContactModal";
 import {
   Calendar,
   Users,
@@ -15,6 +16,7 @@ import {
   RefreshCw,
   Form,
   Star,
+  LogIn,
 } from "lucide-react";
 import FAQAccordion from "@/components/landing/FAQAccordion";
 
@@ -24,8 +26,9 @@ import FAQAccordion from "@/components/landing/FAQAccordion";
 function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-10 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-10 sm:py-4">
         <Image
+          className="w-[130px] h-auto sm:w-[140px]"
           src="/common/logo.svg"
           alt="Pitasuke"
           width={140}
@@ -45,16 +48,13 @@ function Nav() {
         <div className="flex items-center gap-5">
           <Link
             href="/login"
-            className="text-sm font-bold text-brandGray hover:text-brandNavy"
           >
-            ログイン
+            <span className="text-sm font-bold text-brandGray hover:text-brandNavy hidden sm:block">ログイン</span>
+            <span className="text-brandGray block sm:hidden"><LogIn className="w-5 h-5" /></span>
           </Link>
-          <Link
-            href="/login"
-            className="rounded-lg bg-brandPrimary-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-brandPrimary-600 transition-colors"
-          >
+          <ContactButton className="rounded-lg bg-brandPrimary-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-brandPrimary-600 transition-colors">
             お問い合わせ
-          </Link>
+          </ContactButton>
         </div>
       </div>
     </header>
@@ -81,28 +81,25 @@ function Hero() {
   ];
   return (
     <section className="relative overflow-hidden bg-white">
-      <div className="flex items-center justify-center mx-auto max-w-6xl px-10">
-        <div className="relative flex flex-1 flex-col py-16 md:py-24">
-          <h1 className="max-w-3xl text-5xl font-black !leading-tight tracking-tight text-brandNavy sm:text-7xl">
-            複数面接官<span className="text-5xl">の</span>予定<span className="text-5xl">を</span>
+      <div className="flex items-center justify-center mx-auto max-w-6xl px-5 flex-col sm:flex-row sm:px-10">
+        <div className="relative flex flex-1 flex-col py-12 md:py-24">
+          <h1 className="text-4xl font-black !leading-tight tracking-tight text-brandNavy text-center sm:text-7xl sm:text-left">
+            複数面接官<span className="text-2xl sm:text-5xl">の</span>予定<span className="text-2xl sm:text-5xl">を</span>
             <br />
             <span className="text-brandPrimary-500">ピッタリ合わせる</span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-lg text-brandNavy !leading-relaxed">
+          <p className="mt-5 max-w-2xl text-base text-brandNavy !leading-relaxed sm:text-lg sm:mt-7">
             Pitasuke（ピタスケ）は、採用チーム特化型の面接サポートツール。
             <br className="hidden sm:block" />
             日程調整から候補者対応まで、すべてがスムーズに。
           </p>
 
-          <div className="mt-11 flex flex-col items-center gap-8 sm:flex-row">
-            <Link
-              href="/login"
-              className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-10 py-4 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors"
-            >
+          <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row sm:gap-8 sm:mt-11">
+            <ContactButton className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-10 py-3 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors justify-center w-full sm:w-auto sm:py-4">
               お問い合わせ
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </ContactButton>
             <a
               href="#機能"
               className="flex items-center gap-1 text-base font-bold text-brandGray hover:text-brandNavy"
@@ -122,13 +119,13 @@ function Hero() {
         </div>
       </div>
       {/* social proof */}
-      <div className="pb-24 flex flex-wrap items-center justify-center gap-[50px]">
+      <div className="pb-12 flex flex-wrap items-center justify-center gap-4 mt-12 sm:gap-[50px] sm:mt-0 sm:pb-24">
         {points.map((p) => (
-          <div key={p.text} className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brandSecondary-50">
-              <p.icon className="h-[18px] w-[18px]] text-brandSecondary-500" />
+          <div key={p.text} className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brandSecondary-50 sm:w-10 sm:h-10">
+              <p.icon className="h-[16px] w-[16px] text-brandSecondary-500 sm:h-[18px] sm:w-[18px]" />
             </div>
-            <span className="text-md text-brandGray tracking-[0.5px]">{p.text}</span>
+            <span className="text-brandGray tracking-[0.5px] sm:text-md">{p.text}</span>
           </div>
         ))}
       </div>
@@ -322,15 +319,15 @@ function DifferentiatorSection() {
                 <th className="py-4 pl-6 text-left text-sm font-semibold text-brandGray">
 
                 </th>
-                <th className="py-4 text-center text-lg font-bold text-brandPrimary-600 tracking-tight bg-brandPrimary-50/50">
+                <th className="py-4 text-center text-md font-bold text-brandPrimary-600 tracking-tight bg-brandPrimary-50/50 sm:text-lg">
                   Pitasuke
                 </th>
-                <th className="py-4 text-center text-sm font-semibold text-brandGray">
+                <th className="py-4 text-center text-xs font-semibold text-brandGray sm:text-sm">
                   一般的な
                   <br />
                   日程調整ツール
                 </th>
-                <th className="py-4 pr-6 text-center text-sm font-semibold text-brandGray">
+                <th className="py-4 pr-6 text-center text-xs font-semibold text-brandGray sm:text-sm">
                   スプレッド
                   <br />
                   シート管理
@@ -340,9 +337,9 @@ function DifferentiatorSection() {
             <tbody className="divide-y divide-gray-100">
               {rows.map((row) => (
                 <tr key={row.label} className="hover:bg-gray-50">
-                  <td className="py-4 pl-6 text-sm text-brandNavy flex flex-col">
+                  <td className="py-4 pl-3 text-xs text-brandNavy flex flex-col sm:text-sm sm:pl-6">
                     {row.label}
-                    {row.desc ? <span className="text-xs text-brandGray mt-1">{row.desc}</span> : ""}
+                    {row.desc ? <span className="text-[11px] text-brandGray mt-1 sm:text-xs">{row.desc}</span> : ""}
                   </td>
                   <td className="py-4 text-center bg-brandPrimary-50/50">
                     <Icon val={row.pitasuke} />
@@ -553,17 +550,14 @@ function FinalCTA() {
           <br />
           自動でセッティング
         </h2>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-white">
+        <p className="mx-auto mt-6 max-w-xl text-md text-white sm:text-lg">
           今すぐ無料で始めて、チームの時間を取り戻してください。
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link
-            href="/login"
-            className="flex items-center gap-2 rounded-lg bg-white px-10 py-4 text-base font-bold text-brandPrimary-600"
-          >
+          <ContactButton className="flex items-center gap-2 rounded-lg bg-white px-10 py-4 text-base font-bold text-brandPrimary-600 w-full justify-center sm:w-auto">
             お問い合わせ
             <ArrowRight className="h-4 w-4" />
-          </Link>
+          </ContactButton>
         </div>
       </div>
     </section>

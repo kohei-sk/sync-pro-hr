@@ -45,11 +45,17 @@ export default function FAQAccordion() {
                 }`}
             />
           </button>
-          {openIndex === i && (
-            <div className="pb-5 text-sm leading-relaxed text-brandGray">
-              {faq.a}
+          <div
+            className={`grid transition-all duration-200 ease-in-out ${
+              openIndex === i ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="pb-5 text-sm leading-relaxed text-brandGray">
+                {faq.a}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       ))}
     </div>

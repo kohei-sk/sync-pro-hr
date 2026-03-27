@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-[#f8f9fa] text-[#2d3237] antialiased;
     font-feature-settings: "palt";
@@ -288,7 +292,7 @@
   }
 
   .modal-overlay {
-    @apply fixed inset-0 bg-gray-900/50 z-40;
+    @apply fixed inset-0 bg-gray-900/50 z-50;
   }
 
   [data-modal-state="open"] .modal-overlay {
