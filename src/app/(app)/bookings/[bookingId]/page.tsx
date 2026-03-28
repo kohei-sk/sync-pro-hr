@@ -79,6 +79,8 @@ type BookingDetail = {
   }[];
 };
 
+type TextRenderer = { text: string };
+
 const statusConfig: Record<
   BookingStatus,
   { label: string; className: string }
@@ -97,7 +99,7 @@ const historyTypeConfig: Record<string, { label: string; dotClass: string }> = {
 
 const locationConfig: Record<string, { icon: typeof Video; label: string }> = {
   online: { icon: Video, label: "オンライン" },
-  "in-person": { icon: Building2, label: "対面" },
+  "in-person": { icon: MapPin, label: "対面" },
   phone: { icon: Phone, label: "電話" },
 };
 
@@ -124,6 +126,32 @@ function formatHistoryDate(dateStr: string) {
 function computeDisplayStatus(status: BookingStatus, endTime: string): BookingStatus {
   if (status === "confirmed" && new Date(endTime) < new Date()) return "completed";
   return status;
+}
+
+function LinkifiedText({ text }: TextRenderer) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  return (
+    <>
+      {text.split(urlRegex).map((part, index) => {
+        const isUrl = part.match(/^https?:\/\/[^\s]+$/);
+
+        return isUrl ? (
+          <a
+            className="text-primary-600 hover:text-primary-700 hover:underline"
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {part}
+          </a>
+        ) : (
+          <span key={index}>{part}</span>
+        );
+      })}
+    </>
+  );
 }
 
 export default function BookingDetailPage() {
@@ -323,22 +351,19 @@ export default function BookingDetailPage() {
           <div className="flex items-start gap-2.5">
             <LocationIcon className="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm">{event?.location_detail || locCfg.label}</p>
-              {booking.meeting_url && (
-                <div className="mt-2 space-y-1.5">
+              <p className="text-sm">
+                {booking.meeting_url ? (
                   <a
-                    href={booking.meeting_url}
                     target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a73e8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1558b0] transition-colors"
+                    href={booking.meeting_url}
+                    className="text-primary-600 hover:text-primary-700 hover:underline"
                   >
-                    <Video className="h-3.5 w-3.5" />
-                    Google Meet で参加する
-                    <ExternalLink className="h-3 w-3 opacity-70" />
+                    {booking.meeting_url}
                   </a>
-                  <p className="text-xs text-gray-400 break-all">{booking.meeting_url}</p>
-                </div>
-              )}
+                ) :
+                  <LinkifiedText text={event?.location_detail ?? "-"} />
+                }
+              </p>
             </div>
           </div>
         </section>

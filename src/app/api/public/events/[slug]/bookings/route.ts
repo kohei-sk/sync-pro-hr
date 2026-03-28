@@ -238,11 +238,11 @@ export async function POST(
           event,
           assignedMembers.map((m) => m.user_id),
           {
-            candidateName:  candidate_name,
+            candidateName: candidate_name,
             candidateEmail: candidate_email,
             candidatePhone: candidate_phone,
-            startTime:      selected_slot.start,
-            endTime:        selected_slot.end,
+            startTime: selected_slot.start,
+            endTime: selected_slot.end,
           }
         );
       } catch (err) {
@@ -289,11 +289,11 @@ async function createBookingCalendarEvent(
   event: any,
   memberUserIds: string[],
   booking: {
-    candidateName:  string;
+    candidateName: string;
     candidateEmail: string;
     candidatePhone?: string | null;
     startTime: string;
-    endTime:   string;
+    endTime: string;
   }
 ): Promise<string | undefined> {
   if (memberUserIds.length === 0) return undefined;
@@ -355,13 +355,13 @@ async function createBookingCalendarEvent(
 
   const calResult = await createCalendarEvent({
     accessToken,
-    summary:        `【面接】${event.title} — ${booking.candidateName}`,
+    summary: `【面接】${event.title}｜${booking.candidateName} 様`,
     description,
-    startTime:      booking.startTime,
-    endTime:        booking.endTime,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
     attendeeEmails,
-    location:       event.location_detail || undefined,
-    createMeet:     needsMeet,
+    location: event.location_detail || undefined,
+    createMeet: needsMeet,
   });
 
   // booking に calendar event ID と owner を保存
