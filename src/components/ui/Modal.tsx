@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDialogState } from "@/hooks/useDialogState";
@@ -81,7 +82,7 @@ export function Modal({
     lg: "modal-panel-lg",
   }[size];
 
-  return (
+  return createPortal(
     <div data-modal-state={isOpen ? "open" : "close"}>
       {/* Overlay */}
       <div
@@ -130,7 +131,8 @@ export function Modal({
           {footer && <div className="modal-footer">{footer}</div>}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
