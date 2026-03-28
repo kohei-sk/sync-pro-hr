@@ -187,6 +187,7 @@ export default function NewEventPage() {
     buffer_after: 15,
     location_type: "online" as "online" | "in-person" | "phone",
     location_detail: "",
+    onlineMeetType: "meet" as "meet" | "other",
     scheduling_mode: "weekday" as "pool" | "fixed" | "weekday",
     color: "#3b82f6",
     isPublic: true,
@@ -281,7 +282,10 @@ export default function NewEventPage() {
         buffer_before: formData.buffer_before,
         buffer_after: formData.buffer_after,
         location_type: formData.location_type,
-        location_detail: formData.location_detail || undefined,
+        location_detail:
+          formData.location_type === "online" && formData.onlineMeetType === "meet"
+            ? undefined
+            : formData.location_detail || undefined,
         status: formData.isPublic ? "active" : "draft",
         scheduling_mode: formData.scheduling_mode,
         color: formData.color,
@@ -760,7 +764,12 @@ export default function NewEventPage() {
                       <button
                         key={loc.type}
                         onClick={() =>
-                          setFormData({ ...formData, location_type: loc.type })
+                          setFormData({
+                            ...formData,
+                            location_type: loc.type,
+                            onlineMeetType: "meet",
+                            location_detail: "",
+                          })
                         }
                         className={cn(
                           "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ring-1 transition-colors h-[42px]",
@@ -775,7 +784,35 @@ export default function NewEventPage() {
                     ))}
                   </div>
                 </div>
-                {formData.location_type && (
+                {formData.location_type === "online" && (
+                  <div className="mt-3 flex gap-2">
+                    {[
+                      { value: "meet" as const, label: "Google Meet（自動生成）" },
+                      { value: "other" as const, label: "その他" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            onlineMeetType: opt.value,
+                            location_detail: "",
+                          })
+                        }
+                        className={cn(
+                          "rounded-lg px-3 py-1.5 text-sm font-medium ring-1 transition-colors",
+                          formData.onlineMeetType === opt.value
+                            ? "bg-primary-50 text-primary-700 ring-primary-300"
+                            : "text-gray-600 ring-gray-200 hover:ring-gray-300"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {formData.location_type && (formData.location_type !== "online" || formData.onlineMeetType === "other") && (
                   <div>
                     <label className="label">場所の詳細</label>
                     <input
@@ -790,7 +827,7 @@ export default function NewEventPage() {
                       }
                       placeholder={
                         formData.location_type === "online"
-                          ? "Google Meet / Zoom URL"
+                          ? "Zoom URL など"
                           : formData.location_type === "in-person"
                             ? "会議室名や住所"
                             : "電話番号"
@@ -2021,11 +2058,13 @@ export default function NewEventPage() {
                         </dt>
                         <dd>
                           {formData.location_type === "online"
-                            ? "オンライン"
+                            ? formData.onlineMeetType === "meet"
+                              ? "オンライン（Google Meet 自動生成）"
+                              : `オンライン${formData.location_detail ? ` · ${formData.location_detail}` : ""}`
                             : formData.location_type === "in-person"
                               ? "対面"
                               : "電話"}
-                          {formData.location_detail && (
+                          {formData.location_type !== "online" && formData.location_detail && (
                             <span className="text-xs text-gray-400 pl-2">
                               {formData.location_detail}
                             </span>
