@@ -14,7 +14,7 @@ const GOOGLE_CALENDAR_API     = "https://www.googleapis.com/calendar/v3";
 const GOOGLE_USERINFO_API     = "https://www.googleapis.com/oauth2/v2/userinfo";
 
 const SCOPES = [
-  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 
@@ -333,4 +333,121 @@ export async function stopWebhookChannel(
   }).catch(() => {
     // チャンネルが既に期限切れの場合も無視
   });
+}
+
+// ============================================================
+// 11. createCalendarEvent — カレンダーイベントを作成（Google Meet 対応）
+// ============================================================
+// createMeet=true かつ location_detail が未設定の場合に Google Meet リンクを自動生成する。
+// sendUpdates="all" で全参加者にメール通知を送信。
+
+export interface CreateCalendarEventOptions {
+  accessToken:     string;
+  summary:         string;
+  description:     string;
+  startTime:       string;  // ISO 8601
+  endTime:         string;  // ISO 8601
+  attendeeEmails:  string[];
+  location?:       string;
+  createMeet?:     boolean;
+  timeZone?:       string;
+}
+
+export interface CreatedCalendarEvent {
+  eventId:   string;
+  meetLink?: string;
+  htmlLink?: string;
+}
+
+export async function createCalendarEvent(
+  options: CreateCalendarEventOptions
+): Promise<CreatedCalendarEvent> {
+  const {
+    accessToken,
+    summary,
+    description,
+    startTime,
+    endTime,
+    attendeeEmails,
+    location,
+    createMeet = false,
+    timeZone = "Asia/Tokyo",
+  } = options;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body: any = {
+    summary,
+    description,
+    start: { dateTime: startTime, timeZone },
+    end:   { dateTime: endTime,   timeZone },
+    attendees: attendeeEmails.map((email) => ({ email })),
+    reminders: { useDefault: true },
+  };
+
+  if (location) body.location = location;
+
+  if (createMeet) {
+    body.conferenceData = {
+      createRequest: {
+        requestId:             crypto.randomUUID(),
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    };
+  }
+
+  const conferenceDataVersion = createMeet ? 1 : 0;
+  const url = `${GOOGLE_CALENDAR_API}/calendars/primary/events?conferenceDataVersion=${conferenceDataVersion}&sendUpdates=all`;
+
+  const res = await fetch(url, {
+    method:  "POST",
+    headers: {
+      Authorization:  `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Failed to create calendar event: ${res.status} ${err}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: any = await res.json();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const meetLink = data.conferenceData?.entryPoints?.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ep: any) => ep.entryPointType === "video"
+  )?.uri as string | undefined;
+
+  return {
+    eventId:  data.id  as string,
+    meetLink,
+    htmlLink: data.htmlLink as string | undefined,
+  };
+}
+
+// ============================================================
+// 12. deleteCalendarEvent — カレンダーイベントを削除（予約キャンセル時）
+// ============================================================
+// 404/410 はすでに削除済みとみなして無視する。
+// sendUpdates="all" で全参加者にキャンセル通知を送信。
+
+export async function deleteCalendarEvent(
+  accessToken: string,
+  eventId:     string
+): Promise<void> {
+  const res = await fetch(
+    `${GOOGLE_CALENDAR_API}/calendars/primary/events/${encodeURIComponent(eventId)}?sendUpdates=all`,
+    {
+      method:  "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+  // 404 / 410 = すでに削除済み、問題なし
+  if (!res.ok && res.status !== 404 && res.status !== 410) {
+    const err = await res.text();
+    throw new Error(`Failed to delete calendar event: ${res.status} ${err}`);
+  }
 }

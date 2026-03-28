@@ -480,9 +480,7 @@ function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMemb
             {event.reminder_settings.map((r) => (
               <li key={r.id}>
                 <div className="text-sm flex items-center">
-                  {{ email: "メール", sms: "SMS", both: "メール + SMS" }[
-                    r.channel
-                  ]}
+                  {"メール"}
                   <p className="text-xs ml-2">
                     {"（"}
                     {r.timing.value}

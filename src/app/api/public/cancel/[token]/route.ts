@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendSlackMessage } from "@/lib/slack";
+import { sendBookingCancellationEmail, sendMemberCancellationEmail } from "@/lib/email";
+import { getMemberEmailsForNotification } from "@/lib/member-notifications";
+import { getValidAccessToken, deleteCalendarEvent } from "@/lib/google-calendar";
 
 /**
  * GET /api/public/cancel/[token]
@@ -51,7 +54,7 @@ export async function POST(
     // まずトークンで予約を取得
     const { data: booking, error: fetchError } = await supabase
       .from("bookings")
-      .select("id, status, candidate_name, event_id, event_types(title, company_id)")
+      .select("id, status, candidate_name, candidate_email, start_time, end_time, event_id, event_types(title, company_id, companies(name))")
       .eq("cancel_token", params.token)
       .single();
 
@@ -84,10 +87,16 @@ export async function POST(
       );
     }
 
+    // Google Calendar イベントを削除（fire-and-forget）
+    deleteBookingCalendarEvent(supabase, booking.id).catch((e) =>
+      console.error("[Cancel] Calendar event deletion failed:", e)
+    );
+
     // 担当メンバーへ通知
     const eventTypes = booking.event_types as any;
     const eventTitle = eventTypes?.title || "";
     const companyId = eventTypes?.company_id;
+    const companyName: string | undefined = eventTypes?.companies?.name ?? undefined;
 
     const { data: assignedMembers } = await supabase
       .from("booking_members")
@@ -124,10 +133,60 @@ export async function POST(
         .catch((e) => console.error("[Cancel] Slack notification error:", e));
     }
 
+    // 面接官へキャンセル通知メール（fire-and-forget）
+    if (assignedMembers && assignedMembers.length > 0) {
+      const memberUserIds = assignedMembers.map((m) => m.user_id);
+      getMemberEmailsForNotification(memberUserIds, "notify_booking_cancel")
+        .then((targets) =>
+          Promise.all(
+            targets.map(({ email }) =>
+              sendMemberCancellationEmail({
+                to: email,
+                candidateName: booking.candidate_name,
+                eventTitle,
+                startTime: booking.start_time,
+                endTime: booking.end_time,
+                cancelledByAdmin: false,
+              })
+            )
+          )
+        )
+        .catch((e) => console.error("[Cancel] Member email error:", e));
+    }
+
+    // 候補者へキャンセル確認メール（fire-and-forget）
+    if (booking.candidate_email) {
+      sendBookingCancellationEmail({
+        to: booking.candidate_email,
+        candidateName: booking.candidate_name,
+        eventTitle,
+        companyName,
+        startTime: booking.start_time,
+        endTime: booking.end_time,
+      }).catch((e) => console.error("[Cancel] Email notification error:", e));
+    }
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
+}
+
+async function deleteBookingCalendarEvent(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  bookingId: string
+): Promise<void> {
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("google_calendar_event_id, google_calendar_owner_id")
+    .eq("id", bookingId)
+    .single();
+
+  if (!booking?.google_calendar_event_id || !booking?.google_calendar_owner_id) return;
+
+  const accessToken = await getValidAccessToken(supabase, booking.google_calendar_owner_id);
+  await deleteCalendarEvent(accessToken, booking.google_calendar_event_id);
 }
 
 async function sendSlackCancelNotification(

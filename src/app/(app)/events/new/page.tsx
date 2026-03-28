@@ -85,7 +85,7 @@ type NewRole = {
   memberIds: string[];
 };
 
-type ReminderChannel = "email" | "sms" | "both";
+type ReminderChannel = "email";
 type ReminderUnit = "hours" | "days";
 
 type NewReminder = {
@@ -1806,19 +1806,7 @@ export default function NewEventPage() {
                         {editingReminderId === reminder.id ? (
                           <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                             <p className="text-sm font-semibold">リマインドを編集</p>
-                            <div className="grid grid-cols-3 gap-3">
-                              <div>
-                                <label className="label">送信チャネル</label>
-                                <select
-                                  className="select mt-1"
-                                  value={editReminderDraft.channel}
-                                  onChange={(e) => setEditReminderDraft({ ...editReminderDraft, channel: e.target.value as ReminderChannel })}
-                                >
-                                  <option value="email">メール</option>
-                                  <option value="sms">SMS</option>
-                                  <option value="both">メール + SMS</option>
-                                </select>
-                              </div>
+                            <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="label">タイミング（数値）</label>
                                 <input
@@ -1863,7 +1851,7 @@ export default function NewEventPage() {
                           <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                             <div>
                               <p className="text-sm font-medium">
-                                {reminder.channel === "email" ? "メール" : reminder.channel === "sms" ? "SMS" : "メール + SMS"}
+                                メール
                               </p>
                               <p className="mt-0.5 text-xs text-gray-500">
                                 {reminder.timing_value}{reminder.timing_unit === "hours" ? "時間前" : "日前"}
@@ -1898,19 +1886,7 @@ export default function NewEventPage() {
                 {showReminderForm ? (
                   <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                     <p className="text-sm font-semibold">新しいリマインド</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <label className="label">送信チャネル</label>
-                        <select
-                          className="select mt-1"
-                          value={reminderDraft.channel}
-                          onChange={(e) => setReminderDraft({ ...reminderDraft, channel: e.target.value as ReminderChannel })}
-                        >
-                          <option value="email">メール</option>
-                          <option value="sms">SMS</option>
-                          <option value="both">メール + SMS</option>
-                        </select>
-                      </div>
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="label">タイミング（数値）</label>
                         <input
@@ -1967,194 +1943,160 @@ export default function NewEventPage() {
                   </button>
                 )}
 
-                {reminders.length === 0 && (
-                  <p className="text-center text-xs text-gray-400">
-                    リマインドはオプションです。後から設定することもできます。
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Confirmation */}
-        {step === "confirm" && (
-          <div className="card">
-            <h2 className="step-section-title">設定内容の確認</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              以下の内容でイベントを作成します
-            </p>
-            <div className="mt-6 space-y-4">
-
-              {/* ボディーヘッダー */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="flex flex-1 items-center gap-4">
-                  <div className="flex flex-col">
-                    <div className="flex gap-2 items-center">
-                      {/* カラー */}
-                      <div
-                        className="h-2 w-2 min-w-2 rounded-full"
-                        style={{ backgroundColor: formData.color || "#0071c1" }}
-                      />
-                      {/* タイトル行 */}
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm leading-relaxed">
-                          {formData.title}
-                        </span>
-                        {formData.isPublic ? (
-                          <span className="badge badge-green">公開</span>
-                        ) : (
-                          <span className="badge badge-gray">非公開（下書き）</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 説明 */}
-                    {formData.description && (
-                      <p className="mt-1 text-sm text-gray-500 leading-relaxed">
-                        {formData.description}
+                    {reminders.length === 0 && (
+                      <p className="text-center text-xs text-gray-400">
+                        リマインドはオプションです。後から設定することもできます。
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
+            </div>
+            </div>
+        )}
 
-              {/* 時間・場所 */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="space-y-2">
-                  <dl className="flex items-center gap-2.5 text-sm">
-                    <dt><Clock className="h-4 w-4 shrink-0 text-gray-400" /></dt>
-                    <dd>
-                      {formData.duration}分
-                      {(formData.buffer_before > 0 || formData.buffer_after > 0) && (
-                        <span className="text-xs text-gray-400 pl-2">
-                          （前 {formData.buffer_before}分 / 後 {formData.buffer_after}分）
-                        </span>
-                      )}
-                    </dd>
-                  </dl>
-                  <dl className="flex items-center gap-2.5 text-sm">
-                    <dt>
-                      {formData.location_type === "online" ? (
-                        <Video className="h-45 w-4 text-gray-400" />
-                      ) : formData.location_type === "phone" ? (
-                        <Phone className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                      )}
-                    </dt>
-                    <dd>
-                      {formData.location_type === "online"
-                        ? "オンライン"
-                        : formData.location_type === "in-person"
-                          ? "対面"
-                          : "電話"}
-                      {formData.location_detail && (
-                        <span className="text-xs text-gray-400 pl-2">
-                          {formData.location_detail}
-                        </span>
-                      )}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
+            {/* Step 3: Confirmation */}
+            {step === "confirm" && (
+              <div className="card">
+                <h2 className="step-section-title">設定内容の確認</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  以下の内容でイベントを作成します
+                </p>
+                <div className="mt-6 space-y-4">
 
-              {/* 受付設定 */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <h3 className="section-label">受付設定</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-4">
-                    <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">時間</dt>
-                    <dd>{receptionSettings.excludeOutsideHours ? "営業時間外は受け付けない" : "時間制限なし"}</dd>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">曜日</dt>
-                    <dd>
-                      {WEEKDAY_LABELS.filter((_, i) => receptionSettings.allowedDays[i]).join("・")}
-                      {receptionSettings.allowedDays.every((d) => !d) && <span className="text-gray-300">なし</span>}
-                      <span className="ml-2">（{receptionSettings.acceptHolidays ? "祝日は受け付ける" : "祝日は受け付けない"}）</span>
-                    </dd>
-                  </div>
-                </div>
-              </div>
-
-              {/* メンバー */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <h3 className="section-label">
-                  メンバー
-                  <span className="section-sub-label">（{formData.scheduling_mode === "weekday" ? "曜日モード" : formData.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}）</span>
-                </h3>
-                {formData.scheduling_mode === "weekday" ? (
-                  weekdaySchedule.filter((e) => e.memberIds.length > 0).length > 0 ? (
-                    <div className="space-y-3">
-                      {weekdaySchedule
-                        .filter((e) => e.memberIds.length > 0)
-                        .map((entry) => {
-                          const label = WEEKDAY_LABELS[entry.dayIndex];
-                          return (
-                            <div key={entry.dayIndex}>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">
-                                {label}曜日
-                                <span className="ml-1 font-normal text-gray-400">（{entry.requiredCount ?? 1}人必要）</span>
-                              </p>
-                              <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
-                                {entry.memberIds.map((userId) => {
-                                  const user = teamMembers.find((u) => u.id === userId);
-                                  return (
-                                    <li key={userId} className="flex flex-wrap items-center gap-2">
-                                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                        {user?.full_name.charAt(0) ?? "?"}
-                                      </div>
-                                      <span className="text-sm whitespace-nowrap">{user?.full_name ?? "Unknown"}</span>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-300">メンバー未設定</p>
-                  )
-                ) : formData.scheduling_mode === "fixed" ? (
-                  fixedMemberIds.length > 0 ? (
-                    <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
-                      {fixedMemberIds.slice(0, 4).map((userId) => {
-                        const user = teamMembers.find((u) => u.id === userId);
-                        return (
-                          <li
-                            key={userId}
-                            className="flex flex-wrap items-center gap-2"
-                            title={user?.full_name}
-                          >
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                              {user?.full_name.charAt(0) ?? "?"}
-                            </div>
-                            <span className="text-sm whitespace-nowrap">
-                              {user?.full_name ?? "Unknown"}
+                  {/* ボディーヘッダー */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <div className="flex flex-1 items-center gap-4">
+                      <div className="flex flex-col">
+                        <div className="flex gap-2 items-center">
+                          {/* カラー */}
+                          <div
+                            className="h-2 w-2 min-w-2 rounded-full"
+                            style={{ backgroundColor: formData.color || "#0071c1" }}
+                          />
+                          {/* タイトル行 */}
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm leading-relaxed">
+                              {formData.title}
                             </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-300">メンバー未設定</p>
-                  )
-                ) : roles.length > 0 ? (
-                  <div className="space-y-4">
-                    {roles.map((role) => (
-                      <div
-                        key={role.id}
-                      >
-                        <div className="text-xs font-semibold text-gray-600 mb-2">
-                          {role.name || "未入力"}
-                          <span className="ml-1 font-normal text-gray-400">
-                            （{role.required_count}人）
-                          </span>
+                            {formData.isPublic ? (
+                              <span className="badge badge-green">公開</span>
+                            ) : (
+                              <span className="badge badge-gray">非公開（下書き）</span>
+                            )}
+                          </div>
                         </div>
+
+                        {/* 説明 */}
+                        {formData.description && (
+                          <p className="mt-1 text-sm text-gray-500 leading-relaxed">
+                            {formData.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 時間・場所 */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <div className="space-y-2">
+                      <dl className="flex items-center gap-2.5 text-sm">
+                        <dt><Clock className="h-4 w-4 shrink-0 text-gray-400" /></dt>
+                        <dd>
+                          {formData.duration}分
+                          {(formData.buffer_before > 0 || formData.buffer_after > 0) && (
+                            <span className="text-xs text-gray-400 pl-2">
+                              （前 {formData.buffer_before}分 / 後 {formData.buffer_after}分）
+                            </span>
+                          )}
+                        </dd>
+                      </dl>
+                      <dl className="flex items-center gap-2.5 text-sm">
+                        <dt>
+                          {formData.location_type === "online" ? (
+                            <Video className="h-45 w-4 text-gray-400" />
+                          ) : formData.location_type === "phone" ? (
+                            <Phone className="h-4 w-4 text-gray-400" />
+                          ) : (
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                          )}
+                        </dt>
+                        <dd>
+                          {formData.location_type === "online"
+                            ? "オンライン"
+                            : formData.location_type === "in-person"
+                              ? "対面"
+                              : "電話"}
+                          {formData.location_detail && (
+                            <span className="text-xs text-gray-400 pl-2">
+                              {formData.location_detail}
+                            </span>
+                          )}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+
+                  {/* 受付設定 */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <h3 className="section-label">受付設定</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-start gap-4">
+                        <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">時間</dt>
+                        <dd>{receptionSettings.excludeOutsideHours ? "営業時間外は受け付けない" : "時間制限なし"}</dd>
+                      </div>
+                      <div className="flex items-start gap-4">
+                        <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">曜日</dt>
+                        <dd>
+                          {WEEKDAY_LABELS.filter((_, i) => receptionSettings.allowedDays[i]).join("・")}
+                          {receptionSettings.allowedDays.every((d) => !d) && <span className="text-gray-300">なし</span>}
+                          <span className="ml-2">（{receptionSettings.acceptHolidays ? "祝日は受け付ける" : "祝日は受け付けない"}）</span>
+                        </dd>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* メンバー */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <h3 className="section-label">
+                      メンバー
+                      <span className="section-sub-label">（{formData.scheduling_mode === "weekday" ? "曜日モード" : formData.scheduling_mode === "fixed" ? "固定モード" : "プールモード"}）</span>
+                    </h3>
+                    {formData.scheduling_mode === "weekday" ? (
+                      weekdaySchedule.filter((e) => e.memberIds.length > 0).length > 0 ? (
+                        <div className="space-y-3">
+                          {weekdaySchedule
+                            .filter((e) => e.memberIds.length > 0)
+                            .map((entry) => {
+                              const label = WEEKDAY_LABELS[entry.dayIndex];
+                              return (
+                                <div key={entry.dayIndex}>
+                                  <p className="text-xs font-semibold text-gray-600 mb-1">
+                                    {label}曜日
+                                    <span className="ml-1 font-normal text-gray-400">（{entry.requiredCount ?? 1}人必要）</span>
+                                  </p>
+                                  <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
+                                    {entry.memberIds.map((userId) => {
+                                      const user = teamMembers.find((u) => u.id === userId);
+                                      return (
+                                        <li key={userId} className="flex flex-wrap items-center gap-2">
+                                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                            {user?.full_name.charAt(0) ?? "?"}
+                                          </div>
+                                          <span className="text-sm whitespace-nowrap">{user?.full_name ?? "Unknown"}</span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-300">メンバー未設定</p>
+                      )
+                    ) : formData.scheduling_mode === "fixed" ? (
+                      fixedMemberIds.length > 0 ? (
                         <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
-                          {role.memberIds.slice(0, 4).map((userId) => {
+                          {fixedMemberIds.slice(0, 4).map((userId) => {
                             const user = teamMembers.find((u) => u.id === userId);
                             return (
                               <li
@@ -2171,142 +2113,176 @@ export default function NewEventPage() {
                               </li>
                             );
                           })}
-                          {role.memberIds.length === 0 && (
-                            <p className="text-sm text-gray-300">メンバー未設定</p>
-                          )}
                         </ul>
+                      ) : (
+                        <p className="text-sm text-gray-300">メンバー未設定</p>
+                      )
+                    ) : roles.length > 0 ? (
+                      <div className="space-y-4">
+                        {roles.map((role) => (
+                          <div
+                            key={role.id}
+                          >
+                            <div className="text-xs font-semibold text-gray-600 mb-2">
+                              {role.name || "未入力"}
+                              <span className="ml-1 font-normal text-gray-400">
+                                （{role.required_count}人）
+                              </span>
+                            </div>
+                            <ul className="inline-flex flex-wrap gap-x-4 gap-y-2">
+                              {role.memberIds.slice(0, 4).map((userId) => {
+                                const user = teamMembers.find((u) => u.id === userId);
+                                return (
+                                  <li
+                                    key={userId}
+                                    className="flex flex-wrap items-center gap-2"
+                                    title={user?.full_name}
+                                  >
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                      {user?.full_name.charAt(0) ?? "?"}
+                                    </div>
+                                    <span className="text-sm whitespace-nowrap">
+                                      {user?.full_name ?? "Unknown"}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                              {role.memberIds.length === 0 && (
+                                <p className="text-sm text-gray-300">メンバー未設定</p>
+                              )}
+                            </ul>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <p className="text-sm text-gray-300 pl-3">役割未設定</p>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-300 pl-3">役割未設定</p>
-                )}
-              </div>
 
-              {/* フォーム項目 */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <h3 className="section-label">フォーム項目</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
-                      デフォルト項目
-                    </p>
-                    <p className="text-sm">
-                      お名前・メールアドレス・電話番号
-                    </p>
+                  {/* フォーム項目 */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <h3 className="section-label">フォーム項目</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-4">
+                        <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
+                          デフォルト項目
+                        </p>
+                        <p className="text-sm">
+                          お名前・メールアドレス・電話番号
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-4">
+                        <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
+                          カスタム項目
+                        </p>
+                        {formFields.length > 0 ? (
+                          <ul className="space-y-2">
+                            {formFields.map((field) => (
+                              <li
+                                key={field.id}
+                                className="text-sm"
+                              >
+                                <p className="flex items-center gap-1">
+                                  {field.label}
+                                  {field.is_required && ("（必須）")}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {FIELD_TYPE_LABELS[field.type]}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-300">カスタム項目未設定</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <p className="min-w-[90px] leading-[1.3rem] text-sm text-gray-400">
-                      カスタム項目
-                    </p>
-                    {formFields.length > 0 ? (
+
+                  {/* 除外ルール */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <h3 className="section-label">除外ルール</h3>
+                    {newExclusionRules.length === 0 ? (
+                      <p className="text-sm text-gray-300">除外ルール未設定</p>
+                    ) : (
                       <ul className="space-y-2">
-                        {formFields.map((field) => (
+                        {newExclusionRules.map((rule) => (
                           <li
-                            key={field.id}
+                            key={rule.id}
                             className="text-sm"
                           >
-                            <p className="flex items-center gap-1">
-                              {field.label}
-                              {field.is_required && ("（必須）")}
-                            </p>
+                            <p>{rule.name}</p>
                             <p className="text-xs text-gray-400 mt-0.5">
-                              {FIELD_TYPE_LABELS[field.type]}
+                              {EXCLUSION_TYPE_LABELS[rule.type]}
+                              {rule.day_of_week !== undefined &&
+                                `　${DAY_NAMES[rule.day_of_week]}曜日`}
+                              {rule.start_time &&
+                                rule.end_time &&
+                                `　${rule.start_time} – ${rule.end_time}`}
+                              {rule.recurring && "　（繰り返し）"}
                             </p>
                           </li>
                         ))}
                       </ul>
+                    )}
+                  </div>
+
+                  {/* リマインド */}
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <h3 className="section-label">リマインド</h3>
+                    {reminders.length > 0 ? (
+                      <ul className="space-y-2">
+                        {reminders.map((r) => (
+                          <li key={r.id}>
+                            <div className="text-sm flex items-center">
+                              {"メール"}
+                              <p className="text-xs ml-2">
+                                （{r.timing_value}{r.timing_unit === "hours" ? "時間" : "日"}前）
+                              </p>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{r.message}</p>
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
-                      <p className="text-sm text-gray-300">カスタム項目未設定</p>
+                      <p className="text-sm text-gray-300">リマインド未設定</p>
                     )}
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* 除外ルール */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <h3 className="section-label">除外ルール</h3>
-                {newExclusionRules.length === 0 ? (
-                  <p className="text-sm text-gray-300">除外ルール未設定</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {newExclusionRules.map((rule) => (
-                      <li
-                        key={rule.id}
-                        className="text-sm"
-                      >
-                        <p>{rule.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {EXCLUSION_TYPE_LABELS[rule.type]}
-                          {rule.day_of_week !== undefined &&
-                            `　${DAY_NAMES[rule.day_of_week]}曜日`}
-                          {rule.start_time &&
-                            rule.end_time &&
-                            `　${rule.start_time} – ${rule.end_time}`}
-                          {rule.recurring && "　（繰り返し）"}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* リマインド */}
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <h3 className="section-label">リマインド</h3>
-                {reminders.length > 0 ? (
-                  <ul className="space-y-2">
-                    {reminders.map((r) => (
-                      <li key={r.id}>
-                        <div className="text-sm flex items-center">
-                          {{ email: "メール", sms: "SMS", both: "メール + SMS" }[r.channel]}
-                          <p className="text-xs ml-2">
-                            （{r.timing_value}{r.timing_unit === "hours" ? "時間" : "日"}前）
-                          </p>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{r.message}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-300">リマインド未設定</p>
-                )}
-              </div>
-            </div>
           </div>
-        )}
-
-      </div>
 
       {/* Float Area: Navigation buttons */}
-      <div className="float-area max-w-3xl">
-        <div className="max-w-3xl flex items-center justify-between">
-          <button
-            onClick={handleBack}
-            className={cn(
-              "btn btn-secondary",
-              currentStepIndex === 0 && "invisible"
-            )}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            戻る
-          </button>
-          {step === "confirm" ? (
-            <button onClick={handleCreate} className="btn btn-primary">
-              イベントを作成
-            </button>
-          ) : (
+        <div className="float-area max-w-3xl">
+          <div className="max-w-3xl flex items-center justify-between">
             <button
-              onClick={handleNext}
-              disabled={step === "basic" && !formData.title.trim()}
-              className="btn btn-primary"
+              onClick={handleBack}
+              className={cn(
+                "btn btn-secondary",
+                currentStepIndex === 0 && "invisible"
+              )}
             >
-              次へ
-              <ArrowRight className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
+              戻る
             </button>
-          )}
+            {step === "confirm" ? (
+              <button onClick={handleCreate} className="btn btn-primary">
+                イベントを作成
+              </button>
+            ) : (
+              <button
+                onClick={handleNext}
+                disabled={step === "basic" && !formData.title.trim()}
+                className="btn btn-primary"
+              >
+                次へ
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+      );
 }

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendBookingConfirmationEmail } from "@/lib/email";
+import { sendBookingConfirmationEmail, sendMemberBookingNewEmail } from "@/lib/email";
 import { sendSlackMessage } from "@/lib/slack";
+import { getMemberEmailsForNotification } from "@/lib/member-notifications";
+import {
+  getValidAccessToken,
+  createCalendarEvent,
+} from "@/lib/google-calendar";
 import type { TimeSlot } from "@/types";
 
 /**
@@ -54,7 +59,8 @@ export async function POST(
       .from("event_types")
       .select(
         `
-        id, title, company_id, scheduling_mode, location_detail, weekday_schedule,
+        id, title, company_id, scheduling_mode, location_type, location_detail, weekday_schedule,
+        companies(name),
         reminder_settings(*),
         event_roles(
           id, name, required_count, priority_order,
@@ -199,14 +205,62 @@ export async function POST(
       ).catch((e) => console.error("[Booking] Slack notification error:", e));
     }
 
+    // 面接官への予約完了通知メール（fire-and-forget）
+    if (assignedMembers.length > 0) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+      const memberUserIds = assignedMembers.map((m) => m.user_id);
+      getMemberEmailsForNotification(memberUserIds, "notify_booking_new")
+        .then((targets) =>
+          Promise.all(
+            targets.map(({ email }) =>
+              sendMemberBookingNewEmail({
+                to: email,
+                candidateName: candidate_name,
+                eventTitle: event.title,
+                startTime: selected_slot.start,
+                endTime: selected_slot.end,
+                locationDetail: event.location_detail,
+                bookingUrl: `${appUrl}/bookings/${booking.id}`,
+              })
+            )
+          )
+        )
+        .catch((e) => console.error("[Booking] Member email notification error:", e));
+    }
+
+    // ── Google Calendar イベント作成（fire-and-forget） ──────────────
+    let autoMeetingUrl: string | undefined;
+    if (assignedMembers.length > 0) {
+      try {
+        autoMeetingUrl = await createBookingCalendarEvent(
+          supabase,
+          booking.id,
+          event,
+          assignedMembers.map((m) => m.user_id),
+          {
+            candidateName:  candidate_name,
+            candidateEmail: candidate_email,
+            candidatePhone: candidate_phone,
+            startTime:      selected_slot.start,
+            endTime:        selected_slot.end,
+          }
+        );
+      } catch (err) {
+        console.error("[Booking] Calendar event creation failed:", err);
+      }
+    }
+
     // 確認メール送信（失敗しても予約は成功とする）
+    const companyName = (event.companies as any)?.name ?? undefined;
     await sendBookingConfirmationEmail({
       to: candidate_email,
       candidateName: candidate_name,
       eventTitle: event.title,
+      companyName,
       startTime: selected_slot.start,
       endTime: selected_slot.end,
       locationDetail: event.location_detail,
+      meetingUrl: autoMeetingUrl,
       cancelToken: booking.cancel_token,
     });
 
@@ -219,6 +273,111 @@ export async function POST(
     console.error("[Booking] Error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
+}
+
+/**
+ * 担当メンバーの中で Google Calendar が連携済みの最初のユーザーを使って
+ * カレンダーイベントを作成する。
+ * location_type が "online" かつ location_detail が空の場合は Google Meet リンクも生成。
+ * 返り値: 生成した meeting_url (Google Meet URL) または undefined
+ */
+async function createBookingCalendarEvent(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  bookingId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  event: any,
+  memberUserIds: string[],
+  booking: {
+    candidateName:  string;
+    candidateEmail: string;
+    candidatePhone?: string | null;
+    startTime: string;
+    endTime:   string;
+  }
+): Promise<string | undefined> {
+  if (memberUserIds.length === 0) return undefined;
+
+  // 連携済みメンバーのプロフィールを取得
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, google_account_email, calendar_status")
+    .in("id", memberUserIds);
+
+  if (profilesError) {
+    console.error("[Calendar] profiles fetch error:", profilesError);
+    return undefined;
+  }
+  if (!profiles) return undefined;
+
+  // calendar_status = connected かつ google_account_email があるメンバーを探す
+  const owner = (profiles as { id: string; google_account_email?: string; calendar_status?: string }[]).find(
+    (p) => p.calendar_status === "connected" && p.google_account_email
+  );
+  if (!owner) {
+    console.warn(
+      "[Calendar] Google Calendar 連携済みメンバーが見つかりません。" +
+      "設定 > カレンダー から Google Calendar を連携してください。" +
+      ` (対象ユーザーID: ${memberUserIds.join(", ")})`
+    );
+    return undefined;
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await getValidAccessToken(supabase, owner.id);
+  } catch (tokenErr) {
+    console.error("[Calendar] アクセストークン取得失敗:", tokenErr);
+    return undefined;
+  }
+
+  // 全参加者メールアドレス（面接官 + 候補者）
+  const attendeeEmails = [
+    ...(profiles as { google_account_email?: string }[])
+      .map((p) => p.google_account_email)
+      .filter((e): e is string => !!e),
+    booking.candidateEmail,
+  ];
+
+  const needsMeet =
+    event.location_type === "online" && !event.location_detail;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+
+  const descLines = [
+    `候補者: ${booking.candidateName} <${booking.candidateEmail}>`,
+    booking.candidatePhone ? `電話: ${booking.candidatePhone}` : null,
+    "",
+    `▼ Pitasuke 予約詳細`,
+    `${appUrl}/bookings/${bookingId}`,
+  ];
+  const description = descLines.filter((l) => l !== null).join("\n");
+
+  const calResult = await createCalendarEvent({
+    accessToken,
+    summary:        `【面接】${event.title} — ${booking.candidateName}`,
+    description,
+    startTime:      booking.startTime,
+    endTime:        booking.endTime,
+    attendeeEmails,
+    location:       event.location_detail || undefined,
+    createMeet:     needsMeet,
+  });
+
+  // booking に calendar event ID と owner を保存
+  const updateData: Record<string, string> = {
+    google_calendar_event_id: calResult.eventId,
+    google_calendar_owner_id: owner.id,
+  };
+  if (needsMeet && calResult.meetLink) {
+    updateData.meeting_url = calResult.meetLink;
+  }
+  await supabase
+    .from("bookings")
+    .update(updateData)
+    .eq("id", bookingId);
+
+  return needsMeet ? calResult.meetLink : undefined;
 }
 
 /**

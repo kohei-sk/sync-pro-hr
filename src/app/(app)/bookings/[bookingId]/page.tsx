@@ -322,18 +322,22 @@ export default function BookingDetailPage() {
         <section className="py-4">
           <div className="flex items-start gap-2.5">
             <LocationIcon className="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm">{event?.location_detail || locCfg.label}</p>
               {booking.meeting_url && (
-                <a
-                  href={booking.meeting_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
-                >
-                  ミーティングリンクを開く
-                  <ExternalLink className="h-3 w-3" />
-                </a>
+                <div className="mt-2 space-y-1.5">
+                  <a
+                    href={booking.meeting_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a73e8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1558b0] transition-colors"
+                  >
+                    <Video className="h-3.5 w-3.5" />
+                    Google Meet で参加する
+                    <ExternalLink className="h-3 w-3 opacity-70" />
+                  </a>
+                  <p className="text-xs text-gray-400 break-all">{booking.meeting_url}</p>
+                </div>
               )}
             </div>
           </div>
@@ -414,9 +418,7 @@ export default function BookingDetailPage() {
               {booking.booking_reminders.map((reminder) => {
                 const isSent = reminder.status === "sent";
                 const isPending = reminder.status === "pending";
-                const channelLabel =
-                  { email: "メール", sms: "SMS", both: "メール + SMS" }[reminder.channel] ||
-                  reminder.channel;
+                const channelLabel = "メール";
                 const scheduledDate = new Date(reminder.scheduled_at).toLocaleString("ja-JP", {
                   year: "numeric", month: "short", day: "numeric",
                   hour: "2-digit", minute: "2-digit",

@@ -17,16 +17,23 @@ CREATE TABLE companies (
 );
 
 CREATE TABLE profiles (
-  id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  company_id      UUID REFERENCES companies(id),
-  full_name       TEXT NOT NULL DEFAULT '',
-  avatar_url      TEXT,
-  role            TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'member')),
-  status          TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'invited')),
-  timezone        TEXT NOT NULL DEFAULT 'Asia/Tokyo',
-  calendar_status TEXT CHECK (calendar_status IN ('connected', 'error', 'not_connected')),
-  last_synced_at  TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_id                  UUID REFERENCES companies(id),
+  full_name                   TEXT NOT NULL DEFAULT '',
+  avatar_url                  TEXT,
+  role                        TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'member')),
+  status                      TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'invited')),
+  timezone                    TEXT NOT NULL DEFAULT 'Asia/Tokyo',
+  calendar_status             TEXT CHECK (calendar_status IN ('connected', 'error', 'not_connected')),
+  last_synced_at              TIMESTAMPTZ,
+  google_account_email        TEXT,
+  google_webhook_channel_id   TEXT,
+  google_webhook_resource_id  TEXT,
+  google_webhook_expiration   TIMESTAMPTZ,
+  slack_status                TEXT,
+  slack_webhook_url           TEXT,
+  slack_channel_name          TEXT,
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE event_types (
@@ -98,18 +105,20 @@ CREATE TABLE reminder_settings (
 );
 
 CREATE TABLE bookings (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id            UUID NOT NULL REFERENCES event_types(id),
-  candidate_name      TEXT NOT NULL,
-  candidate_email     TEXT NOT NULL,
-  candidate_phone     TEXT,
-  start_time          TIMESTAMPTZ NOT NULL,
-  end_time            TIMESTAMPTZ NOT NULL,
-  status              TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'cancelled', 'pending')),
-  meeting_url         TEXT,
-  custom_field_values JSONB,
-  cancel_token        TEXT UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
-  created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id                  UUID NOT NULL REFERENCES event_types(id),
+  candidate_name            TEXT NOT NULL,
+  candidate_email           TEXT NOT NULL,
+  candidate_phone           TEXT,
+  start_time                TIMESTAMPTZ NOT NULL,
+  end_time                  TIMESTAMPTZ NOT NULL,
+  status                    TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'cancelled', 'pending')),
+  meeting_url               TEXT,
+  custom_field_values       JSONB,
+  cancel_token              TEXT UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+  google_calendar_event_id  TEXT,
+  google_calendar_owner_id  UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE booking_members (
@@ -161,13 +170,31 @@ CREATE TABLE activity_log (
 );
 
 CREATE TABLE user_settings (
-  user_id                UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-  working_hours_start    TIME NOT NULL DEFAULT '09:00',
-  working_hours_end      TIME NOT NULL DEFAULT '18:00',
-  notify_booking_new     BOOLEAN NOT NULL DEFAULT true,
-  notify_booking_cancel  BOOLEAN NOT NULL DEFAULT true,
-  notify_reminder        BOOLEAN NOT NULL DEFAULT true,
-  notify_digest          BOOLEAN NOT NULL DEFAULT false
+  user_id                    UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  working_hours_start        TIME NOT NULL DEFAULT '09:00',
+  working_hours_end          TIME NOT NULL DEFAULT '18:00',
+  notify_booking_new         BOOLEAN NOT NULL DEFAULT true,
+  notify_booking_cancel      BOOLEAN NOT NULL DEFAULT true,
+  notify_reminder            BOOLEAN NOT NULL DEFAULT true,
+  notify_digest              BOOLEAN NOT NULL DEFAULT false,
+  slack_notify_booking_new   BOOLEAN NOT NULL DEFAULT true,
+  slack_notify_booking_cancel BOOLEAN NOT NULL DEFAULT true,
+  slack_notify_reminder      BOOLEAN NOT NULL DEFAULT true,
+  slack_notify_digest        BOOLEAN NOT NULL DEFAULT false
+);
+
+CREATE TABLE oauth_tokens (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  provider      TEXT NOT NULL,
+  access_token  TEXT NOT NULL,
+  refresh_token TEXT,
+  token_type    TEXT NOT NULL DEFAULT 'Bearer',
+  expires_at    TIMESTAMPTZ NOT NULL,
+  scope         TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, provider)
 );
 
 
@@ -186,6 +213,10 @@ $$;
 
 CREATE TRIGGER event_types_updated_at
   BEFORE UPDATE ON event_types
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER oauth_tokens_updated_at
+  BEFORE UPDATE ON oauth_tokens
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- 新規ユーザー登録時に company + profile を自動作成
@@ -249,6 +280,7 @@ ALTER TABLE calendar_events  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE oauth_tokens     ENABLE ROW LEVEL SECURITY;
 
 
 -- ============================================================
@@ -407,4 +439,9 @@ CREATE POLICY "company members can insert activity"
 -- user_settings
 CREATE POLICY "users can manage their own settings"
   ON user_settings FOR ALL
+  USING (user_id = auth.uid());
+
+-- oauth_tokens
+CREATE POLICY "users can manage their own tokens"
+  ON oauth_tokens FOR ALL
   USING (user_id = auth.uid());

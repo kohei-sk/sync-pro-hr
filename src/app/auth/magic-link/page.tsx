@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -19,7 +19,7 @@ import { Loader2 } from "lucide-react";
  *   → このページが hash を読んで setSession()
  *   → /auth/accept-invite へリダイレクト
  */
-export default function MagicLinkCallbackPage() {
+function MagicLinkCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -60,11 +60,18 @@ export default function MagicLinkCallbackPage() {
       });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  return null;
+}
+
+export default function MagicLinkCallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
         <p className="text-sm text-gray-500">認証中...</p>
+        <Suspense>
+          <MagicLinkCallbackContent />
+        </Suspense>
       </div>
     </div>
   );

@@ -46,13 +46,17 @@ export async function PATCH(
 /**
  * DELETE /api/team/[id]
  * 認証必須。チームメンバーを削除する（Auth ユーザーごと削除、プロフィールはカスケード）。
+ *
+ * 削除前に ON DELETE CASCADE が設定されていない参照先を手動でクリーンアップする:
+ *   - notifications (user_id)
+ *   - event_types (user_id) → 削除する管理者自身に再アサイン
  */
 export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { supabase, companyId } = await requireAuth();
+    const { supabase, companyId, user } = await requireAuth();
 
     // 同じ会社のユーザーか確認
     const { data: profile, error: checkError } = await supabase
@@ -66,8 +70,26 @@ export async function DELETE(
       return NextResponse.json({ error: "ユーザーが見つかりません" }, { status: 404 });
     }
 
-    // Service role で Auth ユーザーを削除（profiles はカスケード削除される）
+    // 自分自身の削除は禁止
+    if (params.id === user.id) {
+      return NextResponse.json({ error: "自分自身は削除できません" }, { status: 400 });
+    }
+
     const serviceClient = createServiceClient();
+
+    // 1. notifications を削除（CASCADE なし）
+    await serviceClient
+      .from("notifications")
+      .delete()
+      .eq("user_id", params.id);
+
+    // 2. event_types.user_id を操作者自身に再アサイン（CASCADE なし・NOT NULL）
+    await serviceClient
+      .from("event_types")
+      .update({ user_id: user.id })
+      .eq("user_id", params.id);
+
+    // 3. Auth ユーザーを削除（profiles は auth.users → CASCADE 削除される）
     const { error: deleteError } = await serviceClient.auth.admin.deleteUser(params.id);
 
     if (deleteError) {

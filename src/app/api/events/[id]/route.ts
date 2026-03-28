@@ -4,6 +4,7 @@ import {
   unauthorizedResponse,
   serverErrorResponse,
 } from "@/lib/api-auth";
+import { createServiceClient } from "@/lib/supabase/service";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -70,6 +71,9 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!existing)
       return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
+    // RLS をバイパスするためサービスクライアントを使用（認証チェックは上記で完了済み）
+    const svc = createServiceClient();
+
     const {
       roles,
       exclusion_rules,
@@ -79,22 +83,34 @@ export async function PATCH(request: Request, { params }: Params) {
       ...eventFields
     } = body;
 
-    // イベント本体の更新
-    const { data: updated, error: updateError } = await supabase
-      .from("event_types")
-      .update(eventFields)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
+    // イベント本体の更新（eventFields が空の場合はスキップして既存レコードを取得）
+    let updated: Record<string, unknown>;
+    if (Object.keys(eventFields).length > 0) {
+      const { data, error: updateError } = await svc
+        .from("event_types")
+        .update(eventFields)
+        .eq("id", id)
+        .select()
+        .single();
+      if (updateError) throw updateError;
+      updated = data as Record<string, unknown>;
+    } else {
+      const { data, error: fetchError } = await svc
+        .from("event_types")
+        .select()
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+      updated = data as Record<string, unknown>;
+    }
 
     // ロール・メンバーの全置換
     if (roles !== undefined) {
-      await supabase.from("event_roles").delete().eq("event_id", id);
+      const { error: roleDeleteError } = await svc.from("event_roles").delete().eq("event_id", id);
+      if (roleDeleteError) throw roleDeleteError;
 
       for (const role of roles) {
-        const { data: createdRole, error: roleError } = await supabase
+        const { data: createdRole, error: roleError } = await svc
           .from("event_roles")
           .insert({
             event_id: id,
@@ -112,44 +128,59 @@ export async function PATCH(request: Request, { params }: Params) {
             role_id: createdRole.id,
             user_id: userId,
           }));
-          await supabase.from("event_members").insert(members);
+          await svc.from("event_members").insert(members);
         }
       }
     }
 
     // 除外ルールの全置換
     if (exclusion_rules !== undefined) {
-      await supabase.from("exclusion_rules").delete().eq("event_id", id);
+      const { error: exDelErr } = await svc.from("exclusion_rules").delete().eq("event_id", id);
+      if (exDelErr) throw exDelErr;
       if (exclusion_rules.length) {
-        await supabase
+        const { error: exInsErr } = await svc
           .from("exclusion_rules")
-          .insert(exclusion_rules.map((r: Record<string, unknown>) => ({ ...r, event_id: id })));
+          .insert(exclusion_rules.map((r: Record<string, unknown>) => {
+            const { id: _rid, event_id: _eid, ...rest } = r as any;
+            return { ...rest, event_id: id };
+          }));
+        if (exInsErr) throw exInsErr;
       }
     }
 
     // カスタムフィールドの全置換
     if (custom_fields !== undefined) {
-      await supabase.from("custom_fields").delete().eq("event_id", id);
+      const { error: cfDelErr } = await svc.from("custom_fields").delete().eq("event_id", id);
+      if (cfDelErr) throw cfDelErr;
       if (custom_fields.length) {
-        await supabase
+        const { error: cfInsErr } = await svc
           .from("custom_fields")
           .insert(
             custom_fields.map((f: Record<string, unknown>, idx: number) => ({
-              ...f,
               event_id: id,
+              label: f.label,
+              type: f.type,
+              is_required: f.is_required ?? false,
+              placeholder: f.placeholder ?? null,
               sort_order: f.sort_order ?? idx,
             }))
           );
+        if (cfInsErr) throw cfInsErr;
       }
     }
 
     // リマインダー設定の全置換
     if (reminder_settings !== undefined) {
-      await supabase.from("reminder_settings").delete().eq("event_id", id);
+      const { error: rsDelErr } = await svc.from("reminder_settings").delete().eq("event_id", id);
+      if (rsDelErr) throw rsDelErr;
       if (reminder_settings.length) {
-        await supabase
+        const { error: rsInsErr } = await svc
           .from("reminder_settings")
-          .insert(reminder_settings.map((r: Record<string, unknown>) => ({ ...r, event_id: id })));
+          .insert(reminder_settings.map((r: Record<string, unknown>) => {
+            const { id: _rid, event_id: _eid, ...rest } = r as any;
+            return { ...rest, event_id: id };
+          }));
+        if (rsInsErr) throw rsInsErr;
       }
     }
 
@@ -157,7 +188,7 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED")
       return unauthorizedResponse();
-    console.error(err);
+    console.error("[PATCH /api/events/:id]", err);
     return serverErrorResponse();
   }
 }
