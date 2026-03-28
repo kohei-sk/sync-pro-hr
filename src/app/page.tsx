@@ -35,7 +35,7 @@ function Nav() {
           height={40}
         />
         <nav className="hidden items-center gap-8 md:flex">
-          {["機能", "料金", "よくある質問"].map((label) => (
+          {["機能", "導入事例", "よくある質問"].map((label) => (
             <a
               key={label}
               href={`#${label}`}
@@ -474,7 +474,7 @@ function TestimonialsSection() {
   ];
 
   return (
-    <section className="bg-[#EEF6FC] py-24">
+    <section id="導入事例" className="bg-[#EEF6FC] py-24">
       <div className="mx-auto max-w-7xl px-6">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           Voice
