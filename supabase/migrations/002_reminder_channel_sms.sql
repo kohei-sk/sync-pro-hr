@@ -1,0 +1,2 @@
+-- このマイグレーションは不要になりました（SMS はスコープ外）。
+-- reminder_settings.channel は 'email' のみのまま変更不要です。

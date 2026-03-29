@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Resend } from "resend";
+import { sendMemberReminderEmail } from "@/lib/email";
+import { getMemberEmailsForNotification } from "@/lib/member-notifications";
 
 /**
  * POST /api/cron/reminders
@@ -29,10 +31,13 @@ export async function POST(request: Request) {
         `id,
          channel,
          booking:bookings(
+           id,
            candidate_name,
            candidate_email,
            start_time,
-           event:event_types(title)
+           end_time,
+           booking_members(user_id),
+           event:event_types(title, location_detail)
          ),
          reminder:reminder_settings(message)`
       )
@@ -55,8 +60,10 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const eventTitle = (booking.event as any)?.title ?? "面接";
-      const startTime = new Date(booking.start_time as string).toLocaleString("ja-JP", {
+      const eventData = booking.event as any;
+      const eventTitle = eventData?.title ?? "面接";
+      const locationDetail = eventData?.location_detail ?? null;
+      const startTimeFormatted = new Date(booking.start_time as string).toLocaleString("ja-JP", {
         timeZone: "Asia/Tokyo",
         year: "numeric",
         month: "long",
@@ -64,8 +71,10 @@ export async function POST(request: Request) {
         hour: "2-digit",
         minute: "2-digit",
       });
+      const customMessage = reminder?.message || undefined;
 
       try {
+        // 候補者へリマインダーメール
         await resend.emails.send({
           from: fromEmail,
           to: booking.candidate_email,
@@ -75,16 +84,41 @@ export async function POST(request: Request) {
             <p>面接のリマインダーをお送りします。</p>
             <p>
               <strong>${eventTitle}</strong><br>
-              開始時刻: ${startTime}
+              開始時刻: ${startTimeFormatted}
             </p>
-            ${reminder?.message ? `<p>${reminder.message}</p>` : ""}
+            ${customMessage ? `<p>${customMessage}</p>` : ""}
             <p>よろしくお願いいたします。</p>
           `,
         });
         sent.push(item.id);
       } catch (emailErr) {
-        console.error("[Cron reminders] Email send failed:", emailErr);
+        console.error("[Cron reminders] Candidate email send failed:", emailErr);
         skipped.push(item.id);
+        continue;
+      }
+
+      // 面接官へリマインダーメール（notify_reminder = true のメンバーのみ）
+      const memberIds = ((booking.booking_members as any[]) ?? []).map((m: any) => m.user_id);
+      if (memberIds.length > 0) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+        getMemberEmailsForNotification(memberIds, "notify_reminder")
+          .then((targets) =>
+            Promise.all(
+              targets.map(({ email }) =>
+                sendMemberReminderEmail({
+                  to: email,
+                  candidateName: booking.candidate_name as string,
+                  eventTitle,
+                  startTime: booking.start_time as string,
+                  endTime: booking.end_time as string,
+                  locationDetail,
+                  bookingUrl: `${appUrl}/bookings/${booking.id}`,
+                  customMessage,
+                })
+              )
+            )
+          )
+          .catch((e) => console.error("[Cron reminders] Member email error:", e));
       }
     }
 

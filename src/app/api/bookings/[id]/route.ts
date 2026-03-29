@@ -5,6 +5,9 @@ import {
   serverErrorResponse,
 } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendBookingCancellationEmail, sendMemberCancellationEmail } from "@/lib/email";
+import { getMemberEmailsForNotification } from "@/lib/member-notifications";
+import { getValidAccessToken, deleteCalendarEvent } from "@/lib/google-calendar";
 
 /**
  * GET /api/bookings/[id]
@@ -92,7 +95,7 @@ export async function PATCH(
       .eq("id", params.id)
       .select(
         `
-        id, event_id, candidate_name, event_types(title, company_id)
+        id, event_id, candidate_name, candidate_email, start_time, end_time, event_types(title, company_id, companies(name))
       `
       )
       .single();
@@ -107,6 +110,7 @@ export async function PATCH(
       const booking = data as any;
       const eventTitle = booking.event_types?.title || "";
       const candidateName = booking.candidate_name || "";
+      const companyName: string | undefined = booking.event_types?.companies?.name ?? undefined;
 
       // アサインされていたメンバーに通知
       const { data: assignedMembers } = await supabase
@@ -134,6 +138,47 @@ export async function PATCH(
         description: `${candidateName} さんの ${eventTitle} の予約が管理者によりキャンセルされました`,
         metadata: { booking_id: params.id, cancelled_by: "admin" },
       });
+
+      // Google Calendar イベントを削除（fire-and-forget）
+      deleteBookingCalendarEventById(createServiceClient(), params.id).catch((e) =>
+        console.error("[Bookings] Calendar event deletion failed:", e)
+      );
+
+      // 面接官へキャンセル通知メール（fire-and-forget）
+      if (assignedMembers && assignedMembers.length > 0) {
+        const cancelledBookingForMembers = data as any;
+        const memberUserIds = assignedMembers.map((m: any) => m.user_id);
+        getMemberEmailsForNotification(memberUserIds, "notify_booking_cancel")
+          .then((targets) =>
+            Promise.all(
+              targets.map(({ email }) =>
+                sendMemberCancellationEmail({
+                  to: email,
+                  candidateName,
+                  eventTitle,
+                  startTime: cancelledBookingForMembers.start_time,
+                  endTime: cancelledBookingForMembers.end_time,
+                  cancelledByAdmin: true,
+                })
+              )
+            )
+          )
+          .catch((e) => console.error("[Bookings] Member cancel email error:", e));
+      }
+
+      // 候補者へキャンセル通知メール（fire-and-forget）
+      const cancelledBooking = data as any;
+      if (cancelledBooking.candidate_email) {
+        sendBookingCancellationEmail({
+          to: cancelledBooking.candidate_email,
+          candidateName,
+          eventTitle,
+          companyName,
+          startTime: cancelledBooking.start_time,
+          endTime: cancelledBooking.end_time,
+          cancelledByAdmin: true,
+        }).catch((e) => console.error("[Bookings] Cancel email error:", e));
+      }
     }
 
     return NextResponse.json({ success: true });
@@ -203,4 +248,21 @@ export async function DELETE(
     if (err?.message === "UNAUTHORIZED") return unauthorizedResponse();
     return serverErrorResponse();
   }
+}
+
+async function deleteBookingCalendarEventById(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  bookingId: string
+): Promise<void> {
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("google_calendar_event_id, google_calendar_owner_id")
+    .eq("id", bookingId)
+    .single();
+
+  if (!booking?.google_calendar_event_id || !booking?.google_calendar_owner_id) return;
+
+  const accessToken = await getValidAccessToken(supabase, booking.google_calendar_owner_id);
+  await deleteCalendarEvent(accessToken, booking.google_calendar_event_id);
 }

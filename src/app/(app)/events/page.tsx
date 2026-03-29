@@ -140,12 +140,12 @@ function EventCard({
               {event.duration}分
             </span>
             <span className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
               {event.location_type === "online"
-                ? "オンライン"
+                ? <><Video className="h-3.5 w-3.5" />オンライン</>
                 : event.location_type === "in-person"
-                  ? "対面"
-                  : "電話"}
+                  ? <><MapPin className="h-3.5 w-3.5" />対面</>
+                  : <><Phone className="h-3.5 w-3.5" />電話</>
+              }
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
@@ -294,15 +294,10 @@ function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMemb
             )}
           </dt>
           <dd>
-            {event.location_type === "online"
-              ? "オンライン"
-              : event.location_type === "in-person"
-                ? "対面"
-                : "電話"}
-            {event.location_detail && (
-              <span className="text-xs text-gray-400 pl-2">
-                {event.location_detail}
-              </span>
+            {event.location_type === "online" ? (
+              event.location_detail ?? "Google Meet（自動生成）"
+            ) : (
+              event.location_detail ?? "-"
             )}
           </dd>
         </dl>
@@ -480,9 +475,7 @@ function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMemb
             {event.reminder_settings.map((r) => (
               <li key={r.id}>
                 <div className="text-sm flex items-center">
-                  {{ email: "メール", sms: "SMS", both: "メール + SMS" }[
-                    r.channel
-                  ]}
+                  {"メール"}
                   <p className="text-xs ml-2">
                     {"（"}
                     {r.timing.value}

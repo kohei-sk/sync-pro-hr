@@ -288,7 +288,7 @@ function DifferentiatorSection() {
     },
     {
       label: "候補者へのリマインド通知",
-      desc: "メール、SMS",
+      desc: "メール",
       pitasuke: true,
       general: true,
       spreadsheet: false,
@@ -396,7 +396,7 @@ function FeaturesSection() {
     {
       icon: Clock,
       title: "候補者リマインド",
-      body: "メール、SMS候補者にリマインド。面接の1時間前・1日前など細かい設定可能。",
+      body: "候補者にメールでリマインド。面接の1時間前・1日前など細かい設定可能。",
     },
     {
       icon: Form,

@@ -21,6 +21,7 @@ import {
   CalendarSync,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
@@ -59,6 +60,7 @@ export default function TeamPage() {
   const [newRole, setNewRole] = useState<"admin" | "member">("member");
   const [savingPermission, setSavingPermission] = useState(false);
   const [reconnectingId, setReconnectingId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // チームメンバー取得
   useEffect(() => {
@@ -69,10 +71,21 @@ export default function TeamPage() {
   async function fetchMembers() {
     setLoading(true);
     try {
+      // 現在のユーザーIDを取得
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+
       const res = await fetch("/api/team");
       if (res.ok) {
-        const data = await res.json();
+        const data: TeamMember[] = await res.json();
         setMembers(Array.isArray(data) ? data : []);
+
+        // 現在のユーザーの role を確認
+        if (currentUserId) {
+          const me = data.find((m) => m.id === currentUserId);
+          setIsAdmin(me?.role === "admin");
+        }
       }
     } catch {
       toast.error("メンバーの取得に失敗しました");
@@ -205,10 +218,12 @@ export default function TeamPage() {
         <div className="header-col">
           <h1 className="header-title">チームメンバー</h1>
         </div>
-        <button className="btn btn-primary" onClick={() => setInviteOpen(true)}>
-          <Plus className="h-4 w-4" />
-          メンバー招待
-        </button>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => setInviteOpen(true)}>
+            <Plus className="h-4 w-4" />
+            メンバー招待
+          </button>
+        )}
       </header>
 
       {/* Summary Cards */}
@@ -348,74 +363,76 @@ export default function TeamPage() {
                   </div>
 
                   {/* Actions */}
-                  <div
-                    className="flex items-center gap-1 shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                  >
-                    <DropdownMenu
-                      align="right"
-                      trigger={
-                        <button
-                          className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
-                          disabled={isReconnecting}
-                        >
-                          {isReconnecting ? (
-                            <span className="spinner h-4 w-4" />
-                          ) : (
-                            <MoreVertical className="h-4 w-4" />
-                          )}
-                        </button>
-                      }
-                      items={
-                        isInvited
-                          ? [
-                            {
-                              label: "招待を取り消す",
-                              icon: XCircle,
-                              variant: "danger" as const,
-                              onClick: () => setDeleteTarget(member),
-                            },
-                          ]
-                          : [
-                            ...(member.calendar_status === "error"
-                              ? [
-                                {
-                                  label: "カレンダーを再接続",
-                                  icon: RefreshCw,
-                                  onClick: () => handleReconnect(member.id),
-                                },
-                              ]
-                              : []),
-                            ...(member.calendar_status === "not_connected"
-                              ? [
-                                {
-                                  label: "カレンダーを接続",
-                                  icon: CalendarPlus,
-                                  onClick: () => handleReconnect(member.id),
-                                },
-                              ]
-                              : []),
-                            ...((member.calendar_status === "error" ||
-                              member.calendar_status === "not_connected")
-                              ? [{ separator: true as const }]
-                              : []),
-                            {
-                              label: "権限を変更",
-                              icon: Shield,
-                              onClick: () => openPermissionModal(member),
-                            },
-                            { separator: true as const },
-                            {
-                              label: "メンバーを削除",
-                              icon: Trash2,
-                              variant: "danger" as const,
-                              onClick: () => setDeleteTarget(member),
-                            },
-                          ]
-                      }
-                    />
-                  </div>
+                  {isAdmin && (
+                    <div
+                      className="flex items-center gap-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <DropdownMenu
+                        align="right"
+                        trigger={
+                          <button
+                            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
+                            disabled={isReconnecting}
+                          >
+                            {isReconnecting ? (
+                              <span className="spinner h-4 w-4" />
+                            ) : (
+                              <MoreVertical className="h-4 w-4" />
+                            )}
+                          </button>
+                        }
+                        items={
+                          isInvited
+                            ? [
+                              {
+                                label: "招待を取り消す",
+                                icon: XCircle,
+                                variant: "danger" as const,
+                                onClick: () => setDeleteTarget(member),
+                              },
+                            ]
+                            : [
+                              ...(member.calendar_status === "error"
+                                ? [
+                                  {
+                                    label: "カレンダーを再接続",
+                                    icon: RefreshCw,
+                                    onClick: () => handleReconnect(member.id),
+                                  },
+                                ]
+                                : []),
+                              ...(member.calendar_status === "not_connected"
+                                ? [
+                                  {
+                                    label: "カレンダーを接続",
+                                    icon: CalendarPlus,
+                                    onClick: () => handleReconnect(member.id),
+                                  },
+                                ]
+                                : []),
+                              ...((member.calendar_status === "error" ||
+                                member.calendar_status === "not_connected")
+                                ? [{ separator: true as const }]
+                                : []),
+                              {
+                                label: "権限を変更",
+                                icon: Shield,
+                                onClick: () => openPermissionModal(member),
+                              },
+                              { separator: true as const },
+                              {
+                                label: "メンバーを削除",
+                                icon: Trash2,
+                                variant: "danger" as const,
+                                onClick: () => setDeleteTarget(member),
+                              },
+                            ]
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Sync info bar */}

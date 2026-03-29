@@ -85,7 +85,7 @@ type NewRole = {
   memberIds: string[];
 };
 
-type ReminderChannel = "email" | "sms" | "both";
+type ReminderChannel = "email";
 type ReminderUnit = "hours" | "days";
 
 type NewReminder = {
@@ -187,6 +187,7 @@ export default function NewEventPage() {
     buffer_after: 15,
     location_type: "online" as "online" | "in-person" | "phone",
     location_detail: "",
+    onlineMeetType: "meet" as "meet" | "other",
     scheduling_mode: "weekday" as "pool" | "fixed" | "weekday",
     color: "#3b82f6",
     isPublic: true,
@@ -281,7 +282,10 @@ export default function NewEventPage() {
         buffer_before: formData.buffer_before,
         buffer_after: formData.buffer_after,
         location_type: formData.location_type,
-        location_detail: formData.location_detail || undefined,
+        location_detail:
+          formData.location_type === "online" && formData.onlineMeetType === "meet"
+            ? undefined
+            : formData.location_detail || undefined,
         status: formData.isPublic ? "active" : "draft",
         scheduling_mode: formData.scheduling_mode,
         color: formData.color,
@@ -760,7 +764,12 @@ export default function NewEventPage() {
                       <button
                         key={loc.type}
                         onClick={() =>
-                          setFormData({ ...formData, location_type: loc.type })
+                          setFormData({
+                            ...formData,
+                            location_type: loc.type,
+                            onlineMeetType: "meet",
+                            location_detail: "",
+                          })
                         }
                         className={cn(
                           "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ring-1 transition-colors h-[42px]",
@@ -775,7 +784,35 @@ export default function NewEventPage() {
                     ))}
                   </div>
                 </div>
-                {formData.location_type && (
+                {formData.location_type === "online" && (
+                  <div className="flex gap-3">
+                    {[
+                      { value: "meet" as const, label: "Google Meet（自動生成）" },
+                      { value: "other" as const, label: "その他" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            onlineMeetType: opt.value,
+                            location_detail: "",
+                          })
+                        }
+                        className={cn(
+                          "tracking-tight rounded-lg px-2 py-1.5 text-xs font-medium ring-1 transition-colors",
+                          formData.onlineMeetType === opt.value
+                            ? "bg-primary-50 text-primary-700 ring-primary-300"
+                            : "text-gray-600 ring-gray-200 hover:ring-gray-300"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {formData.location_type && (formData.location_type !== "online" || formData.onlineMeetType === "other") && (
                   <div>
                     <label className="label">場所の詳細</label>
                     <input
@@ -790,7 +827,7 @@ export default function NewEventPage() {
                       }
                       placeholder={
                         formData.location_type === "online"
-                          ? "Google Meet / Zoom URL"
+                          ? "Zoom URL など"
                           : formData.location_type === "in-person"
                             ? "会議室名や住所"
                             : "電話番号"
@@ -1806,19 +1843,7 @@ export default function NewEventPage() {
                         {editingReminderId === reminder.id ? (
                           <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                             <p className="text-sm font-semibold">リマインドを編集</p>
-                            <div className="grid grid-cols-3 gap-3">
-                              <div>
-                                <label className="label">送信チャネル</label>
-                                <select
-                                  className="select mt-1"
-                                  value={editReminderDraft.channel}
-                                  onChange={(e) => setEditReminderDraft({ ...editReminderDraft, channel: e.target.value as ReminderChannel })}
-                                >
-                                  <option value="email">メール</option>
-                                  <option value="sms">SMS</option>
-                                  <option value="both">メール + SMS</option>
-                                </select>
-                              </div>
+                            <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="label">タイミング（数値）</label>
                                 <input
@@ -1863,7 +1888,7 @@ export default function NewEventPage() {
                           <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                             <div>
                               <p className="text-sm font-medium">
-                                {reminder.channel === "email" ? "メール" : reminder.channel === "sms" ? "SMS" : "メール + SMS"}
+                                メール
                               </p>
                               <p className="mt-0.5 text-xs text-gray-500">
                                 {reminder.timing_value}{reminder.timing_unit === "hours" ? "時間前" : "日前"}
@@ -1898,19 +1923,7 @@ export default function NewEventPage() {
                 {showReminderForm ? (
                   <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                     <p className="text-sm font-semibold">新しいリマインド</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <label className="label">送信チャネル</label>
-                        <select
-                          className="select mt-1"
-                          value={reminderDraft.channel}
-                          onChange={(e) => setReminderDraft({ ...reminderDraft, channel: e.target.value as ReminderChannel })}
-                        >
-                          <option value="email">メール</option>
-                          <option value="sms">SMS</option>
-                          <option value="both">メール + SMS</option>
-                        </select>
-                      </div>
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="label">タイミング（数値）</label>
                         <input
@@ -2045,11 +2058,13 @@ export default function NewEventPage() {
                     </dt>
                     <dd>
                       {formData.location_type === "online"
-                        ? "オンライン"
+                        ? formData.onlineMeetType === "meet"
+                          ? <>オンライン<span className="text-xs text-gray-400 pl-2">Google Meet 自動生成</span></>
+                          : <>オンライン{formData.location_detail && <span className="text-xs text-gray-400 pl-2">{formData.location_detail}</span>}</>
                         : formData.location_type === "in-person"
                           ? "対面"
                           : "電話"}
-                      {formData.location_detail && (
+                      {formData.location_type !== "online" && formData.location_detail && (
                         <span className="text-xs text-gray-400 pl-2">
                           {formData.location_detail}
                         </span>
@@ -2259,7 +2274,7 @@ export default function NewEventPage() {
                     {reminders.map((r) => (
                       <li key={r.id}>
                         <div className="text-sm flex items-center">
-                          {{ email: "メール", sms: "SMS", both: "メール + SMS" }[r.channel]}
+                          {"メール"}
                           <p className="text-xs ml-2">
                             （{r.timing_value}{r.timing_unit === "hours" ? "時間" : "日"}前）
                           </p>

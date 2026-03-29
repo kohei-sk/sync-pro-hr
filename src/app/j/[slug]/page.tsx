@@ -549,7 +549,13 @@ export default function BookingPage() {
                     </div>
                     <div className="flex justify-between gap-4">
                       <dt className="text-gray-500">場所</dt>
-                      <dd className="flex-1 font-medium text-right">{event.location_detail || "—"}</dd>
+                      <dd className="flex-1 font-medium text-right">
+                        {event.location_type === "online"
+                          ? "オンライン"
+                          : event.location_type === "in-person"
+                            ? "対面"
+                            : "電話"}
+                      </dd>
                     </div>
                   </dl>
                 </div>

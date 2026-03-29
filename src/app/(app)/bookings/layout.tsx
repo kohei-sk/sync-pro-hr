@@ -194,7 +194,6 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
                 {filteredBookings.map((booking) => {
                   const event = booking.event_types;
                   const statusInfo = statusConfig[booking.displayStatus];
-                  const StatusIcon = statusInfo.icon;
                   const isSelected = selectedId === booking.id;
 
                   return (

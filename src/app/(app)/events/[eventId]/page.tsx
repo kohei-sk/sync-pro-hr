@@ -2096,19 +2096,7 @@ function ReminderTab({
   ) {
     return (
       <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="label">送信チャネル</label>
-            <select
-              className="select mt-1"
-              value={draft.channel}
-              onChange={(e) => setDraft({ ...draft, channel: e.target.value as ReminderChannel })}
-            >
-              <option value="email">メール</option>
-              <option value="sms">SMS</option>
-              <option value="both">メール + SMS</option>
-            </select>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">タイミング（数値）</label>
             <input
@@ -2161,7 +2149,7 @@ function ReminderTab({
       <div className="mb-6">
         <h3 className="text-lg font-bold">リマインド設定</h3>
         <p className="mt-1 text-sm text-gray-500">
-          候補者へのリマインドメール・SMSを設定します
+          候補者へのリマインドメールを設定します
         </p>
       </div>
 
@@ -2180,7 +2168,7 @@ function ReminderTab({
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
                 <div>
                   <p className="text-sm font-medium">
-                    {reminder.channel === "email" ? "メール" : reminder.channel === "sms" ? "SMS" : "メール + SMS"}
+                    メール
                   </p>
                   <p className="mt-0.5 text-sm text-gray-500">
                     {reminder.timing.value}{reminder.timing.unit === "hours" ? "時間前" : "日前"}
