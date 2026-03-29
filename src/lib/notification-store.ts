@@ -22,6 +22,7 @@ export type NotificationItem = {
 // ============================================================
 let notifications: NotificationItem[] = [];
 let fetched = false;
+let initialized = false; // fetch完了後にtrue（ローディング判定用）
 let epoch = 0; // 変更検知用のカウンター
 
 const listeners = new Set<() => void>();
@@ -55,10 +56,12 @@ export async function ensureFetched(): Promise<void> {
     if (res.ok) {
       const data = await res.json();
       notifications = Array.isArray(data) ? data : [];
-      emit();
     }
   } catch {
     fetched = false; // リトライを許可
+  } finally {
+    initialized = true;
+    emit();
   }
 }
 
@@ -71,6 +74,18 @@ export async function markAsRead(id: string): Promise<void> {
   );
   emit();
   await fetch(`/api/notifications/${id}`, { method: "PATCH" }).catch(() => {});
+}
+
+/**
+ * 画面遷移時専用: 状態を更新するが emit() しない（再レンダーなし）。
+ * カードが消えてから遷移するのを防ぐ。
+ */
+export function markAsReadSilent(id: string): void {
+  notifications = notifications.map((n) =>
+    n.id === id ? { ...n, is_read: true } : n
+  );
+  // emit しない → React の再レンダーが起きないのでカードが消えない
+  fetch(`/api/notifications/${id}`, { method: "PATCH" }).catch(() => {});
 }
 
 export async function markAllAsRead(): Promise<void> {
@@ -100,6 +115,7 @@ export function useNotificationStore() {
   return {
     notifications,
     unreadCount,
+    loading: !initialized,
     isRead,
     markAsRead,
     markAllAsRead,

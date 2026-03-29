@@ -11,8 +11,9 @@ import {
   ChevronDown,
   Filter,
 } from "lucide-react";
-import { useNotificationStore } from "@/lib/notification-store";
+import { useNotificationStore, markAsReadSilent } from "@/lib/notification-store";
 import { useToast } from "@/components/ui/Toast";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import type { NotificationType } from "@/types";
 
@@ -68,9 +69,10 @@ function getRelativeTime(timestamp: string): string {
 export default function NotificationsPage() {
   const router = useRouter();
   const toast = useToast();
-  const { notifications, isRead, markAsRead, markAllAsRead } = useNotificationStore();
+  const { notifications, loading, isRead, markAllAsRead } = useNotificationStore();
   const [activeTab, setActiveTab] = useState<NotificationTab>("unread");
   const [filterType, setFilterType] = useState<"all" | NotificationType>("all");
+  const [markingAll, setMarkingAll] = useState(false);
 
   const unreadNotifications = notifications.filter((n) => !n.is_read);
   const readNotifications = notifications.filter((n) => n.is_read);
@@ -86,14 +88,20 @@ export default function NotificationsPage() {
     document.querySelector("main")?.scrollTo({ top: 96, left: 0 });
   }, [activeTab]);
 
-  async function handleNotificationClick(notificationId: string, bookingId: string) {
-    await markAsRead(notificationId);
+  function handleNotificationClick(notificationId: string, bookingId: string) {
+    // emit() を呼ばない silent 版でカードを消さずに遷移
+    markAsReadSilent(notificationId);
     router.push(`/bookings/${bookingId}`);
   }
 
   async function handleMarkAllAsRead() {
-    await markAllAsRead();
-    toast.success("すべて既読にしました");
+    setMarkingAll(true);
+    try {
+      await markAllAsRead();
+      toast.success("すべて既読にしました");
+    } finally {
+      setMarkingAll(false);
+    }
   }
 
   return (
@@ -136,9 +144,14 @@ export default function NotificationsPage() {
             {activeTab === "unread" && unreadNotifications.length > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
+                disabled={markingAll}
                 className="btn btn-ghost btn-size-s ml-auto"
               >
-                <CheckCheck className="h-3.5 w-3.5" />
+                {markingAll ? (
+                  <span className="spinner" />
+                ) : (
+                  <CheckCheck className="h-3.5 w-3.5" />
+                )}
                 すべて既読にする
               </button>
             )}
@@ -163,7 +176,9 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notification list */}
-      {displayedNotifications.length === 0 ? (
+      {loading ? (
+        <PageLoader />
+      ) : displayedNotifications.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-16">
           <Bell className="mb-3 h-10 w-10 text-gray-300" />
           <p className="text-sm font-medium text-gray-500">

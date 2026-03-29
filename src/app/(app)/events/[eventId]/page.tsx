@@ -25,6 +25,7 @@ import {
   CalendarDays,
   Check,
   X,
+  AlertCircle,
 } from "lucide-react";
 import {
   DndContext,
@@ -41,8 +42,10 @@ import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, generateId } from "@/lib/utils";
 import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
-import { deleteEventTypeApi, updateEventTypeApi } from "@/lib/event-store";
+import { deleteEventTypeApi, updateEventTypeApi, useEventTypes } from "@/lib/event-store";
 import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
+import { FieldError } from "@/components/ui/FieldError";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
@@ -125,6 +128,7 @@ export default function EventDetailPage() {
   const eventId = params.eventId as string;
   const [activeTab, setActiveTab] = useState<TabId>("basic");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const { navigate, pendingHref, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty);
   const { members: teamMembers } = useTeamMembers();
@@ -165,21 +169,19 @@ export default function EventDetailPage() {
   }, [activeTab]);
 
   async function handleDelete() {
+    setDeleting(true);
     try {
       await deleteEventTypeApi(eventId);
       toast.success("イベントを削除しました");
       router.push("/events");
     } catch {
       toast.error("削除に失敗しました");
+      setDeleting(false);
     }
   }
 
   if (event === undefined) {
-    return (
-      <div className="text-center py-12">
-        <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-200 mx-auto" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (event === null) {
@@ -299,6 +301,7 @@ export default function EventDetailPage() {
 
       <ConfirmDialog
         open={deleteOpen}
+        loading={deleting}
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
         title="イベントを削除しますか？"
@@ -346,7 +349,9 @@ type BasicFormState = {
 function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirtyChange: (dirty: boolean) => void; onSaved?: (updated: EventType) => void }) {
   const toast = useToast();
   const { members: teamMembers } = useTeamMembers();
+  const { eventTypes } = useEventTypes();
   const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState<BasicFormState>({
     isPublic: event.status === "active",
     color: EVENT_COLORS.includes(event.color ?? "") ? event.color! : EVENT_COLORS[0],
@@ -356,6 +361,17 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
     bufferBefore: event.buffer_before,
     bufferAfter: event.buffer_after,
   });
+
+  function touch(key: string) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function getTitleError(): string | undefined {
+    if (!form.title.trim()) return "イベント名を入力してください";
+    const otherTitles = eventTypes.filter((e) => e.id !== event.id).map((e) => e.title);
+    if (otherTitles.includes(form.title.trim())) return "同じ名前のイベントが既に存在します";
+    return undefined;
+  }
 
   function updateField<K extends keyof BasicFormState>(key: K, value: BasicFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -374,7 +390,14 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
       </div>
       <div>
         <label className="label">イベント名</label>
-        <input type="text" className="input mt-1" value={form.title} onChange={(e) => updateField("title", e.target.value)} />
+        <input
+          type="text"
+          className={cn("input mt-1", touched.title && getTitleError() && "input-error")}
+          value={form.title}
+          onChange={(e) => { updateField("title", e.target.value); touch("title"); }}
+          onBlur={() => touch("title")}
+        />
+        {touched.title && <FieldError message={getTitleError()} />}
       </div>
       <div>
         <label className="label">説明</label>
@@ -480,6 +503,8 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
         <button
           disabled={saving}
           onClick={async () => {
+            touch("title");
+            if (getTitleError()) return;
             setSaving(true);
             try {
               const updated = await updateEventTypeApi(event.id, {
@@ -502,6 +527,7 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
           }}
           className="btn btn-primary"
         >
+          {saving && <span className="spinner" />}
           {saving ? "保存中..." : "変更を保存"}
         </button>
       </div>
@@ -528,8 +554,16 @@ function ReceptionTab({
   };
   const [settings, setSettings] = useState<ReceptionSettings>({ ...initial });
   const [saving, setSaving] = useState(false);
+  const [touchedDays, setTouchedDays] = useState(false);
+
+  function getAllowedDaysError(): string | undefined {
+    if (settings.allowed_days.every((d) => !d)) return "1日以上選択してください";
+    return undefined;
+  }
 
   async function handleSave() {
+    setTouchedDays(true);
+    if (getAllowedDaysError()) return;
     setSaving(true);
     try {
       await updateEventTypeApi(event.id, { reception_settings: settings });
@@ -546,6 +580,7 @@ function ReceptionTab({
     const updated = [...settings.allowed_days];
     updated[i] = !updated[i];
     setSettings({ ...settings, allowed_days: updated });
+    setTouchedDays(true);
     onDirtyChange(true);
   }
 
@@ -588,6 +623,7 @@ function ReceptionTab({
                 </label>
               ))}
             </div>
+            {touchedDays && <FieldError message={getAllowedDaysError()} />}
             <button
               type="button"
               className={cn("toggle-btn w-[250px] mt-4", settings.accept_holidays && "toggle-btn-active")}
@@ -603,6 +639,7 @@ function ReceptionTab({
       </div>
       <div className="mt-6 flex justify-end">
         <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving && <span className="spinner" />}
           {saving ? "保存中..." : "変更を保存"}
         </button>
       </div>
@@ -654,6 +691,42 @@ function TeamTab({
   const [weekdaySchedule, setWeekdaySchedule] = useState<WeekdayScheduleEntry[]>(initialWeekdaySchedule);
   const [weekdayMemberDropdownOpen, setWeekdayMemberDropdownOpen] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  function touch(key: string) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function getWeekdayMemberError(dayIndex: number): string | undefined {
+    const entry = weekdaySchedule.find((e) => e.day_index === dayIndex);
+    const memberIds = entry?.member_ids ?? [];
+    const requiredCount = entry?.required_count ?? 1;
+    if (memberIds.length === 0) return "メンバーを1人以上追加してください";
+    if (requiredCount > memberIds.length) return "必要人数が登録人数を超えています";
+    return undefined;
+  }
+
+  function getFixedMembersError(): string | undefined {
+    if (fixedMemberIds.length === 0) return "メンバーを1人以上追加してください";
+    return undefined;
+  }
+
+  function getRoleMembersError(roleId: string): string | undefined {
+    const role = localRoles.find((r) => r.id === roleId);
+    if (!role) return undefined;
+    if (role.memberIds.length === 0) return "メンバーを1人以上追加してください";
+    if (role.required_count > role.memberIds.length) return "必要人数が登録人数を超えています";
+    return undefined;
+  }
+
+  function hasTeamErrors(): boolean {
+    if (mode === "weekday") {
+      return enabledDays.some(({ dayIndex }) => getWeekdayMemberError(dayIndex));
+    }
+    if (mode === "fixed") return !!getFixedMembersError();
+    if (mode === "pool") return localRoles.some((r) => getRoleMembersError(r.id));
+    return false;
+  }
 
   // Pool mode: role inline editing
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
@@ -676,11 +749,13 @@ function TeamTab({
       onDirtyChange(true);
     }
     setShowMemberPicker(false);
+    touch("fixedMembers");
   }
 
   function removeFixedMember(userId: string) {
     setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
     onDirtyChange(true);
+    touch("fixedMembers");
   }
 
   function handleFixedMemberDragEnd(event: DragEndEvent) {
@@ -742,6 +817,7 @@ function TeamTab({
     );
     setMemberPickerRoleId(null);
     onDirtyChange(true);
+    touch(`role_${roleId}_members`);
   }
 
   function removeMemberFromRole(roleId: string, userId: string) {
@@ -752,6 +828,7 @@ function TeamTab({
       })
     );
     onDirtyChange(true);
+    touch(`role_${roleId}_members`);
   }
 
   function handleRoleMemberDragEnd(event: DragEndEvent, roleId: string) {
@@ -803,6 +880,7 @@ function TeamTab({
     });
     setWeekdayMemberDropdownOpen(null);
     onDirtyChange(true);
+    touch(`weekday_${dayIndex}`);
   }
 
   function removeWeekdayMember(dayIndex: number, userId: string) {
@@ -810,6 +888,7 @@ function TeamTab({
       prev.map((e) => e.day_index === dayIndex ? { ...e, member_ids: e.member_ids.filter((id) => id !== userId) } : e)
     );
     onDirtyChange(true);
+    touch(`weekday_${dayIndex}`);
   }
 
   function handleWeekdayMemberDragEnd(dragEvent: DragEndEvent, dayIndex: number) {
@@ -841,6 +920,17 @@ function TeamTab({
   }
 
   async function handleSave() {
+    // 全touched をセットしてバリデーション
+    const touchKeys: string[] = [];
+    if (mode === "weekday") {
+      enabledDays.forEach(({ dayIndex }) => touchKeys.push(`weekday_${dayIndex}`));
+    } else if (mode === "fixed") {
+      touchKeys.push("fixedMembers");
+    } else if (mode === "pool") {
+      localRoles.forEach((r) => touchKeys.push(`role_${r.id}_members`));
+    }
+    setTouched((prev) => { const next = { ...prev }; touchKeys.forEach((k) => { next[k] = true; }); return next; });
+    if (hasTeamErrors()) return;
     setSaving(true);
     try {
       // スケジューリングモードに応じてロールを構築
@@ -1039,6 +1129,7 @@ function TeamTab({
                         )}
                       </div>
                     </div>
+                    {touched[`weekday_${dayIndex}`] && <FieldError message={getWeekdayMemberError(dayIndex)} />}
                   </div>
                 );
               })}
@@ -1140,8 +1231,8 @@ function TeamTab({
                 </div>
               )}
             </div>
-
           </div>
+          {touched.fixedMembers && <FieldError message={getFixedMembersError()} />}
         </div>
       )}
 
@@ -1317,6 +1408,7 @@ function TeamTab({
                             )}
                           </div>
                         </div>
+                        {touched[`role_${role.id}_members`] && <FieldError message={getRoleMembersError(role.id)} />}
                       </div>
                     )}
                   </SortableRow>
@@ -1385,6 +1477,7 @@ function TeamTab({
 
       <div className="mt-6 flex justify-end">
         <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving && <span className="spinner" />}
           {saving ? "保存中..." : "変更を保存"}
         </button>
       </div>
@@ -1418,24 +1511,55 @@ function ExclusionForm({
   onSave,
   onCancel,
   saveLabel = "保存",
+  existingNames = [],
+  excludeId,
 }: {
   draft: ExclusionDraft;
   onDraftChange: (d: ExclusionDraft) => void;
   onSave: () => void;
   onCancel: () => void;
   saveLabel?: string;
+  existingNames?: string[];
+  excludeId?: string;
 }) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  function touch(key: string) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function getNameError(): string | undefined {
+    if (!draft.name.trim()) return "ルール名を入力してください";
+    const isDuplicate = existingNames.some((n) => n === draft.name.trim());
+    if (isDuplicate) return "同じ名前のルールが既に存在します";
+    return undefined;
+  }
+
+  function getDateError(): string | undefined {
+    if (!draft.recurring && !draft.specific_date) return "対象日を選択してください";
+    return undefined;
+  }
+
+  function handleSave() {
+    const allTouched = { name: true, date: true };
+    setTouched(allTouched);
+    if (getNameError() || getDateError()) return;
+    onSave();
+  }
+
   return (
     <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
       <div>
         <label className="label">ルール名</label>
         <input
           type="text"
-          className="input mt-1"
+          className={cn("input mt-1", touched.name && getNameError() && "input-error")}
           value={draft.name}
-          onChange={(e) => onDraftChange({ ...draft, name: e.target.value })}
+          onChange={(e) => { onDraftChange({ ...draft, name: e.target.value }); touch("name"); }}
+          onBlur={() => touch("name")}
           placeholder="例: 昼休み"
         />
+        {touched.name && <FieldError message={getNameError()} />}
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
@@ -1454,7 +1578,7 @@ function ExclusionForm({
           <button
             onClick={() => onDraftChange({ ...draft, recurring: !draft.recurring })}
             className={cn(
-              "toggle-btn",
+              "toggle-btn mt-1",
               draft.recurring ? "toggle-btn-active" : ""
             )}
           >
@@ -1490,10 +1614,11 @@ function ExclusionForm({
             <label className="label">対象日</label>
             <input
               type="date"
-              className="input mt-1"
+              className={cn("input mt-1", touched.date && getDateError() && "input-error")}
               value={draft.specific_date ?? ""}
-              onChange={(e) => onDraftChange({ ...draft, specific_date: e.target.value })}
+              onChange={(e) => { onDraftChange({ ...draft, specific_date: e.target.value }); touch("date"); }}
             />
+            {touched.date && <FieldError message={getDateError()} />}
           </div>
         )}
         {draft.type === "time-range" && (
@@ -1515,7 +1640,7 @@ function ExclusionForm({
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
-        <button onClick={onSave} disabled={!draft.name.trim()} className="btn btn-primary">
+        <button onClick={handleSave} className="btn btn-primary">
           {saveLabel}
         </button>
       </div>
@@ -1534,7 +1659,6 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
   const [saving, setSaving] = useState(false);
 
   function handleAddSave() {
-    if (!addDraft.name.trim()) return;
     const newRule: ExclusionRule = {
       id: generateId(),
       event_id: eventId,
@@ -1592,6 +1716,10 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
   }
 
   async function handleSaveAll() {
+    if (showAddForm || editingId !== null) {
+      toast.error("編集中のフォームを保存またはキャンセルしてから保存してください");
+      return;
+    }
     setSaving(true);
     try {
       await updateEventTypeApi(eventId, { exclusion_rules: localRules });
@@ -1623,6 +1751,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
                 onSave={() => handleEditSave(rule.id)}
                 onCancel={() => setEditingId(null)}
                 saveLabel="保存"
+                existingNames={localRules.filter((r) => r.id !== rule.id).map((r) => r.name)}
               />
             ) : (
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
@@ -1676,6 +1805,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
           onSave={handleAddSave}
           onCancel={() => { setShowAddForm(false); setAddDraft({ ...EMPTY_EXCLUSION_DRAFT }); }}
           saveLabel="追加"
+          existingNames={localRules.map((r) => r.name)}
         />
       )}
 
@@ -1688,6 +1818,7 @@ function ExclusionsTab({ rules, eventId, onDirtyChange }: { rules: ExclusionRule
 
       <div className="mt-6 flex justify-end">
         <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary">
+          {saving && <span className="spinner" />}
           {saving ? "保存中..." : "変更を保存"}
         </button>
       </div>
@@ -1708,6 +1839,102 @@ const EMPTY_FIELD_DRAFT: FieldDraft = {
   placeholder: "",
   is_required: false,
 };
+
+function FieldForm({
+  draft,
+  setDraft,
+  onSave,
+  onCancel,
+  saveLabel = "保存",
+  existingLabels = [],
+}: {
+  draft: FieldDraft;
+  setDraft: (d: FieldDraft) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saveLabel?: string;
+  existingLabels?: string[];
+}) {
+  const [touched, setTouchedLocal] = useState<Record<string, boolean>>({});
+
+  function touchField(key: string) {
+    setTouchedLocal((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function getLabelError(): string | undefined {
+    if (!draft.label.trim()) return "ラベル名を入力してください";
+    if (existingLabels.includes(draft.label.trim())) return "同じラベル名が既に存在します";
+    return undefined;
+  }
+
+  function handleSave() {
+    setTouchedLocal({ label: true });
+    if (getLabelError()) return;
+    onSave();
+  }
+
+  return (
+    <div className="mt-2 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className="label">ラベル名</label>
+          <input
+            type="text"
+            className={cn("input mt-1", touched.label && getLabelError() && "input-error")}
+            value={draft.label}
+            onChange={(e) => { setDraft({ ...draft, label: e.target.value }); touchField("label"); }}
+            onBlur={() => touchField("label")}
+            placeholder="例: 希望年収"
+          />
+          {touched.label && <FieldError message={getLabelError()} />}
+        </div>
+        <div className="w-[220px]">
+          <label className="label">必須項目</label>
+          <button
+            onClick={() => setDraft({ ...draft, is_required: !draft.is_required })}
+            className={cn("toggle-btn", draft.is_required ? "toggle-btn-active" : "")}
+          >
+            <span>必須項目にする</span>
+            <div className={cn("toggle-btn-switch", draft.is_required ? "toggle-btn-switch-active" : "")}>
+              <span className={cn("toggle-btn-switch-handle", draft.is_required ? "toggle-btn-switch-handle-active" : "")} />
+            </div>
+          </button>
+        </div>
+      </div>
+      <div>
+        <label className="label">タイプ</label>
+        <select
+          className="select mt-1"
+          value={draft.type}
+          onChange={(e) => setDraft({ ...draft, type: e.target.value as FieldType })}
+        >
+          <option value="text">テキスト</option>
+          <option value="email">メール</option>
+          <option value="tel">電話番号</option>
+          <option value="multiline">複数行テキスト</option>
+          <option value="url">URL</option>
+          <option value="file">ファイル</option>
+        </select>
+      </div>
+      <div>
+        <label className="label">プレースホルダー</label>
+        <input
+          type="text"
+          className="input mt-1"
+          value={draft.placeholder}
+          onChange={(e) => setDraft({ ...draft, placeholder: e.target.value })}
+          placeholder="入力例を記入（任意）"
+        />
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
+        <button onClick={handleSave} className="btn btn-primary">
+          {saveLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; eventId: string; onDirtyChange: (dirty: boolean) => void }) {
   const toast = useToast();
@@ -1738,7 +1965,6 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
   }
 
   function handleAddField() {
-    if (!addDraft.label.trim()) return;
     const maxOrder = localFields.reduce((max, f) => Math.max(max, f.sort_order), 0);
     const newField: CustomField = {
       id: generateId(),
@@ -1789,6 +2015,10 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
   }
 
   async function handleSaveAll() {
+    if (showAddForm || editingId !== null) {
+      toast.error("編集中のフォームを保存またはキャンセルしてから保存してください");
+      return;
+    }
     setSaving(true);
     try {
       await updateEventTypeApi(eventId, { custom_fields: localFields });
@@ -1801,75 +2031,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
     }
   }
 
-  function renderFieldForm(
-    draft: FieldDraft,
-    setDraft: (d: FieldDraft) => void,
-    onSave: () => void,
-    onCancel: () => void,
-    formId: string,
-    saveLabel = "保存"
-  ) {
-    return (
-      <div className="mt-2 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="label">ラベル名</label>
-            <input
-              type="text"
-              className="input mt-1"
-              value={draft.label}
-              onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-              placeholder="例: 希望年収"
-            />
-          </div>
-          <div className="w-[220px]">
-            <label className="label">必須項目</label>
-            <button
-              onClick={() => setDraft({ ...draft, is_required: !draft.is_required })}
-              className={cn("toggle-btn", draft.is_required ? "toggle-btn-active" : "")}
-            >
-              <span>必須項目にする</span>
-              <div className={cn("toggle-btn-switch", draft.is_required ? "toggle-btn-switch-active" : "")}>
-                <span className={cn("toggle-btn-switch-handle", draft.is_required ? "toggle-btn-switch-handle-active" : "")} />
-              </div>
-            </button>
-          </div>
-        </div>
-        <div>
-          <label className="label">タイプ</label>
-          <select
-            className="select mt-1"
-            value={draft.type}
-            onChange={(e) => setDraft({ ...draft, type: e.target.value as FieldType })}
-          >
-            <option value="text">テキスト</option>
-            <option value="email">メール</option>
-            <option value="tel">電話番号</option>
-            <option value="multiline">複数行テキスト</option>
-            <option value="url">URL</option>
-            <option value="file">ファイル</option>
-          </select>
-        </div>
-        <div>
-          <label className="label">プレースホルダー</label>
-          <input
-            type="text"
-            className="input mt-1"
-            value={draft.placeholder}
-            onChange={(e) => setDraft({ ...draft, placeholder: e.target.value })}
-            placeholder="入力例を記入（任意）"
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn btn-ghost">キャンセル</button>
-          <button onClick={onSave} disabled={!draft.label.trim()} className="btn btn-primary">
-            {saveLabel}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // no renderFieldForm - replaced by FieldForm component below
 
   return (
     <div>
@@ -1928,14 +2090,14 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
               {localFields.map((field) => (
                 <div key={field.id} className="mb-2">
                   {editingId === field.id ? (
-                    renderFieldForm(
-                      editDraft,
-                      setEditDraft,
-                      () => handleEditSave(field.id),
-                      () => setEditingId(null),
-                      field.id,
-                      "保存"
-                    )
+                    <FieldForm
+                      draft={editDraft}
+                      setDraft={setEditDraft}
+                      onSave={() => handleEditSave(field.id)}
+                      onCancel={() => setEditingId(null)}
+                      saveLabel="保存"
+                      existingLabels={localFields.filter((f) => f.id !== field.id).map((f) => f.label)}
+                    />
                   ) : (
                     <SortableRow id={field.id}>
                       {(handle) => (
@@ -1982,13 +2144,15 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
 
 
       {/* Add form */}
-      {showAddForm && renderFieldForm(
-        addDraft,
-        setAddDraft,
-        handleAddField,
-        () => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); },
-        "new",
-        "追加"
+      {showAddForm && (
+        <FieldForm
+          draft={addDraft}
+          setDraft={setAddDraft}
+          onSave={handleAddField}
+          onCancel={() => { setShowAddForm(false); setAddDraft({ ...EMPTY_FIELD_DRAFT }); }}
+          saveLabel="追加"
+          existingLabels={localFields.map((f) => f.label)}
+        />
       )}
 
       {!showAddForm && (
@@ -2000,6 +2164,7 @@ function FormTab({ fields, eventId, onDirtyChange }: { fields: CustomField[]; ev
 
       <div className="mt-6 flex justify-end">
         <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary">
+          {saving && <span className="spinner" />}
           {saving ? "保存中..." : "変更を保存"}
         </button>
       </div>
@@ -2020,6 +2185,84 @@ const EMPTY_REMINDER_DRAFT: ReminderDraft = {
   timing: { value: 24, unit: "hours" },
   message: "",
 };
+
+function ReminderFormInner({
+  draft,
+  setDraft,
+  onSave,
+  onCancel,
+  saveLabel = "保存",
+}: {
+  draft: ReminderDraft;
+  setDraft: (d: ReminderDraft) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saveLabel?: string;
+}) {
+  const [touchedMsg, setTouchedMsg] = useState(false);
+
+  function getMessageError(): string | undefined {
+    if (!draft.message.trim()) return "メッセージ内容を入力してください";
+    return undefined;
+  }
+
+  function handleSave() {
+    setTouchedMsg(true);
+    if (getMessageError()) return;
+    onSave();
+  }
+
+  return (
+    <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">タイミング（数値）</label>
+          <input
+            type="number"
+            className="input mt-1"
+            min={1}
+            value={draft.timing.value}
+            onChange={(e) =>
+              setDraft({ ...draft, timing: { ...draft.timing, value: parseInt(e.target.value) || 1 } })
+            }
+          />
+        </div>
+        <div>
+          <label className="label">単位</label>
+          <select
+            className="select mt-1"
+            value={draft.timing.unit}
+            onChange={(e) =>
+              setDraft({ ...draft, timing: { ...draft.timing, unit: e.target.value as "hours" | "days" } })
+            }
+          >
+            <option value="hours">時間前</option>
+            <option value="days">日前</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="label">メッセージ内容</label>
+        <textarea
+          className={cn("input mt-1", touchedMsg && getMessageError() && "input-error")}
+          placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
+          value={draft.message}
+          onChange={(e) => { setDraft({ ...draft, message: e.target.value }); setTouchedMsg(true); }}
+          onBlur={() => setTouchedMsg(true)}
+        />
+        {touchedMsg && <FieldError message={getMessageError()} />}
+      </div>
+      <div className="flex justify-end gap-2">
+        <button onClick={onCancel} className="btn btn-ghost">
+          キャンセル
+        </button>
+        <button onClick={handleSave} className="btn btn-primary">
+          {saveLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function ReminderTab({
   eventId,
@@ -2075,6 +2318,10 @@ function ReminderTab({
   }
 
   async function handleSave() {
+    if (showAddForm || editingId !== null) {
+      toast.error("編集中のフォームを保存またはキャンセルしてから保存してください");
+      return;
+    }
     setSaving(true);
     try {
       await updateEventTypeApi(eventId, { reminder_settings: reminders });
@@ -2087,62 +2334,7 @@ function ReminderTab({
     }
   }
 
-  function renderReminderForm(
-    draft: ReminderDraft,
-    setDraft: (d: ReminderDraft) => void,
-    onSave: () => void,
-    onCancel: () => void,
-    saveLabel = "保存"
-  ) {
-    return (
-      <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">タイミング（数値）</label>
-            <input
-              type="number"
-              className="input mt-1"
-              min={1}
-              value={draft.timing.value}
-              onChange={(e) =>
-                setDraft({ ...draft, timing: { ...draft.timing, value: parseInt(e.target.value) || 1 } })
-              }
-            />
-          </div>
-          <div>
-            <label className="label">単位</label>
-            <select
-              className="select mt-1"
-              value={draft.timing.unit}
-              onChange={(e) =>
-                setDraft({ ...draft, timing: { ...draft.timing, unit: e.target.value as "hours" | "days" } })
-              }
-            >
-              <option value="hours">時間前</option>
-              <option value="days">日前</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="label">メッセージ内容</label>
-          <textarea
-            className="input mt-1"
-            placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
-            value={draft.message}
-            onChange={(e) => setDraft({ ...draft, message: e.target.value })}
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="btn btn-ghost">
-            キャンセル
-          </button>
-          <button onClick={onSave} className="btn btn-primary">
-            {saveLabel}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // no renderReminderForm - replaced by ReminderFormInner component
 
   return (
     <div>
@@ -2157,13 +2349,13 @@ function ReminderTab({
         {reminders.map((reminder) => (
           <div key={reminder.id}>
             {editingId === reminder.id ? (
-              renderReminderForm(
-                editDraft,
-                setEditDraft,
-                () => handleEditSave(reminder.id),
-                () => setEditingId(null),
-                "保存"
-              )
+              <ReminderFormInner
+                draft={editDraft}
+                setDraft={setEditDraft}
+                onSave={() => handleEditSave(reminder.id)}
+                onCancel={() => setEditingId(null)}
+                saveLabel="保存"
+              />
             ) : (
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
                 <div>
@@ -2198,12 +2390,14 @@ function ReminderTab({
           </div>
         ))}
 
-        {showAddForm && renderReminderForm(
-          addDraft,
-          setAddDraft,
-          handleAddSave,
-          () => { setShowAddForm(false); setAddDraft({ ...EMPTY_REMINDER_DRAFT }); },
-          "追加"
+        {showAddForm && (
+          <ReminderFormInner
+            draft={addDraft}
+            setDraft={setAddDraft}
+            onSave={handleAddSave}
+            onCancel={() => { setShowAddForm(false); setAddDraft({ ...EMPTY_REMINDER_DRAFT }); }}
+            saveLabel="追加"
+          />
         )}
 
         {!showAddForm && (
@@ -2216,6 +2410,7 @@ function ReminderTab({
 
       <div className="mt-6 flex justify-end">
         <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          {saving && <span className="spinner" />}
           {saving ? "保存中..." : "変更を保存"}
         </button>
       </div>
