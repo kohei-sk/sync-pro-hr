@@ -419,6 +419,8 @@ CREATE POLICY "company members can view team calendar events"
   );
 
 -- notifications
+-- INSERT はサービスロールクライアントから行うためポリシー不要
+-- （route handler で createServiceClient() を使用）
 CREATE POLICY "users can view their own notifications"
   ON notifications FOR SELECT
   USING (user_id = auth.uid());
@@ -445,3 +447,18 @@ CREATE POLICY "users can manage their own settings"
 CREATE POLICY "users can manage their own tokens"
   ON oauth_tokens FOR ALL
   USING (user_id = auth.uid());
+
+
+-- ============================================================
+-- PART 5: Supabase Realtime 有効化
+-- ============================================================
+
+-- 通知・予約のリアルタイム更新に必要
+-- 既存プロジェクトへの適用: Supabase SQL Editor で実行してください
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+ALTER PUBLICATION supabase_realtime ADD TABLE bookings;
+
+-- Supabase Realtime が RLS ポリシー（user_id = auth.uid()）を評価して
+-- 正しいクライアントにイベントを届けるために REPLICA IDENTITY FULL が必須。
+-- 既存プロジェクトへの適用: Supabase SQL Editor で実行してください
+ALTER TABLE notifications REPLICA IDENTITY FULL;
