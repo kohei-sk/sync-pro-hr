@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Clock,
   CalendarDays,
+  AlertCircle,
 } from "lucide-react";
 import {
   DndContext,
@@ -39,8 +40,10 @@ import { useDndSensors } from "@/hooks/useDndSensors";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { cn, generateId } from "@/lib/utils";
-import { createEventTypeApi } from "@/lib/event-store";
+import { createEventTypeApi, useEventTypes } from "@/lib/event-store";
 import { useToast } from "@/components/ui/Toast";
+import { FieldError } from "@/components/ui/FieldError";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
 import { WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
 import type { ExclusionRule, CustomField } from "@/types";
@@ -177,8 +180,12 @@ function SortableRow({
 export default function NewEventPage() {
   const router = useRouter();
   const toast = useToast();
-  const { members: teamMembers } = useTeamMembers();
+  const { members: teamMembers, loading: membersLoading } = useTeamMembers();
+  const [creating, setCreating] = useState(false);
+  const { eventTypes } = useEventTypes();
+  const existingTitles = eventTypes.map((e) => e.title);
   const [step, setStep] = useState<Step>("basic");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -255,6 +262,26 @@ export default function NewEventPage() {
   const currentStepIndex = steps.findIndex((s) => s.id === step);
 
   function handleNext() {
+    if (step === "basic") {
+      // 全フィールドを touched にして検証
+      const enabledDaysList = WEEKDAY_LABELS.map((_, i) => i).filter((i) => receptionSettings.allowedDays[i]);
+      const keys = [
+        "title",
+        "location_detail",
+        "allowedDays",
+        ...enabledDaysList.map((i) => `weekday_${i}`),
+        "fixedMembers",
+        ...roles.flatMap((r) => [`role_${r.id}_name`, `role_${r.id}_members`]),
+      ];
+      touchAll(keys);
+      if (hasBasicErrors()) return;
+    } else if (step === "options") {
+      // 展開中フォームがある場合はブロック
+      if (showExclusionForm || showFieldForm || showReminderForm) {
+        toast.error("編集中のフォームを保存またはキャンセルしてから次へ進んでください");
+        return;
+      }
+    }
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < steps.length) {
       setStep(steps[nextIndex].id);
@@ -273,7 +300,125 @@ export default function NewEventPage() {
     document.querySelector('main')?.scrollTo(0, 0);
   }, [step]);
 
+  // --- バリデーション helpers ---
+  function touch(key: string) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function touchAll(keys: string[]) {
+    setTouched((prev) => {
+      const next = { ...prev };
+      keys.forEach((k) => { next[k] = true; });
+      return next;
+    });
+  }
+
+  function getTitleError(): string | undefined {
+    if (!formData.title.trim()) return "イベント名を入力してください";
+    if (existingTitles.includes(formData.title.trim())) return "同じ名前のイベントが既に存在します";
+    return undefined;
+  }
+
+  function getLocationDetailError(): string | undefined {
+    const needsDetail = formData.location_type !== "online" || formData.onlineMeetType === "other";
+    if (needsDetail && !formData.location_detail.trim()) return "場所の詳細を入力してください";
+    return undefined;
+  }
+
+  function getAllowedDaysError(): string | undefined {
+    if (receptionSettings.allowedDays.every((d) => !d)) return "1日以上選択してください";
+    return undefined;
+  }
+
+  function getWeekdayMemberError(dayIndex: number): string | undefined {
+    const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex);
+    const memberIds = entry?.memberIds ?? [];
+    const requiredCount = entry?.requiredCount ?? 1;
+    if (memberIds.length === 0) return "メンバーを1人以上追加してください";
+    if (requiredCount > memberIds.length) return "必要人数が登録人数を超えています";
+    return undefined;
+  }
+
+  function getFixedMembersError(): string | undefined {
+    if (fixedMemberIds.length === 0) return "メンバーを1人以上追加してください";
+    return undefined;
+  }
+
+  function getRoleNameError(roleId: string): string | undefined {
+    const role = roles.find((r) => r.id === roleId);
+    if (!role) return undefined;
+    if (!role.name.trim()) return "役割名を入力してください";
+    return undefined;
+  }
+
+  function getRoleMembersError(roleId: string): string | undefined {
+    const role = roles.find((r) => r.id === roleId);
+    if (!role) return undefined;
+    if (role.memberIds.length === 0) return "メンバーを1人以上追加してください";
+    if (role.required_count > role.memberIds.length) return "必要人数が登録人数を超えています";
+    return undefined;
+  }
+
+  function getExclusionNameError(name: string, excludeId?: string): string | undefined {
+    if (!name.trim()) return "ルール名を入力してください";
+    const isDuplicate = newExclusionRules.some((r) => r.id !== excludeId && r.name === name.trim());
+    if (isDuplicate) return "同じ名前のルールが既に存在します";
+    return undefined;
+  }
+
+  function getExclusionDateError(draft: ExclusionDraft): string | undefined {
+    if (!draft.recurring && !draft.specific_date) return "対象日を選択してください";
+    return undefined;
+  }
+
+  function getFieldLabelError(label: string, excludeId?: string): string | undefined {
+    if (!label.trim()) return "ラベル名を入力してください";
+    const isDuplicate = formFields.some((f) => f.id !== excludeId && f.label === label.trim());
+    if (isDuplicate) return "同じラベル名が既に存在します";
+    return undefined;
+  }
+
+  function getReminderMessageError(message: string): string | undefined {
+    if (!message.trim()) return "メッセージ内容を入力してください";
+    return undefined;
+  }
+
+  function hasBasicErrors(): boolean {
+    if (getTitleError()) return true;
+    if (getLocationDetailError()) return true;
+    if (getAllowedDaysError()) return true;
+    if (formData.scheduling_mode === "weekday") {
+      const enabledDaysList = WEEKDAY_LABELS.map((_, i) => i).filter((i) => receptionSettings.allowedDays[i]);
+      if (enabledDaysList.some((i) => getWeekdayMemberError(i))) return true;
+    }
+    if (formData.scheduling_mode === "fixed" && getFixedMembersError()) return true;
+    if (formData.scheduling_mode === "pool") {
+      if (roles.some((r) => getRoleNameError(r.id) || getRoleMembersError(r.id))) return true;
+    }
+    return false;
+  }
+
+  function hasExclusionDraftErrors(): boolean {
+    return !!(getExclusionNameError(exclusionDraft.name) || getExclusionDateError(exclusionDraft));
+  }
+
+  function hasFieldDraftErrors(): boolean {
+    return !!getFieldLabelError(fieldDraft.label);
+  }
+
+  function hasReminderDraftErrors(): boolean {
+    return !!getReminderMessageError(reminderDraft.message);
+  }
+
+  function hasOptionsExpandedErrors(): boolean {
+    if (showExclusionForm && hasExclusionDraftErrors()) return true;
+    if (showFieldForm && hasFieldDraftErrors()) return true;
+    if (showReminderForm && hasReminderDraftErrors()) return true;
+    return false;
+  }
+
   async function handleCreate() {
+    setCreating(true);
     try {
       await createEventTypeApi({
         title: formData.title,
@@ -324,6 +469,8 @@ export default function NewEventPage() {
       router.push("/events");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "作成に失敗しました");
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -346,6 +493,7 @@ export default function NewEventPage() {
 
   function updateRole(roleId: string, updates: Partial<NewRole>) {
     setRoles(roles.map((r) => (r.id === roleId ? { ...r, ...updates } : r)));
+    if ("name" in updates) touch(`role_${roleId}_name`);
   }
 
   function addMemberToRole(roleId: string, userId: string) {
@@ -357,6 +505,7 @@ export default function NewEventPage() {
       })
     );
     setMemberDropdownOpen(null);
+    touch(`role_${roleId}_members`);
   }
 
   function removeMemberFromRole(roleId: string, userId: string) {
@@ -366,6 +515,7 @@ export default function NewEventPage() {
         return { ...r, memberIds: r.memberIds.filter((id) => id !== userId) };
       })
     );
+    touch(`role_${roleId}_members`);
   }
 
   function addFixedMember(userId: string) {
@@ -373,15 +523,20 @@ export default function NewEventPage() {
       setFixedMemberIds([...fixedMemberIds, userId]);
     }
     setFixedMemberDropdownOpen(false);
+    touch("fixedMembers");
   }
 
   function removeFixedMember(userId: string) {
     setFixedMemberIds(fixedMemberIds.filter((id) => id !== userId));
+    touch("fixedMembers");
   }
 
   function handleAddReminder() {
+    touchAll(["reminderMessage"]);
+    if (hasReminderDraftErrors()) return;
     setReminders([...reminders, { id: generateId(), ...reminderDraft, is_enabled: true }]);
     setReminderDraft({ ...EMPTY_REMINDER_DRAFT });
+    setTouched((prev) => { const next = { ...prev }; delete next.reminderMessage; return next; });
     setShowReminderForm(false);
   }
 
@@ -396,7 +551,8 @@ export default function NewEventPage() {
   }
 
   function addExclusionRule() {
-    if (!exclusionDraft.name.trim()) return;
+    touchAll(["exclusionName", "exclusionDate"]);
+    if (hasExclusionDraftErrors()) return;
     setNewExclusionRules([
       ...newExclusionRules,
       { ...exclusionDraft, id: generateId() },
@@ -410,6 +566,7 @@ export default function NewEventPage() {
       start_time: "09:00",
       end_time: "10:00",
     });
+    setTouched((prev) => { const next = { ...prev }; delete next.exclusionName; delete next.exclusionDate; return next; });
     setShowExclusionForm(false);
   }
 
@@ -443,9 +600,11 @@ export default function NewEventPage() {
 
   // フォームフィールド操作
   function addFormField() {
-    if (!fieldDraft.label.trim()) return;
+    touchAll(["fieldLabel"]);
+    if (hasFieldDraftErrors()) return;
     setFormFields([...formFields, { ...fieldDraft, id: generateId() }]);
     setFieldDraft({ ...EMPTY_FIELD_DRAFT });
+    setTouched((prev) => { const next = { ...prev }; delete next.fieldLabel; return next; });
     setShowFieldForm(false);
   }
 
@@ -512,6 +671,7 @@ export default function NewEventPage() {
     const updated = [...receptionSettings.allowedDays];
     updated[dayIndex] = !updated[dayIndex];
     setReceptionSettings({ ...receptionSettings, allowedDays: updated });
+    touch("allowedDays");
   }
 
   // 曜日モード: メンバー追加
@@ -525,6 +685,7 @@ export default function NewEventPage() {
       return [...prev, { dayIndex, memberIds: [userId], requiredCount: 1 }];
     });
     setWeekdayMemberDropdownOpen(null);
+    touch(`weekday_${dayIndex}`);
   }
 
   // 曜日モード: 必要人数更新
@@ -536,6 +697,7 @@ export default function NewEventPage() {
       }
       return [...prev, { dayIndex, memberIds: [], requiredCount: count }];
     });
+    touch(`weekday_${dayIndex}`);
   }
 
   // 曜日モード: メンバー削除
@@ -543,6 +705,7 @@ export default function NewEventPage() {
     setWeekdaySchedule((prev) =>
       prev.map((e) => e.dayIndex === dayIndex ? { ...e, memberIds: e.memberIds.filter((id) => id !== userId) } : e)
     );
+    touch(`weekday_${dayIndex}`);
   }
 
   // 曜日モード: メンバー並び替え
@@ -654,16 +817,16 @@ export default function NewEventPage() {
                   <label className="label">イベント名</label>
                   <input
                     type="text"
-                    className="input mt-1"
+                    className={cn("input mt-1", touched.title && getTitleError() && "input-error")}
                     value={formData.title}
                     onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        title: e.target.value,
-                      });
+                      setFormData({ ...formData, title: e.target.value });
+                      touch("title");
                     }}
+                    onBlur={() => touch("title")}
                     placeholder="例: エンジニア一次面接"
                   />
+                  {touched.title && <FieldError message={getTitleError()} />}
                 </div>
                 <div>
                   <label className="label">説明</label>
@@ -817,14 +980,13 @@ export default function NewEventPage() {
                     <label className="label">場所の詳細</label>
                     <input
                       type="text"
-                      className="input mt-1"
+                      className={cn("input mt-1", touched.location_detail && getLocationDetailError() && "input-error")}
                       value={formData.location_detail}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          location_detail: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, location_detail: e.target.value });
+                        touch("location_detail");
+                      }}
+                      onBlur={() => touch("location_detail")}
                       placeholder={
                         formData.location_type === "online"
                           ? "Zoom URL など"
@@ -833,6 +995,7 @@ export default function NewEventPage() {
                             : "電話番号"
                       }
                     />
+                    {touched.location_detail && <FieldError message={getLocationDetailError()} />}
                   </div>
                 )}
 
@@ -918,6 +1081,7 @@ export default function NewEventPage() {
                         </button>
                       ))}
                     </div>
+                    {touched.allowedDays && <FieldError message={getAllowedDaysError()} />}
                     <button
                       type="button"
                       className={cn("toggle-btn w-[250px] mt-4", receptionSettings.acceptHolidays && "toggle-btn-active")}
@@ -1018,6 +1182,11 @@ export default function NewEventPage() {
                   </div>
                 </div>
 
+                {/* Member mode sections */}
+                {membersLoading ? (
+                  <PageLoader />
+                ) : (
+                  <>
                 {/* Weekday mode */}
                 {formData.scheduling_mode === "weekday" && (
                   <div>
@@ -1120,6 +1289,7 @@ export default function NewEventPage() {
                                   )}
                                 </div>
                               </div>
+                              {touched[`weekday_${dayIndex}`] && <FieldError message={getWeekdayMemberError(dayIndex)} />}
                             </div>
                           );
                         })}
@@ -1209,6 +1379,7 @@ export default function NewEventPage() {
                           )}
                         </div>
                       </div>
+                      {touched.fixedMembers && <FieldError message={getFixedMembersError()} />}
                     </div>
                   </div>
                 )}
@@ -1240,15 +1411,17 @@ export default function NewEventPage() {
                                       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
                                         {roleIndex + 1}
                                       </span>
-                                      <input
-                                        type="text"
-                                        className="input flex-1"
-                                        value={role.name}
-                                        onChange={(e) =>
-                                          updateRole(role.id, { name: e.target.value })
-                                        }
-                                        placeholder="役割名（例: 面接官）"
-                                      />
+                                      <div className="flex-1">
+                                        <input
+                                          type="text"
+                                          className={cn("input w-full", touched[`role_${role.id}_name`] && getRoleNameError(role.id) && "input-error")}
+                                          value={role.name}
+                                          onChange={(e) => updateRole(role.id, { name: e.target.value })}
+                                          onBlur={() => touch(`role_${role.id}_name`)}
+                                          placeholder="役割名（例: 面接官）"
+                                        />
+                                        {touched[`role_${role.id}_name`] && <FieldError message={getRoleNameError(role.id)} />}
+                                      </div>
                                       <div className="flex items-center gap-2 shrink-0">
                                         <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
                                         <input
@@ -1364,6 +1537,7 @@ export default function NewEventPage() {
                                         </div>
                                       )}
                                     </div>
+                                    {touched[`role_${role.id}_members`] && <FieldError message={getRoleMembersError(role.id)} />}
                                   </div>
                                 </div>
                               )}
@@ -1381,6 +1555,8 @@ export default function NewEventPage() {
                       </button>
                     </div>
                   </div>
+                )}
+                  </>
                 )}
               </div>
             </div>
@@ -1481,7 +1657,7 @@ export default function NewEventPage() {
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
                               <button onClick={() => setEditingExclusionId(null)} className="btn btn-ghost">キャンセル</button>
-                              <button onClick={() => saveEditExclusionRule(rule.id)} disabled={!editExclusionDraft.name.trim()} className="btn btn-primary">保存</button>
+                              <button onClick={() => saveEditExclusionRule(rule.id)} disabled={!editExclusionDraft.name.trim() || (!editExclusionDraft.recurring && !editExclusionDraft.specific_date)} className="btn btn-primary">保存</button>
                             </div>
                           </div>
                         ) : (
@@ -1536,11 +1712,13 @@ export default function NewEventPage() {
                       <label className="label">ルール名</label>
                       <input
                         type="text"
-                        className="input mt-1"
+                        className={cn("input mt-1", touched.exclusionName && getExclusionNameError(exclusionDraft.name) && "input-error")}
                         value={exclusionDraft.name}
-                        onChange={(e) => setExclusionDraft({ ...exclusionDraft, name: e.target.value })}
+                        onChange={(e) => { setExclusionDraft({ ...exclusionDraft, name: e.target.value }); touch("exclusionName"); }}
+                        onBlur={() => touch("exclusionName")}
                         placeholder="例: 昼休み、全社定例会議"
                       />
+                      {touched.exclusionName && <FieldError message={getExclusionNameError(exclusionDraft.name)} />}
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
@@ -1611,12 +1789,11 @@ export default function NewEventPage() {
                           <label className="label">対象日</label>
                           <input
                             type="date"
-                            className="input mt-1"
+                            className={cn("input mt-1", touched.exclusionDate && getExclusionDateError(exclusionDraft) && "input-error")}
                             value={exclusionDraft.specific_date ?? ""}
-                            onChange={(e) =>
-                              setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value })
-                            }
+                            onChange={(e) => { setExclusionDraft({ ...exclusionDraft, specific_date: e.target.value }); touch("exclusionDate"); }}
                           />
+                          {touched.exclusionDate && <FieldError message={getExclusionDateError(exclusionDraft)} />}
                         </div>
                       )}
                       {exclusionDraft.type === "time-range" && (
@@ -1649,14 +1826,13 @@ export default function NewEventPage() {
 
                     <div className="flex justify-end gap-2 pt-1">
                       <button
-                        onClick={() => setShowExclusionForm(false)}
+                        onClick={() => { setShowExclusionForm(false); setTouched((prev) => { const n = { ...prev }; delete n.exclusionName; delete n.exclusionDate; return n; }); }}
                         className="btn btn-ghost"
                       >
                         キャンセル
                       </button>
                       <button
                         onClick={addExclusionRule}
-                        disabled={!exclusionDraft.name.trim()}
                         className="btn btn-primary"
                       >
                         追加
@@ -1780,7 +1956,15 @@ export default function NewEventPage() {
                     <div className="flex gap-3">
                       <div className="flex-1">
                         <label className="label">ラベル名</label>
-                        <input type="text" className="input mt-1" value={fieldDraft.label} onChange={(e) => setFieldDraft({ ...fieldDraft, label: e.target.value })} placeholder="例: 希望年収" />
+                        <input
+                          type="text"
+                          className={cn("input mt-1", touched.fieldLabel && getFieldLabelError(fieldDraft.label) && "input-error")}
+                          value={fieldDraft.label}
+                          onChange={(e) => { setFieldDraft({ ...fieldDraft, label: e.target.value }); touch("fieldLabel"); }}
+                          onBlur={() => touch("fieldLabel")}
+                          placeholder="例: 希望年収"
+                        />
+                        {touched.fieldLabel && <FieldError message={getFieldLabelError(fieldDraft.label)} />}
                       </div>
                       <div className="w-[220px]">
                         <label className="label">必須項目</label>
@@ -1812,8 +1996,8 @@ export default function NewEventPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-1">
-                      <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); }} className="btn btn-ghost">キャンセル</button>
-                      <button onClick={addFormField} disabled={!fieldDraft.label.trim()} className="btn btn-primary">追加</button>
+                      <button onClick={() => { setShowFieldForm(false); setFieldDraft({ ...EMPTY_FIELD_DRAFT }); setTouched((prev) => { const n = { ...prev }; delete n.fieldLabel; return n; }); }} className="btn btn-ghost">キャンセル</button>
+                      <button onClick={addFormField} className="btn btn-primary">追加</button>
                     </div>
                   </div>
                 ) : (
@@ -1949,15 +2133,17 @@ export default function NewEventPage() {
                     <div>
                       <label className="label">メッセージ内容</label>
                       <textarea
-                        className="input mt-1 resize-y"
+                        className={cn("input mt-1 resize-y", touched.reminderMessage && getReminderMessageError(reminderDraft.message) && "input-error")}
                         placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
                         value={reminderDraft.message}
-                        onChange={(e) => setReminderDraft({ ...reminderDraft, message: e.target.value })}
+                        onChange={(e) => { setReminderDraft({ ...reminderDraft, message: e.target.value }); touch("reminderMessage"); }}
+                        onBlur={() => touch("reminderMessage")}
                       />
+                      {touched.reminderMessage && <FieldError message={getReminderMessageError(reminderDraft.message)} />}
                     </div>
                     <div className="flex justify-end gap-2 pt-1">
                       <button
-                        onClick={() => { setShowReminderForm(false); setReminderDraft({ ...EMPTY_REMINDER_DRAFT }); }}
+                        onClick={() => { setShowReminderForm(false); setReminderDraft({ ...EMPTY_REMINDER_DRAFT }); setTouched((prev) => { const n = { ...prev }; delete n.reminderMessage; return n; }); }}
                         className="btn btn-ghost"
                       >
                         キャンセル
@@ -2307,13 +2493,13 @@ export default function NewEventPage() {
             戻る
           </button>
           {step === "confirm" ? (
-            <button onClick={handleCreate} className="btn btn-primary">
+            <button onClick={handleCreate} disabled={creating} className="btn btn-primary">
+              {creating && <span className="spinner" />}
               イベントを作成
             </button>
           ) : (
             <button
               onClick={handleNext}
-              disabled={step === "basic" && !formData.title.trim()}
               className="btn btn-primary"
             >
               次へ

@@ -18,6 +18,8 @@ import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { invalidateUser } from "@/lib/user-store";
+import { FieldError } from "@/components/ui/FieldError";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 // ============================================================
 // Types
@@ -119,6 +121,44 @@ function ProfileTab() {
   const [timezone, setTimezone] = useState("Asia/Tokyo");
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  function touch(key: string) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
+  function touchAll(keys: string[]) {
+    setTouched((prev) => {
+      const next = { ...prev };
+      keys.forEach((k) => { next[k] = true; });
+      return next;
+    });
+  }
+  function getNameError(): string | undefined {
+    if (!name.trim()) return "氏名を入力してください";
+    return undefined;
+  }
+  function getEmailError(): string | undefined {
+    if (!email.trim()) return "メールアドレスを入力してください";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "有効なメールアドレスを入力してください";
+    return undefined;
+  }
+  function getCurrentPasswordError(): string | undefined {
+    if (!currentPassword.trim()) return "現在のパスワードを入力してください";
+    return undefined;
+  }
+  function getNewPasswordError(): string | undefined {
+    if (!newPassword.trim()) return "新しいパスワードを入力してください";
+    if (newPassword.length < 8) return "パスワードは8文字以上で入力してください";
+    return undefined;
+  }
+  function getConfirmPasswordError(): string | undefined {
+    if (!confirmPassword.trim()) return "確認用パスワードを入力してください";
+    if (newPassword !== confirmPassword) return "パスワードが一致しません";
+    return undefined;
+  }
 
   useEffect(() => {
     fetch("/api/settings/profile")
@@ -134,6 +174,8 @@ function ProfileTab() {
   }, []);
 
   async function handleSaveProfile() {
+    touchAll(["name", "email"]);
+    if (getNameError() || getEmailError()) return;
     setSavingProfile(true);
     try {
       const res = await fetch("/api/settings/profile", {
@@ -152,10 +194,22 @@ function ProfileTab() {
   }
 
   function handleSavePassword() {
+    touchAll(["currentPassword", "newPassword", "confirmPassword"]);
+    if (getCurrentPasswordError() || getNewPasswordError() || getConfirmPasswordError()) return;
     setSavingPassword(true);
     setTimeout(() => {
       setSavingPassword(false);
       toast.success("パスワードを変更しました");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTouched((prev) => {
+        const next = { ...prev };
+        delete next.currentPassword;
+        delete next.newPassword;
+        delete next.confirmPassword;
+        return next;
+      });
     }, 800);
   }
 
@@ -189,9 +243,11 @@ function ProfileTab() {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input mt-1"
+              onChange={(e) => { setName(e.target.value); touch("name"); }}
+              onBlur={() => touch("name")}
+              className={cn("input mt-1", touched.name && getNameError() && "input-error")}
             />
+            {touched.name && <FieldError message={getNameError()} />}
           </div>
 
           <div>
@@ -199,9 +255,11 @@ function ProfileTab() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input mt-1"
+              onChange={(e) => { setEmail(e.target.value); touch("email"); }}
+              onBlur={() => touch("email")}
+              className={cn("input mt-1", touched.email && getEmailError() && "input-error")}
             />
+            {touched.email && <FieldError message={getEmailError()} />}
           </div>
 
           <div>
@@ -248,16 +306,36 @@ function ProfileTab() {
             <input
               type="password"
               placeholder="••••••••"
-              className="input mt-1"
+              value={currentPassword}
+              onChange={(e) => { setCurrentPassword(e.target.value); touch("currentPassword"); }}
+              onBlur={() => touch("currentPassword")}
+              className={cn("input mt-1", touched.currentPassword && getCurrentPasswordError() && "input-error")}
             />
+            {touched.currentPassword && <FieldError message={getCurrentPasswordError()} />}
           </div>
           <div>
             <label className="label">新しいパスワード</label>
             <input
               type="password"
               placeholder="8文字以上"
-              className="input mt-1"
+              value={newPassword}
+              onChange={(e) => { setNewPassword(e.target.value); touch("newPassword"); }}
+              onBlur={() => touch("newPassword")}
+              className={cn("input mt-1", touched.newPassword && getNewPasswordError() && "input-error")}
             />
+            {touched.newPassword && <FieldError message={getNewPasswordError()} />}
+          </div>
+          <div>
+            <label className="label">パスワードの確認</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => { setConfirmPassword(e.target.value); touch("confirmPassword"); }}
+              onBlur={() => touch("confirmPassword")}
+              className={cn("input mt-1", touched.confirmPassword && getConfirmPasswordError() && "input-error")}
+            />
+            {touched.confirmPassword && <FieldError message={getConfirmPasswordError()} />}
           </div>
         </div>
         <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
@@ -282,6 +360,7 @@ function ProfileTab() {
 
 function NotificationsTab() {
   const toast = useToast();
+  const [loading, setLoading] = useState(true);
   const [emailBookingNew, setEmailBookingNew] = useState(true);
   const [emailBookingCancel, setEmailBookingCancel] = useState(true);
   const [emailReminder, setEmailReminder] = useState(true);
@@ -295,26 +374,27 @@ function NotificationsTab() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/settings/user")
-      .then((r) => r.json())
-      .then((data) => {
-        setEmailBookingNew(data.notify_booking_new ?? true);
-        setEmailBookingCancel(data.notify_booking_cancel ?? true);
-        setEmailReminder(data.notify_reminder ?? true);
-        setEmailDigest(data.notify_digest ?? false);
-        setSlackNotifyBookingNew(data.slack_notify_booking_new ?? false);
-        setSlackNotifyBookingCancel(data.slack_notify_booking_cancel ?? false);
-        setSlackNotifyReminder(data.slack_notify_reminder ?? false);
-        setSlackNotifyDigest(data.slack_notify_digest ?? false);
-      })
-      .catch(() => {});
-
-    fetch("/api/settings/profile")
-      .then((r) => r.json())
-      .then((data) => {
-        setSlackConnected(data.slack_status === "connected");
-      })
-      .catch(() => {});
+    Promise.all([
+      fetch("/api/settings/user")
+        .then((r) => r.json())
+        .then((data) => {
+          setEmailBookingNew(data.notify_booking_new ?? true);
+          setEmailBookingCancel(data.notify_booking_cancel ?? true);
+          setEmailReminder(data.notify_reminder ?? true);
+          setEmailDigest(data.notify_digest ?? false);
+          setSlackNotifyBookingNew(data.slack_notify_booking_new ?? false);
+          setSlackNotifyBookingCancel(data.slack_notify_booking_cancel ?? false);
+          setSlackNotifyReminder(data.slack_notify_reminder ?? false);
+          setSlackNotifyDigest(data.slack_notify_digest ?? false);
+        })
+        .catch(() => {}),
+      fetch("/api/settings/profile")
+        .then((r) => r.json())
+        .then((data) => {
+          setSlackConnected(data.slack_status === "connected");
+        })
+        .catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const emailNotifications = [
@@ -403,6 +483,14 @@ function NotificationsTab() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="card flex items-center justify-center py-16">
+        <span className="spinner" />
+      </div>
+    );
   }
 
   return (
