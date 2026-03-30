@@ -83,19 +83,19 @@ function Hero() {
     <section className="relative overflow-hidden bg-white">
       <div className="flex items-center justify-center mx-auto max-w-6xl px-5 flex-col sm:flex-row sm:px-10">
         <div className="relative flex flex-1 flex-col py-12 md:py-24">
-          <h1 className="text-4xl font-black !leading-tight tracking-tight text-brandNavy text-center sm:text-7xl sm:text-left">
-            複数面接官<span className="text-2xl sm:text-5xl">の</span>予定<span className="text-2xl sm:text-5xl">を</span>
+          <h1 className="text-4xl font-black !leading-[1.3] tracking-tight text-brandNavy text-center sm:text-7xl sm:text-left">
+            <span className="z-[1] relative before:absolute before:left-0 before:bottom-0 before:w-full before:h-4 inline-block before:bg-[#bef2e9] before:content-[''] before:z-[-1] sm:before:h-6">複数面接官</span><span className="text-2xl sm:text-5xl">の</span><span className="z-[1] relative before:absolute before:left-0 before:bottom-0 before:w-full before:h-4 inline-block before:bg-[#bef2e9] before:content-[''] before:z-[-1] sm:before:h-6">予定</span><span className="text-2xl sm:text-5xl">を</span>
             <br />
             <span className="text-brandPrimary-500">ピッタリ合わせる</span>
           </h1>
 
-          <p className="mt-5 max-w-2xl text-base text-brandNavy !leading-relaxed sm:text-lg sm:mt-7">
+          <p className="mt-5 max-w-2xl text-base text-brandNavy !leading-relaxed sm:text-lg sm:mt-8">
             Pitasuke（ピタスケ）は、採用チーム特化型の面接サポートツール。
             <br className="hidden sm:block" />
             日程調整から候補者対応まで、すべてがスムーズに。
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row sm:gap-8 sm:mt-11">
+          <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row sm:gap-8 sm:mt-12">
             <ContactButton className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-10 py-3 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors justify-center w-full sm:w-auto sm:py-4">
               お問い合わせ
               <ArrowRight className="h-4 w-4" />
@@ -113,13 +113,13 @@ function Hero() {
           <Image
             src="/lp/kv.svg"
             alt="Pitasuke"
-            width={400}
+            width={410}
             height={160}
           />
         </div>
       </div>
       {/* social proof */}
-      <div className="pb-12 flex flex-wrap items-center justify-center gap-4 mt-12 sm:gap-[50px] sm:mt-0 sm:pb-24">
+      <div className="pt-4 pb-14 flex flex-wrap items-center justify-center gap-4 mt-12 sm:gap-[50px] sm:mt-0 sm:pb-24">
         {points.map((p) => (
           <div key={p.text} className="flex items-center gap-3 sm:gap-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brandSecondary-50 sm:w-10 sm:h-10">
@@ -157,7 +157,7 @@ function ProblemSection() {
 
   return (
     <section className="bg-gray-50 py-20">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-5 sm:px-10">
         <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
           こんなお悩み、ありませんか？
         </h2>
@@ -214,7 +214,7 @@ function HowItWorks() {
 
   return (
     <section className="bg-white py-24">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-5 sm:px-10">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           How to
         </p>
@@ -304,7 +304,7 @@ function DifferentiatorSection() {
 
   return (
     <section className="bg-brandNavy-light py-24">
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-5xl px-5 sm:px-10">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-400">
           Compare
         </p>
@@ -412,7 +412,7 @@ function FeaturesSection() {
 
   return (
     <section id="機能" className="bg-gray-50 py-24">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-5 sm:px-10">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           Feature
         </p>
@@ -475,7 +475,7 @@ function TestimonialsSection() {
 
   return (
     <section id="導入事例" className="bg-[#EEF6FC] py-24">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-5 sm:px-10">
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           Voice
         </p>
@@ -486,7 +486,7 @@ function TestimonialsSection() {
           {cards.map((c) => (
             <div
               key={c.name}
-              className="px-6 flex flex-col border-r-[1px] border-gray-100 last:border-r-0"
+              className="py-14 first:py-0 last:py-0 px-0 flex flex-col sm:px-6 sm:py-0"
             >
               <div className="text-lg font-bold text-brandNavy">{c.title}</div>
               <div className="mt-5 flex gap-0.5">
@@ -570,7 +570,7 @@ function FinalCTA() {
 function Footer() {
   return (
     <footer className="py-10 pb-5">
-      <div className="mx-auto max-w-7xl px-10">
+      <div className="mx-auto max-w-7xl px-5 sm:px-10">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div className="flex items-center gap-2">
             <Image

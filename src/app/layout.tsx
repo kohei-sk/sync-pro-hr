@@ -3,9 +3,9 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
-  title: "Pitasuke - スマートな面接日程調整",
+  title: "Pitasuke ピタスケ｜採用チーム特化型の面接サポートツール。",
   description:
-    "複数の面接官の空き時間を自動合成し、最適な面接スケジュールを提案するプロフェッショナルな日程調整SaaS",
+    "Pitasuke（ピタスケ）は、採用チーム特化型の面接フォローアップSaasサービスです。複数面接官のカレンダーを自動照会し、最適な面接スケジュールを候補者に提案します。日程調整から候補者対応まで、すべてがスムーズになります。",
 };
 
 export default function RootLayout({
