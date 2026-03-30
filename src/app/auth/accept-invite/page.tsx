@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -13,7 +15,6 @@ import { createClient } from "@/lib/supabase/client";
  */
 export default function AcceptInvitePage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +28,7 @@ export default function AcceptInvitePage() {
 
   useEffect(() => {
     // セッションが確立されているか確認
-    supabase.auth.getUser().then(({ data }) => {
+    createClient().auth.getUser().then(({ data }) => {
       if (!data.user) {
         // セッションなし → ログインへ
         router.replace("/login");
@@ -53,6 +54,7 @@ export default function AcceptInvitePage() {
     }
 
     setIsLoading(true);
+    const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
