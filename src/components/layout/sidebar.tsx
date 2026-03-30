@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNotificationStore } from "@/lib/notification-store";
+import { useNotificationStore, initRealtime, stopRealtime } from "@/lib/notification-store";
 import { useCurrentUser } from "@/lib/user-store";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { createClient } from "@/lib/supabase/client";
@@ -35,6 +35,13 @@ export function Sidebar() {
   const { unreadCount } = useNotificationStore();
   const currentUser = useCurrentUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      initRealtime(currentUser.id);
+    }
+    return () => stopRealtime();
+  }, [currentUser?.id]);
 
   async function handleLogout() {
     const supabase = createClient();

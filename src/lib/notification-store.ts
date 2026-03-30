@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { NotificationType } from "@/types";
 
 // ============================================================
@@ -8,6 +9,7 @@ import type { NotificationType } from "@/types";
 // ============================================================
 export type NotificationItem = {
   id: string;
+  user_id: string; // クライアント側フィルタに使用
   type: NotificationType;
   booking_id: string;
   candidate_name: string;
@@ -96,6 +98,98 @@ export async function markAllAsRead(): Promise<void> {
 
 export function isRead(id: string): boolean {
   return notifications.find((n) => n.id === id)?.is_read ?? false;
+}
+
+/**
+ * 通知キャッシュを無効化して即座に再フェッチ。
+ * キャンセル等の操作後にリアルタイム未受信でも通知を即表示するために使用。
+ */
+export function invalidateNotifications(): void {
+  fetched = false;
+  ensureFetched();
+}
+
+// ============================================================
+// Supabase Realtime サブスクリプション
+// ============================================================
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let realtimeChannel: any = null;
+let currentUserId: string | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let pollIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function setupChannel(userId: string): void {
+  const supabase = createClient();
+  realtimeChannel = supabase
+    .channel(`notifications-${userId}`)
+    .on(
+      "postgres_changes",
+      // filter を使わず RLS に任せ、クライアント側で user_id を確認する。
+      // filter: user_id=eq.${userId} は REPLICA IDENTITY FULL がないと
+      // イベントを一切受信しないサイレント失敗になるため除外。
+      { event: "INSERT", schema: "public", table: "notifications" },
+      (payload: { new: NotificationItem }) => {
+        console.log("[Notification Realtime] INSERT received. payload.new.user_id:", payload.new.user_id, "/ expected userId:", userId, "/ match:", payload.new.user_id === userId);
+        if (payload.new.user_id !== userId) return;
+        notifications = [payload.new, ...notifications];
+        emit();
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "notifications" },
+      (payload: { new: NotificationItem }) => {
+        if (payload.new.user_id !== userId) return;
+        notifications = notifications.map((n) =>
+          n.id === payload.new.id ? payload.new : n
+        );
+        emit();
+      }
+    )
+    .subscribe((status: string) => {
+      console.log("[Notification Realtime] status:", status);
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        realtimeChannel = null;
+        if (currentUserId && !reconnectTimer) {
+          reconnectTimer = setTimeout(() => {
+            reconnectTimer = null;
+            if (currentUserId) setupChannel(currentUserId);
+          }, 3000);
+        }
+      }
+    });
+}
+
+function startPolling(): void {
+  if (pollIntervalId) return;
+  pollIntervalId = setInterval(() => {
+    invalidateNotifications();
+  }, 30_000);
+}
+
+function stopPolling(): void {
+  if (pollIntervalId) {
+    clearInterval(pollIntervalId);
+    pollIntervalId = null;
+  }
+}
+
+export function initRealtime(userId: string): void {
+  currentUserId = userId;
+  if (realtimeChannel) return;
+  setupChannel(userId);
+  startPolling();
+}
+
+export function stopRealtime(): void {
+  currentUserId = null;
+  stopPolling();
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  realtimeChannel?.unsubscribe();
+  realtimeChannel = null;
 }
 
 // ============================================================

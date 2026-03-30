@@ -46,7 +46,7 @@ export async function GET(
         .single(),
       supabase
         .from("activity_log")
-        .select("id, type, description, created_at")
+        .select("id, type, description, metadata, created_at")
         .contains("metadata", { booking_id: params.id })
         .order("created_at", { ascending: true }),
     ]);
@@ -63,7 +63,35 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ ...data, booking_history: history ?? [] });
+    // actor_idを持つエントリのプロフィールを一括取得
+    const actorIds = [
+      ...new Set(
+        (history ?? [])
+          .filter((h) => h.metadata?.actor_id)
+          .map((h) => h.metadata.actor_id as string)
+      ),
+    ];
+    const { data: actorProfiles } =
+      actorIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", actorIds)
+        : { data: [] };
+    const profileMap = Object.fromEntries(
+      (actorProfiles ?? []).map((p: { id: string; full_name: string }) => [p.id, p.full_name])
+    );
+    const bookingHistory = (history ?? []).map((h) => ({
+      id: h.id,
+      type: h.type,
+      description: h.description,
+      created_at: h.created_at,
+      actor_name: h.metadata?.actor_id
+        ? (profileMap[h.metadata.actor_id] ?? undefined)
+        : undefined,
+    }));
+
+    return NextResponse.json({ ...data, booking_history: bookingHistory });
   } catch (err: any) {
     if (err?.message === "UNAUTHORIZED") return unauthorizedResponse();
     return serverErrorResponse();
@@ -80,7 +108,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { supabase, companyId } = await requireAuth();
+    const { supabase, companyId, user } = await requireAuth();
     const body = await request.json();
     const { status } = body as { status: string };
 
@@ -112,31 +140,43 @@ export async function PATCH(
       const candidateName = booking.candidate_name || "";
       const companyName: string | undefined = booking.event_types?.companies?.name ?? undefined;
 
-      // アサインされていたメンバーに通知
+      // 管理者名を取得
+      const { data: adminProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+      const adminName = adminProfile?.full_name || "管理者";
+      const notificationMessage = `管理者（${adminName}）が ${eventTitle} の予約をキャンセルしました`;
+
+      // アサインされていたメンバーに通知（管理者自身も含む）
       const { data: assignedMembers } = await supabase
         .from("booking_members")
         .select("user_id")
         .eq("booking_id", params.id);
 
-      if (assignedMembers && assignedMembers.length > 0) {
-        await supabase.from("notifications").insert(
-          assignedMembers.map((m) => ({
-            company_id: companyId,
-            user_id: m.user_id,
-            type: "booking_cancelled",
-            booking_id: params.id,
-            candidate_name: candidateName,
-            event_title: eventTitle,
-            message: `${candidateName} さんの ${eventTitle} の予約が管理者によりキャンセルされました`,
-          }))
-        );
-      }
+      // 通知先: アサインメンバー + 管理者本人（重複排除）
+      const notifyUserIds = new Set<string>((assignedMembers || []).map((m: { user_id: string }) => m.user_id));
+      notifyUserIds.add(user.id);
+
+      // notifications は INSERT RLS ポリシーがないため service role クライアントで挿入
+      await createServiceClient().from("notifications").insert(
+        [...notifyUserIds].map((uid) => ({
+          company_id: companyId,
+          user_id: uid,
+          type: "booking_cancelled",
+          booking_id: params.id,
+          candidate_name: candidateName,
+          event_title: eventTitle,
+          message: notificationMessage,
+        }))
+      );
 
       await createServiceClient().from("activity_log").insert({
         company_id: companyId,
         type: "booking_admin_cancelled",
         description: `${candidateName} さんの ${eventTitle} の予約が管理者によりキャンセルされました`,
-        metadata: { booking_id: params.id, cancelled_by: "admin" },
+        metadata: { booking_id: params.id, cancelled_by: "admin", actor_id: user.id },
       });
 
       // Google Calendar イベントを削除（fire-and-forget）

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
   Search,
@@ -70,6 +71,13 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
     document.querySelector("#booking-list-scroll-top")?.scrollTo({ top: 0, left: 0 });
   }, [filterStatus]);
 
+  const fetchBookings = useCallback(() => {
+    fetch("/api/bookings")
+      .then((r) => r.json())
+      .then((data) => setBookings(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
   // 予約一覧・イベント一覧を並行取得
   useEffect(() => {
     Promise.all([
@@ -83,6 +91,25 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
       .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
+
+  // 予約のリアルタイム更新
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("bookings-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bookings" },
+        () => fetchBookings()
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "bookings" },
+        () => fetchBookings()
+      )
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [fetchBookings]);
 
   const selectedId = pathname.startsWith("/bookings/")
     ? pathname.split("/").pop() ?? null

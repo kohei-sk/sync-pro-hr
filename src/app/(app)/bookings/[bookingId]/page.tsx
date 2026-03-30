@@ -19,6 +19,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { invalidateNotifications } from "@/lib/notification-store";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import type { BookingStatus } from "@/types";
@@ -29,6 +30,7 @@ type BookingHistoryEntry = {
   type: string;
   description: string;
   created_at: string;
+  actor_name?: string;
 };
 
 // API レスポンス型
@@ -192,6 +194,8 @@ export default function BookingDetailPage() {
         setBooking((prev) => prev ? { ...prev, status: "cancelled" } : prev);
         setCancelOpen(false);
         toast.success("予約をキャンセルしました");
+        // リアルタイム未受信の場合でも通知を即表示するためキャッシュを無効化
+        invalidateNotifications();
       } else {
         toast.error("キャンセルに失敗しました");
       }
@@ -521,6 +525,10 @@ export default function BookingDetailPage() {
                 <ol className="relative border-l border-gray-200 ml-1.5 space-y-4">
                   {booking.booking_history.map((entry) => {
                     const cfg = historyTypeConfig[entry.type] ?? { label: entry.type, dotClass: "bg-gray-400" };
+                    const bodyText =
+                      entry.type === "booking_admin_cancelled" && entry.actor_name
+                        ? `管理者（${entry.actor_name}）が ${event?.title || ""} の予約をキャンセルしました`
+                        : entry.description || null;
                     return (
                       <li key={entry.id} className="ml-4">
                         <div className={cn(
@@ -530,8 +538,8 @@ export default function BookingDetailPage() {
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-medium">{cfg.label}</span>
                           <span className="text-xs text-gray-400">{formatHistoryDate(entry.created_at)}</span>
-                          {entry.description && (
-                            <span className="text-xs text-gray-500 mt-0.5">{entry.description}</span>
+                          {bodyText && (
+                            <span className="text-xs text-gray-500 mt-0.5">{bodyText}</span>
                           )}
                         </div>
                       </li>
