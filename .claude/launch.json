@@ -4,7 +4,7 @@
     {
       "name": "dev",
       "runtimeExecutable": "/opt/homebrew/bin/node",
-      "runtimeArgs": ["node_modules/.bin/next", "dev", "-H", "0.0.0.0"],
+      "runtimeArgs": ["/Users/kohei/Desktop/Work/Dev/sync-pro-hr/node_modules/.bin/next", "dev", "-H", "0.0.0.0"],
       "port": 3002
     }
   ]
