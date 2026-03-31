@@ -378,8 +378,7 @@ export default function NewEventPage() {
     return undefined;
   }
 
-  function getReminderMessageError(message: string): string | undefined {
-    if (!message.trim()) return "メッセージ内容を入力してください";
+  function getReminderMessageError(_message: string): string | undefined {
     return undefined;
   }
 
@@ -1187,294 +1186,62 @@ export default function NewEventPage() {
                   <PageLoader />
                 ) : (
                   <>
-                {/* Weekday mode */}
-                {formData.scheduling_mode === "weekday" && (
-                  <div>
-                    <label className="label">曜日別メンバー</label>
-                    {enabledDays.length === 0 ? (
-                      <p className="mt-2 text-sm text-gray-400">受付設定で曜日を有効にしてください</p>
-                    ) : (
-                      <div className="mt-2 space-y-3">
-                        {enabledDays.map(({ label, dayIndex }) => {
-                          const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] as string[], requiredCount: 1 };
-                          const usedIds = entry.memberIds;
-                          return (
-                            <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
-                                  <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                  <span>必要人数:</span>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    className="input w-14 text-center px-1"
-                                    value={entry.requiredCount ?? 1}
-                                    onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                  <span>人</span>
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <DndContext
-                                  sensors={sensors}
-                                  collisionDetection={closestCenter}
-                                  onDragEnd={(e) => handleWeekdayMemberDragEnd(e, dayIndex)}
-                                >
-                                  <SortableContext
-                                    items={usedIds.map((uid) => `${dayIndex}-${uid}`)}
-                                    strategy={verticalListSortingStrategy}
-                                  >
-                                    {usedIds.map((userId, memberIndex) => {
-                                      const user = teamMembers.find((u) => u.id === userId);
-                                      return (
-                                        <SortableRow key={`${dayIndex}-${userId}`} id={`${dayIndex}-${userId}`}>
-                                          {(handle) => (
-                                            <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
-                                              {handle}
-                                              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
-                                                {memberIndex + 1}
-                                              </span>
-                                              <span className="flex-1 text-sm text-gray-700">
-                                                {user?.full_name || userId}
-                                              </span>
-                                              <button
-                                                onClick={() => removeWeekdayMember(dayIndex, userId)}
-                                                className="text-gray-400 hover:text-red-500 transition-colors"
-                                              >
-                                                <Trash2 className="h-3 w-3" />
-                                              </button>
-                                            </div>
-                                          )}
-                                        </SortableRow>
-                                      );
-                                    })}
-                                  </SortableContext>
-                                </DndContext>
-                                <div className="relative">
-                                  <button
-                                    onClick={() => setWeekdayMemberDropdownOpen(weekdayMemberDropdownOpen === dayIndex ? null : dayIndex)}
-                                    className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                    メンバー追加
-                                    <ChevronDown className="h-3 w-3" />
-                                  </button>
-                                  {weekdayMemberDropdownOpen === dayIndex && (
-                                    <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                                      {teamMembers
-                                        .filter((u) => !usedIds.includes(u.id))
-                                        .map((user) => (
-                                          <button
-                                            key={user.id}
-                                            onClick={() => addWeekdayMember(dayIndex, user.id)}
-                                            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                          >
-                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                              {user.full_name.charAt(0)}
-                                            </div>
-                                            <div className="text-left min-w-0">
-                                              <p className="font-medium truncate">{user.full_name}</p>
-                                              <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                                            </div>
-                                          </button>
-                                        ))}
-                                      {teamMembers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
-                                        <p className="px-3 py-2 text-sm text-gray-400">追加できるメンバーがいません</p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {touched[`weekday_${dayIndex}`] && <FieldError message={getWeekdayMemberError(dayIndex)} />}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Fixed mode */}
-                {formData.scheduling_mode === "fixed" && (
-                  <div>
-                    <label className="label">メンバー</label>
-                    <div className="mt-2 rounded-2xl border border-gray-200 p-4">
-                      <div className="space-y-2">
-                        <DndContext
-                          sensors={sensors}
-                          collisionDetection={closestCenter}
-                          onDragEnd={handleFixedMemberDragEnd}
-                        >
-                          <SortableContext
-                            items={fixedMemberIds}
-                            strategy={verticalListSortingStrategy}
-                          >
-                            {fixedMemberIds.map((userId, index) => {
-                              const user = teamMembers.find((u) => u.id === userId);
+                    {/* Weekday mode */}
+                    {formData.scheduling_mode === "weekday" && (
+                      <div>
+                        <label className="label">曜日別メンバー</label>
+                        {enabledDays.length === 0 ? (
+                          <p className="mt-2 text-sm text-gray-400">受付設定で曜日を有効にしてください</p>
+                        ) : (
+                          <div className="mt-2 space-y-3">
+                            {enabledDays.map(({ label, dayIndex }) => {
+                              const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex) ?? { dayIndex, memberIds: [] as string[], requiredCount: 1 };
+                              const usedIds = entry.memberIds;
                               return (
-                                <SortableRow key={userId} id={userId}>
-                                  {(handle) => (
-                                    <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
-                                      {handle}
-                                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
-                                        {index + 1}
-                                      </span>
-                                      <span className="flex-1 text-sm text-gray-700">
-                                        {user?.full_name || userId}
-                                      </span>
-                                      <button
-                                        onClick={() => removeFixedMember(userId)}
-                                        className="text-gray-400 hover:text-red-500 transition-colors"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </button>
+                                <div key={dayIndex} className="rounded-2xl border border-gray-200 p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">{label}</span>
+                                      <span className="text-xs text-gray-400">{usedIds.length}人登録</span>
                                     </div>
-                                  )}
-                                </SortableRow>
-                              );
-                            })}
-                          </SortableContext>
-                        </DndContext>
-
-                        {/* Add member dropdown */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setFixedMemberDropdownOpen(!fixedMemberDropdownOpen)}
-                            className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            <Plus className="h-3 w-3" />
-                            メンバー追加
-                            <ChevronDown className="h-3 w-3" />
-                          </button>
-
-                          {fixedMemberDropdownOpen && (
-                            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                              {teamMembers
-                                .filter((u) => !fixedMemberIds.includes(u.id))
-                                .map((user) => (
-                                  <button
-                                    key={user.id}
-                                    onClick={() => addFixedMember(user.id)}
-                                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
-                                      {user.full_name.charAt(0)}
+                                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                      <span>必要人数:</span>
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        className="input w-14 text-center px-1"
+                                        value={entry.requiredCount ?? 1}
+                                        onChange={(e) => updateWeekdayRequiredCount(dayIndex, parseInt(e.target.value) || 1)}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                      <span>人</span>
                                     </div>
-                                    <div className="text-left min-w-0">
-                                      <p className="font-medium truncate">{user.full_name}</p>
-                                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                                    </div>
-                                  </button>
-                                ))}
-                              {teamMembers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
-                                <p className="px-3 py-2 text-sm text-gray-400">
-                                  追加できるメンバーがいません
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {touched.fixedMembers && <FieldError message={getFixedMembersError()} />}
-                    </div>
-                  </div>
-                )}
-
-                {/* Pool mode */}
-                {formData.scheduling_mode === "pool" && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="label">役割とメンバー</label>
-                    </div>
-                    <div className="space-y-3">
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleRoleDragEnd}
-                      >
-                        <SortableContext
-                          items={roles.map((r) => r.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          {roles.map((role, roleIndex) => (
-                            <SortableRow key={role.id} id={role.id}>
-                              {(handle) => (
-                                <div className="rounded-2xl border border-gray-200 p-4">
-                                  {/* Role header */}
-                                  <div className="flex items-center gap-6">
-                                    <div className="flex-1 flex items-center gap-3">
-                                      {handle}
-                                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
-                                        {roleIndex + 1}
-                                      </span>
-                                      <div className="flex-1">
-                                        <input
-                                          type="text"
-                                          className={cn("input w-full", touched[`role_${role.id}_name`] && getRoleNameError(role.id) && "input-error")}
-                                          value={role.name}
-                                          onChange={(e) => updateRole(role.id, { name: e.target.value })}
-                                          onBlur={() => touch(`role_${role.id}_name`)}
-                                          placeholder="役割名（例: 面接官）"
-                                        />
-                                        {touched[`role_${role.id}_name`] && <FieldError message={getRoleNameError(role.id)} />}
-                                      </div>
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
-                                        <input
-                                          type="number"
-                                          className="input w-16 text-center"
-                                          value={role.required_count}
-                                          onChange={(e) =>
-                                            updateRole(role.id, {
-                                              required_count: parseInt(e.target.value) || 1,
-                                            })
-                                          }
-                                          min={1}
-                                        />
-                                      </div>
-                                    </div>
-                                    {roles.length > 1 && (
-                                      <button
-                                        onClick={() => removeRole(role.id)}
-                                        className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                    )}
                                   </div>
-
-                                  {/* Members */}
-                                  <div className="mt-3 space-y-2">
+                                  <div className="space-y-2">
                                     <DndContext
                                       sensors={sensors}
                                       collisionDetection={closestCenter}
-                                      onDragEnd={(e) => handleRoleMemberDragEnd(e, role.id)}
+                                      onDragEnd={(e) => handleWeekdayMemberDragEnd(e, dayIndex)}
                                     >
                                       <SortableContext
-                                        items={role.memberIds}
+                                        items={usedIds.map((uid) => `${dayIndex}-${uid}`)}
                                         strategy={verticalListSortingStrategy}
                                       >
-                                        {role.memberIds.map((userId, memberIndex) => {
+                                        {usedIds.map((userId, memberIndex) => {
                                           const user = teamMembers.find((u) => u.id === userId);
                                           return (
-                                            <SortableRow key={userId} id={userId}>
-                                              {(memberHandle) => (
-                                                <div className="flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-2">
-                                                  {memberHandle}
-                                                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
+                                            <SortableRow key={`${dayIndex}-${userId}`} id={`${dayIndex}-${userId}`}>
+                                              {(handle) => (
+                                                <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+                                                  {handle}
+                                                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
                                                     {memberIndex + 1}
                                                   </span>
                                                   <span className="flex-1 text-sm text-gray-700">
                                                     {user?.full_name || userId}
                                                   </span>
                                                   <button
-                                                    onClick={() =>
-                                                      removeMemberFromRole(role.id, userId)
-                                                    }
+                                                    onClick={() => removeWeekdayMember(dayIndex, userId)}
                                                     className="text-gray-400 hover:text-red-500 transition-colors"
                                                   >
                                                     <Trash2 className="h-3 w-3" />
@@ -1486,36 +1253,23 @@ export default function NewEventPage() {
                                         })}
                                       </SortableContext>
                                     </DndContext>
-
-                                    {/* Add member dropdown */}
                                     <div className="relative">
                                       <button
-                                        onClick={() =>
-                                          setMemberDropdownOpen(
-                                            memberDropdownOpen === role.id
-                                              ? null
-                                              : role.id
-                                          )
-                                        }
+                                        onClick={() => setWeekdayMemberDropdownOpen(weekdayMemberDropdownOpen === dayIndex ? null : dayIndex)}
                                         className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
                                       >
                                         <Plus className="h-3 w-3" />
                                         メンバー追加
                                         <ChevronDown className="h-3 w-3" />
                                       </button>
-
-                                      {memberDropdownOpen === role.id && (
+                                      {weekdayMemberDropdownOpen === dayIndex && (
                                         <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
                                           {teamMembers
-                                            .filter(
-                                              (u) => !role.memberIds.includes(u.id)
-                                            )
+                                            .filter((u) => !usedIds.includes(u.id))
                                             .map((user) => (
                                               <button
                                                 key={user.id}
-                                                onClick={() =>
-                                                  addMemberToRole(role.id, user.id)
-                                                }
+                                                onClick={() => addWeekdayMember(dayIndex, user.id)}
                                                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                               >
                                                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
@@ -1527,35 +1281,280 @@ export default function NewEventPage() {
                                                 </div>
                                               </button>
                                             ))}
-                                          {teamMembers.filter(
-                                            (u) => !role.memberIds.includes(u.id)
-                                          ).length === 0 && (
-                                              <p className="px-3 py-2 text-sm text-gray-400">
-                                                追加できるメンバーがいません
-                                              </p>
-                                            )}
+                                          {teamMembers.filter((u) => !usedIds.includes(u.id)).length === 0 && (
+                                            <p className="px-3 py-2 text-sm text-gray-400">追加できるメンバーがいません</p>
+                                          )}
                                         </div>
                                       )}
                                     </div>
-                                    {touched[`role_${role.id}_members`] && <FieldError message={getRoleMembersError(role.id)} />}
                                   </div>
+                                  {touched[`weekday_${dayIndex}`] && <FieldError message={getWeekdayMemberError(dayIndex)} />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Fixed mode */}
+                    {formData.scheduling_mode === "fixed" && (
+                      <div>
+                        <label className="label">メンバー</label>
+                        <div className="mt-2 rounded-2xl border border-gray-200 p-4">
+                          <div className="space-y-2">
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={handleFixedMemberDragEnd}
+                            >
+                              <SortableContext
+                                items={fixedMemberIds}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                {fixedMemberIds.map((userId, index) => {
+                                  const user = teamMembers.find((u) => u.id === userId);
+                                  return (
+                                    <SortableRow key={userId} id={userId}>
+                                      {(handle) => (
+                                        <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+                                          {handle}
+                                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-100 px-1 text-xs font-semibold text-primary-700 shrink-0">
+                                            {index + 1}
+                                          </span>
+                                          <span className="flex-1 text-sm text-gray-700">
+                                            {user?.full_name || userId}
+                                          </span>
+                                          <button
+                                            onClick={() => removeFixedMember(userId)}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </SortableRow>
+                                  );
+                                })}
+                              </SortableContext>
+                            </DndContext>
+
+                            {/* Add member dropdown */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setFixedMemberDropdownOpen(!fixedMemberDropdownOpen)}
+                                className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                                メンバー追加
+                                <ChevronDown className="h-3 w-3" />
+                              </button>
+
+                              {fixedMemberDropdownOpen && (
+                                <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                  {teamMembers
+                                    .filter((u) => !fixedMemberIds.includes(u.id))
+                                    .map((user) => (
+                                      <button
+                                        key={user.id}
+                                        onClick={() => addFixedMember(user.id)}
+                                        className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                      >
+                                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                          {user.full_name.charAt(0)}
+                                        </div>
+                                        <div className="text-left min-w-0">
+                                          <p className="font-medium truncate">{user.full_name}</p>
+                                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  {teamMembers.filter((u) => !fixedMemberIds.includes(u.id)).length === 0 && (
+                                    <p className="px-3 py-2 text-sm text-gray-400">
+                                      追加できるメンバーがいません
+                                    </p>
+                                  )}
                                 </div>
                               )}
-                            </SortableRow>
-                          ))}
-                        </SortableContext>
-                      </DndContext>
+                            </div>
+                          </div>
+                          {touched.fixedMembers && <FieldError message={getFixedMembersError()} />}
+                        </div>
+                      </div>
+                    )}
 
-                      <button
-                        onClick={addRole}
-                        className="add-btn"
-                      >
-                        <Plus className="h-4 w-4" />
-                        役割を追加
-                      </button>
-                    </div>
-                  </div>
-                )}
+                    {/* Pool mode */}
+                    {formData.scheduling_mode === "pool" && (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="label">役割とメンバー</label>
+                        </div>
+                        <div className="space-y-3">
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleRoleDragEnd}
+                          >
+                            <SortableContext
+                              items={roles.map((r) => r.id)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {roles.map((role, roleIndex) => (
+                                <SortableRow key={role.id} id={role.id}>
+                                  {(handle) => (
+                                    <div className="rounded-2xl border border-gray-200 p-4">
+                                      {/* Role header */}
+                                      <div className="flex items-center gap-6">
+                                        <div className="flex-1 flex items-center gap-3">
+                                          {handle}
+                                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1 text-xs font-semibold text-gray-600 shrink-0">
+                                            {roleIndex + 1}
+                                          </span>
+                                          <div className="flex-1">
+                                            <input
+                                              type="text"
+                                              className={cn("input w-full", touched[`role_${role.id}_name`] && getRoleNameError(role.id) && "input-error")}
+                                              value={role.name}
+                                              onChange={(e) => updateRole(role.id, { name: e.target.value })}
+                                              onBlur={() => touch(`role_${role.id}_name`)}
+                                              placeholder="役割名（例: 面接官）"
+                                            />
+                                            {touched[`role_${role.id}_name`] && <FieldError message={getRoleNameError(role.id)} />}
+                                          </div>
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            <label className="text-xs text-gray-500 whitespace-nowrap">必要人数</label>
+                                            <input
+                                              type="number"
+                                              className="input w-16 text-center"
+                                              value={role.required_count}
+                                              onChange={(e) =>
+                                                updateRole(role.id, {
+                                                  required_count: parseInt(e.target.value) || 1,
+                                                })
+                                              }
+                                              min={1}
+                                            />
+                                          </div>
+                                        </div>
+                                        {roles.length > 1 && (
+                                          <button
+                                            onClick={() => removeRole(role.id)}
+                                            className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </button>
+                                        )}
+                                      </div>
+
+                                      {/* Members */}
+                                      <div className="mt-3 space-y-2">
+                                        <DndContext
+                                          sensors={sensors}
+                                          collisionDetection={closestCenter}
+                                          onDragEnd={(e) => handleRoleMemberDragEnd(e, role.id)}
+                                        >
+                                          <SortableContext
+                                            items={role.memberIds}
+                                            strategy={verticalListSortingStrategy}
+                                          >
+                                            {role.memberIds.map((userId, memberIndex) => {
+                                              const user = teamMembers.find((u) => u.id === userId);
+                                              return (
+                                                <SortableRow key={userId} id={userId}>
+                                                  {(memberHandle) => (
+                                                    <div className="flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-2">
+                                                      {memberHandle}
+                                                      <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-50 px-0.5 text-xs font-semibold text-primary-600 shrink-0">
+                                                        {memberIndex + 1}
+                                                      </span>
+                                                      <span className="flex-1 text-sm text-gray-700">
+                                                        {user?.full_name || userId}
+                                                      </span>
+                                                      <button
+                                                        onClick={() =>
+                                                          removeMemberFromRole(role.id, userId)
+                                                        }
+                                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                                      >
+                                                        <Trash2 className="h-3 w-3" />
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </SortableRow>
+                                              );
+                                            })}
+                                          </SortableContext>
+                                        </DndContext>
+
+                                        {/* Add member dropdown */}
+                                        <div className="relative">
+                                          <button
+                                            onClick={() =>
+                                              setMemberDropdownOpen(
+                                                memberDropdownOpen === role.id
+                                                  ? null
+                                                  : role.id
+                                              )
+                                            }
+                                            className="flex items-center gap-1 rounded-xl border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                                          >
+                                            <Plus className="h-3 w-3" />
+                                            メンバー追加
+                                            <ChevronDown className="h-3 w-3" />
+                                          </button>
+
+                                          {memberDropdownOpen === role.id && (
+                                            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                              {teamMembers
+                                                .filter(
+                                                  (u) => !role.memberIds.includes(u.id)
+                                                )
+                                                .map((user) => (
+                                                  <button
+                                                    key={user.id}
+                                                    onClick={() =>
+                                                      addMemberToRole(role.id, user.id)
+                                                    }
+                                                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                  >
+                                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 shrink-0">
+                                                      {user.full_name.charAt(0)}
+                                                    </div>
+                                                    <div className="text-left min-w-0">
+                                                      <p className="font-medium truncate">{user.full_name}</p>
+                                                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                                    </div>
+                                                  </button>
+                                                ))}
+                                              {teamMembers.filter(
+                                                (u) => !role.memberIds.includes(u.id)
+                                              ).length === 0 && (
+                                                  <p className="px-3 py-2 text-sm text-gray-400">
+                                                    追加できるメンバーがいません
+                                                  </p>
+                                                )}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {touched[`role_${role.id}_members`] && <FieldError message={getRoleMembersError(role.id)} />}
+                                      </div>
+                                    </div>
+                                  )}
+                                </SortableRow>
+                              ))}
+                            </SortableContext>
+                          </DndContext>
+
+                          <button
+                            onClick={addRole}
+                            className="add-btn"
+                          >
+                            <Plus className="h-4 w-4" />
+                            役割を追加
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -2067,7 +2066,21 @@ export default function NewEventPage() {
                                   <p className="font-medium text-gray-700">面接情報</p>
                                   <p>日時　2026年4月1日水曜日 11:00 〜 12:00</p>
                                   <p>主催　株式会社KOHEI</p>
-                                  <p className="text-blue-500 underline">参加リンク：https://meet.google.com/xxx-xxxx-xxx</p>
+                                  {formData.location_type === "online" ? (
+                                    formData.onlineMeetType === "meet" ? (
+                                      <p>参加リンク　<span className="text-gray-400">（Google Meet 自動生成）</span></p>
+                                    ) : formData.location_detail ? (
+                                      <p>参加リンク　<span className="text-blue-500 underline">{formData.location_detail}</span></p>
+                                    ) : (
+                                      <p>参加リンク　<span className="text-gray-400">（URLを入力してください）</span></p>
+                                    )
+                                  ) : formData.location_type === "in-person" ? (
+                                    <p>場所　{formData.location_detail || <span className="text-gray-400">（会議室名や住所）</span>}</p>
+                                  ) : formData.location_type === "phone" ? (
+                                    <p>電話　{formData.location_detail || <span className="text-gray-400">（電話番号）</span>}</p>
+                                  ) : (
+                                    <p className="text-gray-400">（場所未設定）</p>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -2117,7 +2130,7 @@ export default function NewEventPage() {
                 )}
 
                 {showReminderForm ? (
-                  <div className="rounded-2xl border border-primary-200 p-4 space-y-3">
+                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3 shadow-sm">
                     <p className="text-sm font-semibold">新しいリマインド</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -2144,26 +2157,38 @@ export default function NewEventPage() {
                     </div>
                     <div>
                       <label className="label">メッセージ内容</label>
-                      <div className={cn("mt-1 rounded-2xl border overflow-hidden", touched.reminderMessage && getReminderMessageError(reminderDraft.message) ? "border-red-400" : "border-gray-200")}>
-                        <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-b border-gray-200">
+                      <div className="mt-1 rounded-2xl border border-gray-200 overflow-hidden">
+                        <div className="bg-gray-50 px-4 py-3 text-xs text-gray-500 border-b border-gray-100">
                           <p>田中 太郎 様</p>
                           <p className="mt-1">面接の <span className="font-medium text-gray-700">{reminderDraft.timing_value}{reminderDraft.timing_unit === "hours" ? "時間前" : "日前"}</span> になりましたので、再度ご連絡いたします。</p>
                         </div>
                         <textarea
                           className="w-full px-4 py-3 text-sm resize-y focus:outline-none min-h-[80px]"
-                          placeholder="候補者に送るメッセージを入力してください"
+                          placeholder="候補者に送るメッセージを入力してください（任意）"
                           value={reminderDraft.message}
-                          onChange={(e) => { setReminderDraft({ ...reminderDraft, message: e.target.value }); touch("reminderMessage"); }}
-                          onBlur={() => touch("reminderMessage")}
+                          onChange={(e) => setReminderDraft({ ...reminderDraft, message: e.target.value })}
                         />
-                        <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-t border-gray-200 space-y-1">
+                        <div className="bg-gray-50 px-4 py-3 text-xs text-gray-500 border-t border-gray-100 space-y-1">
                           <p className="font-medium text-gray-700">面接情報</p>
                           <p>日時　2026年4月1日水曜日 11:00 〜 12:00</p>
                           <p>主催　株式会社KOHEI</p>
-                          <p className="text-blue-500 underline">参加リンク：https://meet.google.com/xxx-xxxx-xxx</p>
+                          {formData.location_type === "online" ? (
+                            formData.onlineMeetType === "meet" ? (
+                              <p>参加リンク　<span className="text-gray-400">（Google Meet 自動生成）</span></p>
+                            ) : formData.location_detail ? (
+                              <p>参加リンク　<span className="text-blue-500 underline">{formData.location_detail}</span></p>
+                            ) : (
+                              <p>参加リンク　<span className="text-gray-400">（URLを入力してください）</span></p>
+                            )
+                          ) : formData.location_type === "in-person" ? (
+                            <p>場所　{formData.location_detail || <span className="text-gray-400">（会議室名や住所）</span>}</p>
+                          ) : formData.location_type === "phone" ? (
+                            <p>電話　{formData.location_detail || <span className="text-gray-400">（電話番号）</span>}</p>
+                          ) : (
+                            <p className="text-gray-400">（場所未設定）</p>
+                          )}
                         </div>
                       </div>
-                      {touched.reminderMessage && <FieldError message={getReminderMessageError(reminderDraft.message)} />}
                     </div>
                     <div className="flex justify-end gap-2 pt-1">
                       <button
