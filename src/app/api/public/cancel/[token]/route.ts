@@ -128,7 +128,15 @@ export async function POST(
 
     // Slack 通知（fire-and-forget）
     if (assignedMembers && assignedMembers.length > 0) {
-      const text = `【キャンセル】${booking.candidate_name} さんが「${eventTitle}」の予約をキャンセルしました`;
+      const slackStart = new Date(booking.start_time);
+      const slackEnd = new Date(booking.end_time);
+      const slackDateStr = slackStart.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long", timeZone: "Asia/Tokyo" });
+      const slackTimeStr = `${slackStart.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })} 〜 ${slackEnd.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}`;
+      const text = [
+        `【キャンセル】${booking.candidate_name} さんが「${eventTitle}」の予約をキャンセルしました`,
+        `日時: ${slackDateStr} ${slackTimeStr}`,
+        `候補者: ${booking.candidate_name}`,
+      ].join("\n");
       sendSlackCancelNotification(supabase, assignedMembers.map((m) => m.user_id), text)
         .catch((e) => console.error("[Cancel] Slack notification error:", e));
     }

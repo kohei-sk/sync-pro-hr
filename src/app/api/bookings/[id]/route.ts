@@ -179,6 +179,13 @@ export async function PATCH(
         metadata: { booking_id: params.id, cancelled_by: "admin", actor_id: user.id },
       });
 
+      // pending なリマインダーをスキップ済みに更新
+      await createServiceClient()
+        .from("booking_reminders")
+        .update({ status: "skipped" })
+        .eq("booking_id", params.id)
+        .eq("status", "pending");
+
       // Google Calendar イベントを削除（fire-and-forget）
       deleteBookingCalendarEventById(createServiceClient(), params.id).catch((e) =>
         console.error("[Bookings] Calendar event deletion failed:", e)

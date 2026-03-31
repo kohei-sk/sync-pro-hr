@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Resend } from "resend";
-import { sendMemberReminderEmail } from "@/lib/email";
-import { getMemberEmailsForNotification } from "@/lib/member-notifications";
+import { sendCandidateReminderEmail } from "@/lib/email";
 
-/**
- * POST /api/cron/reminders
- * リマインダーCronジョブ。15分ごとに Vercel Cron から呼び出される。
- * CRON_SECRET ヘッダーで認証。pending の booking_reminders を処理して email を送信する。
- */
-export async function POST(request: Request) {
+// GET /api/cron/reminders
+// リマインダーCronジョブ。cron-job.org から定期的に呼び出される。
+//
+// 【cron-job.org 設定】
+//   URL      : https://<your-domain>/api/cron/reminders
+//   Method   : GET
+//   Schedule : every 15 minutes (cron: "*/15 * * * *")
+//   Headers  : Authorization: Bearer <CRON_SECRET の値>
+//
+// 【Vercel 環境変数】
+//   CRON_SECRET : 任意のランダム文字列（cron-job.org の Authorization ヘッダーと一致させる）
+//
+// pending の booking_reminders を処理して候補者へリマインドメールを送信する。
+export async function GET(request: Request) {
   // CRON_SECRET でリクエストを検証
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -19,9 +25,6 @@ export async function POST(request: Request) {
   }
 
   const serviceClient = createServiceClient();
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const fromEmail =
-    process.env.RESEND_FROM_EMAIL ?? "noreply@pitasuke.example.com";
 
   try {
     // 送信期限を過ぎた pending リマインダーを取得
@@ -36,10 +39,11 @@ export async function POST(request: Request) {
            candidate_email,
            start_time,
            end_time,
+           meeting_url,
            booking_members(user_id),
-           event:event_types(title, location_detail)
+           event:event_types(title, location_type, location_detail, companies(name))
          ),
-         reminder:reminder_settings(message)`
+         reminder:reminder_settings(message, timing)`
       )
       .eq("status", "pending")
       .lte("scheduled_at", new Date().toISOString());
@@ -62,63 +66,54 @@ export async function POST(request: Request) {
 
       const eventData = booking.event as any;
       const eventTitle = eventData?.title ?? "面接";
-      const locationDetail = eventData?.location_detail ?? null;
-      const startTimeFormatted = new Date(booking.start_time as string).toLocaleString("ja-JP", {
+      const companyName: string | null = eventData?.companies?.name ?? null;
+      const locationType: string | null = eventData?.location_type ?? null;
+      const locationDetail: string | null = eventData?.location_detail ?? null;
+      const meetingUrl: string | null =
+        (booking.meeting_url as string | null) ??
+        (locationType === "online" ? locationDetail : null);
+      const physicalLocation: string | null =
+        locationType !== "online" ? locationDetail : null;
+
+      const subjectCompany = companyName ? `${companyName}｜` : "";
+
+      const start = new Date(booking.start_time as string);
+      const end = new Date(booking.end_time as string);
+      const dateStr = start.toLocaleDateString("ja-JP", {
         timeZone: "Asia/Tokyo",
         year: "numeric",
         month: "long",
         day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+        weekday: "long",
       });
-      const customMessage = reminder?.message || undefined;
+      const timeStr = `${start.toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })} 〜 ${end.toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })}`;
+
+      const timing = reminder?.timing as { value: number; unit: "hours" | "days" } | null;
+      const timingStr = timing
+        ? `${timing.value}${timing.unit === "hours" ? "時間" : "日"}`
+        : "";
+
+      const customMessage = reminder?.message?.trim() || undefined;
 
       try {
-        // 候補者へリマインダーメール
-        await resend.emails.send({
-          from: fromEmail,
+        await sendCandidateReminderEmail({
           to: booking.candidate_email,
-          subject: `【リマインダー】${eventTitle}のご確認`,
-          html: `
-            <p>${booking.candidate_name} 様</p>
-            <p>面接のリマインダーをお送りします。</p>
-            <p>
-              <strong>${eventTitle}</strong><br>
-              開始時刻: ${startTimeFormatted}
-            </p>
-            ${customMessage ? `<p>${customMessage}</p>` : ""}
-            <p>よろしくお願いいたします。</p>
-          `,
+          candidateName: booking.candidate_name as string,
+          eventTitle,
+          companyName,
+          startTime: booking.start_time as string,
+          endTime: booking.end_time as string,
+          locationType,
+          locationDetail,
+          meetingUrl,
+          timingStr,
+          customMessage,
         });
         sent.push(item.id);
       } catch (emailErr) {
         console.error("[Cron reminders] Candidate email send failed:", emailErr);
         skipped.push(item.id);
         continue;
-      }
-
-      // 面接官へリマインダーメール（notify_reminder = true のメンバーのみ）
-      const memberIds = ((booking.booking_members as any[]) ?? []).map((m: any) => m.user_id);
-      if (memberIds.length > 0) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
-        getMemberEmailsForNotification(memberIds, "notify_reminder")
-          .then((targets) =>
-            Promise.all(
-              targets.map(({ email }) =>
-                sendMemberReminderEmail({
-                  to: email,
-                  candidateName: booking.candidate_name as string,
-                  eventTitle,
-                  startTime: booking.start_time as string,
-                  endTime: booking.end_time as string,
-                  locationDetail,
-                  bookingUrl: `${appUrl}/bookings/${booking.id}`,
-                  customMessage,
-                })
-              )
-            )
-          )
-          .catch((e) => console.error("[Cron reminders] Member email error:", e));
       }
     }
 

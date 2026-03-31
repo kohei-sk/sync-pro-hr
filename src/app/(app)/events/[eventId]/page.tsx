@@ -294,7 +294,13 @@ export default function EventDetailPage() {
             <FormTab fields={customFields} eventId={eventId} onDirtyChange={setIsDirty} />
           )}
           {activeTab === "reminder" && (
-            <ReminderTab eventId={eventId} reminders={event.reminder_settings ?? []} onDirtyChange={setIsDirty} />
+            <ReminderTab
+              eventId={eventId}
+              reminders={event.reminder_settings ?? []}
+              onDirtyChange={setIsDirty}
+              locationType={event.location_type}
+              locationDetail={event.location_detail}
+            />
           )}
         </div>
       </div>
@@ -2192,28 +2198,19 @@ function ReminderFormInner({
   onSave,
   onCancel,
   saveLabel = "保存",
+  locationPreview,
 }: {
   draft: ReminderDraft;
   setDraft: (d: ReminderDraft) => void;
   onSave: () => void;
   onCancel: () => void;
   saveLabel?: string;
+  locationPreview?: React.ReactNode;
 }) {
-  const [touchedMsg, setTouchedMsg] = useState(false);
-
-  function getMessageError(): string | undefined {
-    if (!draft.message.trim()) return "メッセージ内容を入力してください";
-    return undefined;
-  }
-
-  function handleSave() {
-    setTouchedMsg(true);
-    if (getMessageError()) return;
-    onSave();
-  }
+  const timingLabel = `${draft.timing.value}${draft.timing.unit === "hours" ? "時間前" : "日前"}`;
 
   return (
-    <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+    <div className="mt-3 space-y-3 bg-hilight rounded-2xl border border-primary-200 p-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">タイミング（数値）</label>
@@ -2243,20 +2240,33 @@ function ReminderFormInner({
       </div>
       <div>
         <label className="label">メッセージ内容</label>
-        <textarea
-          className={cn("input mt-1", touchedMsg && getMessageError() && "input-error")}
-          placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
-          value={draft.message}
-          onChange={(e) => { setDraft({ ...draft, message: e.target.value }); setTouchedMsg(true); }}
-          onBlur={() => setTouchedMsg(true)}
-        />
-        {touchedMsg && <FieldError message={getMessageError()} />}
+        <div className="mt-1 rounded-2xl border border-gray-200 overflow-hidden">
+          {/* プレビューヘッダー */}
+          <div className="bg-gray-50 px-4 py-3 text-xs text-gray-500 border-b border-gray-100">
+            <p>田中 太郎 様</p>
+            <p className="mt-1">面接の <span className="font-medium text-gray-700">{timingLabel}</span> になりましたので、再度ご連絡いたします。</p>
+          </div>
+          {/* 編集エリア */}
+          <textarea
+            className="w-full px-4 py-3 text-sm resize-y focus:outline-none min-h-[80px]"
+            placeholder="候補者に送るメッセージを入力してください"
+            value={draft.message}
+            onChange={(e) => setDraft({ ...draft, message: e.target.value })}
+          />
+          {/* プレビューフッター */}
+          <div className="bg-gray-50 px-4 py-3 text-xs text-gray-500 border-t border-gray-100 space-y-1">
+            <p className="font-medium text-gray-700">面接情報</p>
+            <p>日時　2026年4月1日水曜日 11:00 〜 12:00</p>
+            <p>主催　株式会社KOHEI</p>
+            {locationPreview}
+          </div>
+        </div>
       </div>
       <div className="flex justify-end gap-2">
         <button onClick={onCancel} className="btn btn-ghost">
           キャンセル
         </button>
-        <button onClick={handleSave} className="btn btn-primary">
+        <button onClick={onSave} className="btn btn-primary">
           {saveLabel}
         </button>
       </div>
@@ -2268,10 +2278,14 @@ function ReminderTab({
   eventId,
   reminders: initialReminders,
   onDirtyChange,
+  locationType,
+  locationDetail,
 }: {
   eventId: string;
   reminders: ReminderSetting[];
   onDirtyChange: (dirty: boolean) => void;
+  locationType?: string;
+  locationDetail?: string | null;
 }) {
   const toast = useToast();
   const [reminders, setReminders] = useState<ReminderSetting[]>(initialReminders);
@@ -2334,7 +2348,24 @@ function ReminderTab({
     }
   }
 
-  // no renderReminderForm - replaced by ReminderFormInner component
+  const locationPreview = (() => {
+    if (locationType === "online") {
+      return locationDetail
+        ? <p>参加リンク　<span className="text-blue-500 underline">{locationDetail}</span></p>
+        : <p>参加リンク　<span className="text-blue-500">https://meet.google.com/XXX-XXX-XXX</span></p>;
+    }
+    if (locationType === "in-person") {
+      return locationDetail
+        ? <p>場所　{locationDetail}</p>
+        : <p>場所　<span className="text-gray-400">（対面）</span></p>;
+    }
+    if (locationType === "phone") {
+      return locationDetail
+        ? <p>電話　{locationDetail}</p>
+        : <p>電話</p>;
+    }
+    return <p className="text-gray-400">（場所未設定）</p>;
+  })();
 
   return (
     <div>
@@ -2355,6 +2386,7 @@ function ReminderTab({
                 onSave={() => handleEditSave(reminder.id)}
                 onCancel={() => setEditingId(null)}
                 saveLabel="保存"
+                locationPreview={locationPreview}
               />
             ) : (
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 p-4">
@@ -2397,6 +2429,7 @@ function ReminderTab({
             onSave={handleAddSave}
             onCancel={() => { setShowAddForm(false); setAddDraft({ ...EMPTY_REMINDER_DRAFT }); }}
             saveLabel="追加"
+            locationPreview={locationPreview}
           />
         )}
 
