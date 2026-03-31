@@ -197,11 +197,23 @@ export async function POST(
 
     // Slack 通知（fire-and-forget）
     if (assignedMembers.length > 0) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+      const slackStart = new Date(selected_slot.start);
+      const slackEnd = new Date(selected_slot.end);
+      const slackDateStr = slackStart.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long", timeZone: "Asia/Tokyo" });
+      const slackTimeStr = `${slackStart.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })} 〜 ${slackEnd.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}`;
+      const slackLines = [
+        `【新規予約】${candidate_name} さんが「${event.title}」を予約しました`,
+        `日時: ${slackDateStr} ${slackTimeStr}`,
+        `候補者: ${candidate_name}`,
+        event.location_detail ? `場所: ${event.location_detail}` : null,
+        `詳細: ${appUrl}/bookings/${booking.id}`,
+      ].filter(Boolean).join("\n");
       sendSlackBookingNotification(
         supabase,
         assignedMembers.map((m) => m.user_id),
         "new",
-        `【新規予約】${candidate_name} さんが「${event.title}」を予約しました\n日時: ${new Date(selected_slot.start).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}`
+        slackLines
       ).catch((e) => console.error("[Booking] Slack notification error:", e));
     }
 

@@ -2,16 +2,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export type NotifyFlag =
   | "notify_booking_new"
-  | "notify_booking_cancel"
-  | "notify_reminder"
-  | "notify_digest";
+  | "notify_booking_cancel";
 
 /** デフォルト値（user_settings 未作成ユーザー向け） */
 const DEFAULTS: Record<NotifyFlag, boolean> = {
   notify_booking_new: true,
   notify_booking_cancel: true,
-  notify_reminder: true,
-  notify_digest: false,
 };
 
 /**

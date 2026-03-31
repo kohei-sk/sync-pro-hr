@@ -175,12 +175,8 @@ CREATE TABLE user_settings (
   working_hours_end          TIME NOT NULL DEFAULT '18:00',
   notify_booking_new         BOOLEAN NOT NULL DEFAULT true,
   notify_booking_cancel      BOOLEAN NOT NULL DEFAULT true,
-  notify_reminder            BOOLEAN NOT NULL DEFAULT true,
-  notify_digest              BOOLEAN NOT NULL DEFAULT false,
   slack_notify_booking_new   BOOLEAN NOT NULL DEFAULT true,
-  slack_notify_booking_cancel BOOLEAN NOT NULL DEFAULT true,
-  slack_notify_reminder      BOOLEAN NOT NULL DEFAULT true,
-  slack_notify_digest        BOOLEAN NOT NULL DEFAULT false
+  slack_notify_booking_cancel BOOLEAN NOT NULL DEFAULT true
 );
 
 CREATE TABLE oauth_tokens (

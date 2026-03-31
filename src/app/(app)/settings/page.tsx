@@ -169,7 +169,7 @@ function ProfileTab() {
         setEmail(data.email ?? "");
         setTimezone(data.timezone ?? "Asia/Tokyo");
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -363,14 +363,9 @@ function NotificationsTab() {
   const [loading, setLoading] = useState(true);
   const [emailBookingNew, setEmailBookingNew] = useState(true);
   const [emailBookingCancel, setEmailBookingCancel] = useState(true);
-  const [emailReminder, setEmailReminder] = useState(true);
-  const [emailDigest, setEmailDigest] = useState(false);
-  const [reminderTime, setReminderTime] = useState("30");
   const [slackConnected, setSlackConnected] = useState(false);
   const [slackNotifyBookingNew, setSlackNotifyBookingNew] = useState(false);
   const [slackNotifyBookingCancel, setSlackNotifyBookingCancel] = useState(false);
-  const [slackNotifyReminder, setSlackNotifyReminder] = useState(false);
-  const [slackNotifyDigest, setSlackNotifyDigest] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -380,20 +375,16 @@ function NotificationsTab() {
         .then((data) => {
           setEmailBookingNew(data.notify_booking_new ?? true);
           setEmailBookingCancel(data.notify_booking_cancel ?? true);
-          setEmailReminder(data.notify_reminder ?? true);
-          setEmailDigest(data.notify_digest ?? false);
           setSlackNotifyBookingNew(data.slack_notify_booking_new ?? false);
           setSlackNotifyBookingCancel(data.slack_notify_booking_cancel ?? false);
-          setSlackNotifyReminder(data.slack_notify_reminder ?? false);
-          setSlackNotifyDigest(data.slack_notify_digest ?? false);
         })
-        .catch(() => {}),
+        .catch(() => { }),
       fetch("/api/settings/profile")
         .then((r) => r.json())
         .then((data) => {
           setSlackConnected(data.slack_status === "connected");
         })
-        .catch(() => {}),
+        .catch(() => { }),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -412,50 +403,22 @@ function NotificationsTab() {
       checked: emailBookingCancel,
       onChange: setEmailBookingCancel,
     },
-    {
-      id: "reminder",
-      label: "面接リマインダー",
-      description: "面接開始前にリマインダーを受け取ります",
-      checked: emailReminder,
-      onChange: setEmailReminder,
-    },
-    {
-      id: "digest",
-      label: "デイリーダイジェスト",
-      description: "毎朝、当日の面接スケジュールをまとめて通知します",
-      checked: emailDigest,
-      onChange: setEmailDigest,
-    },
   ];
 
   const slackNotifications = [
     {
       id: "slack-new",
       label: "新規予約通知",
-      description: "候補者が面接を予約した際にSlackへ通知します",
+      description: "候補者が面接を予約した際に通知を受け取ります",
       checked: slackNotifyBookingNew,
       onChange: setSlackNotifyBookingNew,
     },
     {
       id: "slack-cancel",
       label: "キャンセル通知",
-      description: "予約がキャンセルされた際にSlackへ通知します",
+      description: "予約がキャンセルされた際に通知を受け取ります",
       checked: slackNotifyBookingCancel,
       onChange: setSlackNotifyBookingCancel,
-    },
-    {
-      id: "slack-reminder",
-      label: "面接リマインダー",
-      description: "面接開始前にSlackへリマインダーを送信します",
-      checked: slackNotifyReminder,
-      onChange: setSlackNotifyReminder,
-    },
-    {
-      id: "slack-digest",
-      label: "デイリーダイジェスト",
-      description: "毎朝、当日の面接スケジュールをSlackへまとめて通知します",
-      checked: slackNotifyDigest,
-      onChange: setSlackNotifyDigest,
     },
   ];
 
@@ -466,14 +429,10 @@ function NotificationsTab() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          notify_booking_new:          emailBookingNew,
-          notify_booking_cancel:       emailBookingCancel,
-          notify_reminder:             emailReminder,
-          notify_digest:               emailDigest,
-          slack_notify_booking_new:    slackNotifyBookingNew,
+          notify_booking_new: emailBookingNew,
+          notify_booking_cancel: emailBookingCancel,
+          slack_notify_booking_new: slackNotifyBookingNew,
           slack_notify_booking_cancel: slackNotifyBookingCancel,
-          slack_notify_reminder:       slackNotifyReminder,
-          slack_notify_digest:         slackNotifyDigest,
         }),
       });
       if (!res.ok) throw new Error();
@@ -504,27 +463,11 @@ function NotificationsTab() {
             <NotificationToggleRow key={n.id} {...n} />
           ))}
         </div>
-
-        {/* Reminder Time */}
-        <div className="mt-4">
-          <label className="label mb-1">送信タイミング</label>
-          <select
-            value={reminderTime}
-            onChange={(e) => setReminderTime(e.target.value)}
-            className="select max-w-xs"
-          >
-            <option value="15">15分前</option>
-            <option value="30">30分前</option>
-            <option value="60">1時間前</option>
-            <option value="120">2時間前</option>
-            <option value="1440">1日前</option>
-          </select>
-        </div>
       </div>
 
       {/* Slack通知 */}
       <div className={cn("card", !slackConnected && "opacity-70")}>
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-4">
           <h2 className="text-md font-semibold">Slack通知</h2>
           {slackConnected ? (
             <span className="badge badge-green">
@@ -535,15 +478,11 @@ function NotificationsTab() {
             <span className="badge badge-gray">未接続</span>
           )}
         </div>
-        {!slackConnected ? (
+        {!slackConnected &&
           <p className="text-xs text-gray-500 mb-4 mt-1">
-            Slack通知を利用するには「連携設定」タブでSlackを接続してください
+            Slack通知を利用するには「連携設定」からSlackを接続してください
           </p>
-        ) : (
-          <p className="text-xs text-gray-500 mb-4 mt-1">
-            Slackチャンネルへ通知する内容を選択してください
-          </p>
-        )}
+        }
 
         <div className="space-y-3">
           {slackNotifications.map((n) => (
@@ -639,7 +578,7 @@ function CalendarTab() {
         setGoogleAccount(data.google_account_email ?? null);
         setLastSyncedAt(data.last_synced_at ?? null);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
 
     // OAuthコールバック後のURLパラメータを処理
@@ -713,12 +652,12 @@ function CalendarTab() {
 
   const lastSyncedText = lastSyncedAt
     ? new Date(lastSyncedAt).toLocaleString("ja-JP", {
-        timeZone: "Asia/Tokyo",
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }) + " に同期"
+      timeZone: "Asia/Tokyo",
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }) + " に同期"
     : "未同期";
 
   return (
@@ -761,8 +700,8 @@ function CalendarTab() {
                   {calendarStatus === "connected" && googleAccount
                     ? `${googleAccount} · ${lastSyncedText}`
                     : calendarStatus === "error"
-                    ? "再接続が必要です"
-                    : "Googleカレンダーと同期して空き時間を自動取得します"}
+                      ? "再接続が必要です"
+                      : "Googleカレンダーと同期して空き時間を自動取得します"}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -791,14 +730,14 @@ function CalendarTab() {
                 )}
                 {(calendarStatus === "not_connected" ||
                   calendarStatus === "error") && (
-                  <button
-                    onClick={handleConnect}
-                    className="btn btn-secondary btn-size-s"
-                  >
-                    <Link2 className="h-3 w-3" />
-                    {calendarStatus === "error" ? "再接続" : "接続"}
-                  </button>
-                )}
+                    <button
+                      onClick={handleConnect}
+                      className="btn btn-secondary btn-size-s"
+                    >
+                      <Link2 className="h-3 w-3" />
+                      {calendarStatus === "error" ? "再接続" : "接続"}
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -884,7 +823,7 @@ function MessagingIntegrationCard() {
         setSlackStatus(data.slack_status === "connected" ? "connected" : "not_connected");
         setSlackChannelName(data.slack_channel_name ?? null);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // OAuthコールバック後のURLパラメータを処理
     const params = new URLSearchParams(window.location.search);
@@ -898,7 +837,7 @@ function MessagingIntegrationCard() {
           setSlackStatus(data.slack_status === "connected" ? "connected" : "not_connected");
           setSlackChannelName(data.slack_channel_name ?? null);
         })
-        .catch(() => {});
+        .catch(() => { });
     } else if (params.get("slack_error")) {
       const err = params.get("slack_error");
       toast.error(
@@ -1053,7 +992,7 @@ function GeneralTab() {
         if (data.working_hours_end)
           setWorkEnd(data.working_hours_end.slice(0, 5));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   async function handleSave() {
