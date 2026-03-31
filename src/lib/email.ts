@@ -382,3 +382,113 @@ export async function sendMemberCancellationEmail(
     console.error("[Email] 面接官向けキャンセルメール送信に失敗しました:", err);
   }
 }
+
+// ─────────────────────────────────────────────
+// 候補者向け: リマインドメール
+// ─────────────────────────────────────────────
+
+interface CandidateReminderOptions {
+  to: string;
+  candidateName: string;
+  eventTitle: string;
+  companyName?: string | null;
+  startTime: string;
+  endTime: string;
+  locationType?: string | null;
+  locationDetail?: string | null;
+  meetingUrl?: string | null;
+  timingStr?: string;
+  customMessage?: string;
+  isTest?: boolean;
+}
+
+export async function sendCandidateReminderEmail(
+  options: CandidateReminderOptions
+): Promise<void> {
+  if (!resend) {
+    console.warn("[Email] RESEND_API_KEY が未設定のためメール送信をスキップします");
+    return;
+  }
+
+  const {
+    to, candidateName, eventTitle, companyName, startTime, endTime,
+    locationType, locationDetail, meetingUrl: rawMeetingUrl, timingStr, customMessage, isTest = false,
+  } = options;
+
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  const dateStr = start.toLocaleDateString("ja-JP", {
+    timeZone: "Asia/Tokyo", year: "numeric", month: "long", day: "numeric", weekday: "long",
+  });
+  const timeStr = `${start.toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })} 〜 ${end.toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })}`;
+
+  const meetingUrl: string | null =
+    rawMeetingUrl ?? (locationType === "online" ? (locationDetail ?? null) : null);
+  const physicalLocation: string | null =
+    locationType !== "online" ? (locationDetail ?? null) : null;
+
+  const subjectCompany = companyName ? `${companyName}｜` : "";
+  const subjectPrefix = isTest ? "【テスト送信】" : "";
+
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "noreply@pitasuke.com",
+      to,
+      subject: `${subjectPrefix}【予約確認】${subjectCompany}${eventTitle}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; color: #111827;">
+          ${isTest ? `<p style="background:#fef9c3; border:1px solid #fde68a; border-radius:6px; padding:8px 12px; font-size:13px; margin-bottom:16px;">⚠️ これはテスト送信です</p>` : ""}
+          ${companyName ? `<p style="color: #6b7280; font-size: 13px; margin-bottom: 4px;">${companyName}</p>` : ""}
+          <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">${eventTitle} のリマインドです</h2>
+          <p style="color: #374151;">${candidateName} 様</p>
+          <p style="color: #374151;">${timingStr ? `面接の ${timingStr} 前になりましたので、再度ご連絡いたします。` : "面接のリマインダーをお送りします。"}</p>
+
+          ${customMessage ? `
+          <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
+          <p style="color: #374151; white-space: pre-line;">${customMessage}</p>
+          ` : ""}
+
+          <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
+
+          <p style="font-weight: 600; margin-bottom: 8px;">面接情報</p>
+          <table style="width: 100%; margin: 0 0 16px; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; width: 80px; vertical-align: top;">日時</td>
+              <td style="padding: 8px 0; font-weight: 600;">${dateStr}<br>${timeStr}</td>
+            </tr>
+            ${companyName ? `<tr>
+              <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">主催</td>
+              <td style="padding: 8px 0;">${companyName}</td>
+            </tr>` : ""}
+            ${meetingUrl ? `<tr>
+              <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">参加リンク</td>
+              <td style="padding: 8px 0;">
+                <a href="${meetingUrl}" style="color: #2563eb; word-break: break-all;">${meetingUrl}</a>
+              </td>
+            </tr>` : ""}
+            ${physicalLocation ? `<tr>
+              <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">場所</td>
+              <td style="padding: 8px 0;">${physicalLocation}</td>
+            </tr>` : ""}
+          </table>
+
+          ${meetingUrl ? `
+          <div style="margin: 20px 0;">
+            <a href="${meetingUrl}"
+              style="display: inline-block; background-color: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              面接に参加する
+            </a>
+          </div>
+          ` : ""}
+
+          <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;" />
+          <p style="color: #9ca3af; font-size: 12px;">Powered by Pitasuke</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("[Email] リマインドメール送信に失敗しました:", err);
+    throw err;
+  }
+}

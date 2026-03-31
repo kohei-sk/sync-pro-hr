@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Resend } from "resend";
+import { sendCandidateReminderEmail } from "@/lib/email";
 
 // GET /api/cron/reminders
 // リマインダーCronジョブ。cron-job.org から定期的に呼び出される。
@@ -25,9 +25,6 @@ export async function GET(request: Request) {
   }
 
   const serviceClient = createServiceClient();
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const fromEmail =
-    process.env.RESEND_FROM_EMAIL ?? "noreply@pitasuke.example.com";
 
   try {
     // 送信期限を過ぎた pending リマインダーを取得
@@ -99,60 +96,18 @@ export async function GET(request: Request) {
       const customMessage = reminder?.message?.trim() || undefined;
 
       try {
-        // 候補者へリマインダーメール
-        await resend.emails.send({
-          from: fromEmail,
+        await sendCandidateReminderEmail({
           to: booking.candidate_email,
-          subject: `【予約確認】${subjectCompany}${eventTitle}`,
-          html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; color: #111827;">
-              ${companyName ? `<p style="color: #6b7280; font-size: 13px; margin-bottom: 4px;">${companyName}</p>` : ""}
-              <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">${eventTitle} のリマインドです</h2>
-              <p style="color: #374151;">${booking.candidate_name} 様</p>
-              <p style="color: #374151;">${timingStr ? `面接の ${timingStr} 前になりましたので、再度ご連絡いたします。` : "面接のリマインダーをお送りします。"}</p>
-
-              ${customMessage ? `
-              <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
-              <p style="color: #374151; white-space: pre-line;">${customMessage}</p>
-              ` : ""}
-
-              <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
-
-              <p style="font-weight: 600; margin-bottom: 8px;">面接情報</p>
-              <table style="width: 100%; margin: 0 0 16px; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; width: 80px; vertical-align: top;">日時</td>
-                  <td style="padding: 8px 0; font-weight: 600;">${dateStr}<br>${timeStr}</td>
-                </tr>
-                ${companyName ? `<tr>
-                  <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">主催</td>
-                  <td style="padding: 8px 0;">${companyName}</td>
-                </tr>` : ""}
-                ${meetingUrl ? `<tr>
-                  <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">参加リンク</td>
-                  <td style="padding: 8px 0;">
-                    <a href="${meetingUrl}" style="color: #2563eb; word-break: break-all;">${meetingUrl}</a>
-                  </td>
-                </tr>` : ""}
-                ${physicalLocation ? `<tr>
-                  <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">場所</td>
-                  <td style="padding: 8px 0;">${physicalLocation}</td>
-                </tr>` : ""}
-              </table>
-
-              ${meetingUrl ? `
-              <div style="margin: 20px 0;">
-                <a href="${meetingUrl}"
-                  style="display: inline-block; background-color: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-                  面接に参加する
-                </a>
-              </div>
-              ` : ""}
-
-              <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;" />
-              <p style="color: #9ca3af; font-size: 12px;">Powered by Pitasuke</p>
-            </div>
-          `,
+          candidateName: booking.candidate_name as string,
+          eventTitle,
+          companyName,
+          startTime: booking.start_time as string,
+          endTime: booking.end_time as string,
+          locationType,
+          locationDetail,
+          meetingUrl,
+          timingStr,
+          customMessage,
         });
         sent.push(item.id);
       } catch (emailErr) {
