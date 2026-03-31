@@ -7,7 +7,7 @@ import { Resend } from "resend";
  * リマインダーCronジョブ。15分ごとに Vercel Cron から呼び出される。
  * CRON_SECRET ヘッダーで認証。pending の booking_reminders を処理して email を送信する。
  */
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   // CRON_SECRET でリクエストを検証
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
