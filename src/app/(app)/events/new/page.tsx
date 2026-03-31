@@ -2024,7 +2024,7 @@ export default function NewEventPage() {
                     {reminders.map((reminder) => (
                       <div key={reminder.id}>
                         {editingReminderId === reminder.id ? (
-                          <div className="rounded-2xl border border-primary-200 p-4 space-y-3">
+                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
                             <p className="text-sm font-semibold">リマインドを編集</p>
                             <div className="grid grid-cols-2 gap-3">
                               <div>
@@ -2174,11 +2174,11 @@ export default function NewEventPage() {
                           <p>主催　株式会社KOHEI</p>
                           {formData.location_type === "online" ? (
                             formData.onlineMeetType === "meet" ? (
-                              <p>参加リンク　<span className="text-gray-400">（Google Meet 自動生成）</span></p>
+                              <p>参加リンク　<span className="text-blue-500">https://meet.google.com/XXX-XXX-XXX</span></p>
                             ) : formData.location_detail ? (
                               <p>参加リンク　<span className="text-blue-500 underline">{formData.location_detail}</span></p>
                             ) : (
-                              <p>参加リンク　<span className="text-gray-400">（URLを入力してください）</span></p>
+                              <p>参加リンク　<span className="text-gray-400">（URL未設定）</span></p>
                             )
                           ) : formData.location_type === "in-person" ? (
                             <p>場所　{formData.location_detail || <span className="text-gray-400">（会議室名や住所）</span>}</p>
