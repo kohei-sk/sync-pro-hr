@@ -2294,25 +2294,6 @@ function ReminderTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<ReminderDraft>({ ...EMPTY_REMINDER_DRAFT });
   const [saving, setSaving] = useState(false);
-  const [testSendingId, setTestSendingId] = useState<string | null>(null);
-
-  async function handleTestSend(reminderId: string) {
-    setTestSendingId(reminderId);
-    try {
-      const res = await fetch(`/api/events/${eventId}/reminders/test`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reminder_id: reminderId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "送信に失敗しました");
-      toast.success(`テストメールを ${data.sent_to} に送信しました`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "送信に失敗しました");
-    } finally {
-      setTestSendingId(null);
-    }
-  }
 
   function handleAddSave() {
     setReminders([
@@ -2421,19 +2402,6 @@ function ReminderTab({
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleTestSend(reminder.id)}
-                    disabled={testSendingId === reminder.id}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-primary-600 transition-colors disabled:opacity-50"
-                    title="テスト送信（自分のメールアドレスに送信）"
-                  >
-                    {testSendingId === reminder.id ? (
-                      <span className="spinner h-3 w-3" />
-                    ) : (
-                      <Mail className="h-3.5 w-3.5" />
-                    )}
-                    テスト送信
-                  </button>
                   <button
                     onClick={() => handleEditStart(reminder)}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
