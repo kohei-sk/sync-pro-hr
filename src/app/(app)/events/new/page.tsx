@@ -2025,7 +2025,7 @@ export default function NewEventPage() {
                     {reminders.map((reminder) => (
                       <div key={reminder.id}>
                         {editingReminderId === reminder.id ? (
-                          <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                          <div className="rounded-2xl border border-primary-200 p-4 space-y-3">
                             <p className="text-sm font-semibold">リマインドを編集</p>
                             <div className="grid grid-cols-2 gap-3">
                               <div>
@@ -2052,12 +2052,24 @@ export default function NewEventPage() {
                             </div>
                             <div>
                               <label className="label">メッセージ内容</label>
-                              <textarea
-                                className="input mt-1 resize-y"
-                                placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
-                                value={editReminderDraft.message}
-                                onChange={(e) => setEditReminderDraft({ ...editReminderDraft, message: e.target.value })}
-                              />
+                              <div className="mt-1 rounded-2xl border border-gray-200 overflow-hidden">
+                                <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-b border-gray-200">
+                                  <p>田中 太郎 様</p>
+                                  <p className="mt-1">面接の <span className="font-medium text-gray-700">{editReminderDraft.timing_value}{editReminderDraft.timing_unit === "hours" ? "時間前" : "日前"}</span> になりましたので、再度ご連絡いたします。</p>
+                                </div>
+                                <textarea
+                                  className="w-full px-4 py-3 text-sm resize-y focus:outline-none min-h-[80px]"
+                                  placeholder="候補者に送るメッセージを入力してください"
+                                  value={editReminderDraft.message}
+                                  onChange={(e) => setEditReminderDraft({ ...editReminderDraft, message: e.target.value })}
+                                />
+                                <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-t border-gray-200 space-y-1">
+                                  <p className="font-medium text-gray-700">面接情報</p>
+                                  <p>日時　2026年4月1日水曜日 11:00 〜 12:00</p>
+                                  <p>主催　株式会社KOHEI</p>
+                                  <p className="text-blue-500 underline">参加リンク：https://meet.google.com/xxx-xxxx-xxx</p>
+                                </div>
+                              </div>
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
                               <button onClick={() => setEditingReminderId(null)} className="btn btn-ghost">
@@ -2105,7 +2117,7 @@ export default function NewEventPage() {
                 )}
 
                 {showReminderForm ? (
-                  <div className="bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+                  <div className="rounded-2xl border border-primary-200 p-4 space-y-3">
                     <p className="text-sm font-semibold">新しいリマインド</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -2132,13 +2144,25 @@ export default function NewEventPage() {
                     </div>
                     <div>
                       <label className="label">メッセージ内容</label>
-                      <textarea
-                        className={cn("input mt-1 resize-y", touched.reminderMessage && getReminderMessageError(reminderDraft.message) && "input-error")}
-                        placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
-                        value={reminderDraft.message}
-                        onChange={(e) => { setReminderDraft({ ...reminderDraft, message: e.target.value }); touch("reminderMessage"); }}
-                        onBlur={() => touch("reminderMessage")}
-                      />
+                      <div className={cn("mt-1 rounded-2xl border overflow-hidden", touched.reminderMessage && getReminderMessageError(reminderDraft.message) ? "border-red-400" : "border-gray-200")}>
+                        <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-b border-gray-200">
+                          <p>田中 太郎 様</p>
+                          <p className="mt-1">面接の <span className="font-medium text-gray-700">{reminderDraft.timing_value}{reminderDraft.timing_unit === "hours" ? "時間前" : "日前"}</span> になりましたので、再度ご連絡いたします。</p>
+                        </div>
+                        <textarea
+                          className="w-full px-4 py-3 text-sm resize-y focus:outline-none min-h-[80px]"
+                          placeholder="候補者に送るメッセージを入力してください"
+                          value={reminderDraft.message}
+                          onChange={(e) => { setReminderDraft({ ...reminderDraft, message: e.target.value }); touch("reminderMessage"); }}
+                          onBlur={() => touch("reminderMessage")}
+                        />
+                        <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-t border-gray-200 space-y-1">
+                          <p className="font-medium text-gray-700">面接情報</p>
+                          <p>日時　2026年4月1日水曜日 11:00 〜 12:00</p>
+                          <p>主催　株式会社KOHEI</p>
+                          <p className="text-blue-500 underline">参加リンク：https://meet.google.com/xxx-xxxx-xxx</p>
+                        </div>
+                      </div>
                       {touched.reminderMessage && <FieldError message={getReminderMessageError(reminderDraft.message)} />}
                     </div>
                     <div className="flex justify-end gap-2 pt-1">

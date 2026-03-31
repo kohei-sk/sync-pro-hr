@@ -2212,8 +2212,10 @@ function ReminderFormInner({
     onSave();
   }
 
+  const timingLabel = `${draft.timing.value}${draft.timing.unit === "hours" ? "時間前" : "日前"}`;
+
   return (
-    <div className="mt-3 bg-hilight rounded-2xl border border-primary-200 p-4 space-y-3">
+    <div className="mt-3 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">タイミング（数値）</label>
@@ -2243,13 +2245,28 @@ function ReminderFormInner({
       </div>
       <div>
         <label className="label">メッセージ内容</label>
-        <textarea
-          className={cn("input mt-1", touchedMsg && getMessageError() && "input-error")}
-          placeholder={"候補者に送るメッセージを入力してください。\n{{date}}、{{location}} でスロット情報を挿入できます。"}
-          value={draft.message}
-          onChange={(e) => { setDraft({ ...draft, message: e.target.value }); setTouchedMsg(true); }}
-          onBlur={() => setTouchedMsg(true)}
-        />
+        <div className={cn("mt-1 rounded-2xl border overflow-hidden", touchedMsg && getMessageError() ? "border-red-400" : "border-primary-200")}>
+          {/* プレビューヘッダー */}
+          <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-b border-gray-200">
+            <p>田中 太郎 様</p>
+            <p className="mt-1">面接の <span className="font-medium text-gray-700">{timingLabel}</span> になりましたので、再度ご連絡いたします。</p>
+          </div>
+          {/* 編集エリア */}
+          <textarea
+            className="w-full px-4 py-3 text-sm resize-y focus:outline-none min-h-[80px]"
+            placeholder="候補者に送るメッセージを入力してください"
+            value={draft.message}
+            onChange={(e) => { setDraft({ ...draft, message: e.target.value }); setTouchedMsg(true); }}
+            onBlur={() => setTouchedMsg(true)}
+          />
+          {/* プレビューフッター */}
+          <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500 border-t border-gray-200 space-y-1">
+            <p className="font-medium text-gray-700">面接情報</p>
+            <p>日時　2026年4月1日水曜日 11:00 〜 12:00</p>
+            <p>主催　株式会社KOHEI</p>
+            <p className="text-blue-500 underline">参加リンク：https://meet.google.com/xxx-xxxx-xxx</p>
+          </div>
+        </div>
         {touchedMsg && <FieldError message={getMessageError()} />}
       </div>
       <div className="flex justify-end gap-2">
