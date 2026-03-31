@@ -2,11 +2,19 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Resend } from "resend";
 
-/**
- * POST /api/cron/reminders
- * リマインダーCronジョブ。15分ごとに Vercel Cron から呼び出される。
- * CRON_SECRET ヘッダーで認証。pending の booking_reminders を処理して email を送信する。
- */
+// GET /api/cron/reminders
+// リマインダーCronジョブ。cron-job.org から定期的に呼び出される。
+//
+// 【cron-job.org 設定】
+//   URL      : https://<your-domain>/api/cron/reminders
+//   Method   : GET
+//   Schedule : every 15 minutes (cron: "*/15 * * * *")
+//   Headers  : Authorization: Bearer <CRON_SECRET の値>
+//
+// 【Vercel 環境変数】
+//   CRON_SECRET : 任意のランダム文字列（cron-job.org の Authorization ヘッダーと一致させる）
+//
+// pending の booking_reminders を処理して候補者へリマインドメールを送信する。
 export async function GET(request: Request) {
   // CRON_SECRET でリクエストを検証
   const authHeader = request.headers.get("authorization");
