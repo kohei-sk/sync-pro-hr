@@ -45,16 +45,16 @@ function Nav() {
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-5">
-          <Link
-            href="/login"
-          >
-            <span className="text-sm font-bold text-brandGray hover:text-brandNavy hidden sm:block">ログイン</span>
-            <span className="text-brandGray block sm:hidden"><LogIn className="w-5 h-5" /></span>
-          </Link>
-          <ContactButton className="rounded-lg bg-brandPrimary-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-brandPrimary-600 transition-colors">
+        <div className="flex items-center gap-3">
+          <ContactButton className="text-center min-w-auto rounded-lg bg-brandPrimary-500 px-3 py-2.5 text-sm font-bold text-white hover:bg-brandPrimary-600 transition-colors sm:px-4 sm:min-w-[125px]">
             お問い合わせ
           </ContactButton>
+          <Link className="text-center min-w-auto rounded-lg bg-white px-2.5 py-2.5 text-sm font-bold text-brandNavy hover:bg-gray-50 transition-colors border-[2px] border-gray-150 sm:px-2.5 sm:min-w-[125px]"
+            href="/login"
+          >
+            <span className="hidden sm:block">ログイン</span>
+            <span className="block sm:hidden"><LogIn className="w-5 h-5" /></span>
+          </Link>
         </div>
       </div>
     </header>
@@ -95,14 +95,14 @@ function Hero() {
             日程調整から候補者対応まで、すべてがスムーズに。
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row sm:gap-8 sm:mt-12">
-            <ContactButton className="flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-10 py-3 text-base font-bold text-white shadow-sm hover:bg-brandPrimary-600 transition-colors justify-center w-full sm:w-auto sm:py-4">
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:gap-6 sm:mt-12">
+            <ContactButton className="min-w-[210px] flex items-center gap-2 rounded-lg bg-brandPrimary-500 px-10 py-3 text-base font-bold text-white hover:bg-brandPrimary-600 transition-colors justify-center w-full sm:w-auto sm:py-4">
               お問い合わせ
               <ArrowRight className="h-4 w-4" />
             </ContactButton>
             <a
               href="#機能"
-              className="flex items-center gap-1 text-base font-bold text-brandGray hover:text-brandNavy"
+              className="min-w-[210px] flex items-center gap-2 rounded-lg bg-white border-[2px] border-gray-150 px-10 py-3 text-base font-bold text-brandNavy hover:bg-gray-50 transition-colors justify-center w-full sm:w-auto sm:py-4"
             >
               くわしく見る
               <ArrowRight className="h-4 w-4" />
@@ -158,7 +158,7 @@ function ProblemSection() {
   return (
     <section className="bg-gray-50 py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-10">
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
+        <h2 className="!leading-tight mt-3 text-center text-2xl font-black text-brandNavy sm:text-4xl">
           こんなお悩み、ありませんか？
         </h2>
         <div className="mt-12 grid gap-12 md:grid-cols-3">
@@ -218,7 +218,7 @@ function HowItWorks() {
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           How to
         </p>
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
+        <h2 className="!leading-tight mt-3 text-center text-2xl font-black text-brandNavy sm:text-4xl">
           <span className="tracking-tight">Pitasuke</span>なら、解決できます
         </h2>
         <div className="mt-12 grid gap-12 md:grid-cols-3">
@@ -308,7 +308,7 @@ function DifferentiatorSection() {
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-400">
           Compare
         </p>
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-white sm:text-4xl">
+        <h2 className="!leading-tight mt-3 text-center text-2xl font-black text-white sm:text-4xl">
           他のツールと、何が違うの？
         </h2>
 
@@ -416,7 +416,7 @@ function FeaturesSection() {
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           Feature
         </p>
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
+        <h2 className="!leading-tight mt-3 text-center text-2xl font-black text-brandNavy sm:text-4xl">
           採用チームに必要な機能が
           <br />
           すべて揃っています
@@ -479,7 +479,7 @@ function TestimonialsSection() {
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           Voice
         </p>
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
+        <h2 className="!leading-tight mt-3 text-center text-2xl font-black text-brandNavy sm:text-4xl">
           採用チームに選ばれています
         </h2>
         <div className="mt-16 grid md:grid-cols-3">
@@ -524,7 +524,7 @@ function FAQSection() {
         <p className="text-center text-sm font-black uppercase tracking-widest text-brandPrimary-500">
           FAQ
         </p>
-        <h2 className="!leading-tight mt-3 text-center text-3xl font-black text-brandNavy sm:text-4xl">
+        <h2 className="!leading-tight mt-3 text-center text-2xl font-black text-brandNavy sm:text-4xl">
           よくある質問
         </h2>
         <div className="mt-12">
@@ -545,7 +545,7 @@ function FinalCTA() {
       style={{ background: "linear-gradient(135deg, #1e8cd6 0%, #31b5a2 100%)" }}
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
-        <h2 className="text-4xl font-black !leading-tight tracking-tight text-white sm:text-6xl">
+        <h2 className="text-3xl font-black !leading-tight tracking-tight text-white sm:text-6xl">
           採用面接の日程調整
           <br />
           自動でセッティング
@@ -554,7 +554,7 @@ function FinalCTA() {
           今すぐ無料で始めて、チームの時間を取り戻してください。
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <ContactButton className="flex items-center gap-2 rounded-lg bg-white px-10 py-4 text-base font-bold text-brandPrimary-600 w-full justify-center sm:w-auto">
+          <ContactButton className="min-w-[210px] flex items-center gap-2 rounded-lg bg-white px-10 py-4 text-base font-bold text-brandNavy w-full justify-center sm:w-auto hover:bg-gray-50 transition-colors">
             お問い合わせ
             <ArrowRight className="h-4 w-4" />
           </ContactButton>
@@ -568,34 +568,55 @@ function FinalCTA() {
 // Footer
 // ─────────────────────────────────────────────
 function Footer() {
+  const links = [
+    {
+      label: "機能",
+      target: "#機能",
+    },
+    {
+      label: "導入事例",
+      target: "#導入事例",
+    },
+    {
+      label: "よくある質問",
+      target: "#よくある質問",
+    },
+    {
+      label: "プライバシーポリシー",
+      target: "",
+    },
+    {
+      label: "利用規約",
+      target: "",
+    },
+  ];
+
   return (
     <footer className="py-10 pb-5">
       <div className="mx-auto max-w-7xl px-5 sm:px-10">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div className="flex items-center gap-2">
             <Image
+              className="w-[100px] sm:w-[120px]"
               src="/common/logo.svg"
               alt="Pitasuke"
               width={120}
               height={40}
             />
           </div>
-          <nav className="flex flex-wrap justify-center gap-6">
-            {[
-              "機能",
-              "料金",
-              "プライバシーポリシー",
-              "利用規約",
-              "お問い合わせ",
-            ].map((label) => (
+          <nav className="flex flex-wrap justify-center gap-4 sm:gap-6">
+            {links.map((label) => (
               <a
-                key={label}
-                href="#"
-                className="text-sm font-bold text-brandGray hover:text-brandNavy"
+                key={label.label}
+                href={label.target}
+                className="text-xs font-bold text-brandGray hover:text-brandNavy sm:text-sm"
               >
-                {label}
+                {label.label}
               </a>
             ))}
+            <ContactButton className="text-xs font-bold text-brandGray hover:text-brandNavy sm:text-sm">
+              お問い合わせ
+            </ContactButton>
           </nav>
         </div>
         <div className="mt-10 text-center text-xs text-brandGray/50">
