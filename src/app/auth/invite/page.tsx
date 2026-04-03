@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, UserCheck, AlertCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * /auth/invite?token=INVITE_TOKEN
@@ -13,6 +15,7 @@ import { Loader2, UserCheck, AlertCircle } from "lucide-react";
  * これにより OTP の pre-fetch 消費問題を回避する。
  */
 export default function InvitePage() {
+  const router = useRouter();
   const [token, setToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +42,7 @@ export default function InvitePage() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.url) {
+      if (!res.ok || !data.token_hash) {
         setError(
           data.error ??
           "招待リンクが無効または期限切れです。管理者に再招待を依頼してください。"
@@ -48,8 +51,22 @@ export default function InvitePage() {
         return;
       }
 
-      // Supabase の magic link にリダイレクト（その場で生成した新鮮なリンク）
-      window.location.href = data.url;
+      // hashed_token を使ってクライアント側で直接セッション確立
+      // action_link 経由のリダイレクトを使わないため、Supabase の Redirect URLs 設定に依存しない
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: "magiclink",
+      });
+
+      if (verifyError) {
+        console.error("[invite] verifyOtp error:", verifyError);
+        setError("認証に失敗しました。管理者に再招待を依頼してください。");
+        setIsLoading(false);
+        return;
+      }
+
+      router.push("/auth/accept-invite");
     } catch {
       setError("エラーが発生しました。もう一度お試しください。");
       setIsLoading(false);
