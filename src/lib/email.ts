@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getAppUrl } from "@/lib/app-url";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -163,7 +164,7 @@ export async function sendBookingConfirmationEmail(
 
   const { to, candidateName, eventTitle, companyName, startTime, endTime, locationDetail, meetingUrl, cancelToken } =
     options;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+  const appUrl = getAppUrl();
 
   const start = new Date(startTime);
   const end = new Date(endTime);

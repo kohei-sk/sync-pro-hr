@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getAppUrl } from "@/lib/app-url";
 
 /**
  * POST /api/auth/verify-invite
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const serviceClient = createServiceClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3002";
+    const appUrl = getAppUrl();
 
     // トークンをDBで検索（期限内のもの）
     const { data: profile, error: profileError } = await serviceClient
