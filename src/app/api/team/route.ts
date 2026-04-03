@@ -6,6 +6,7 @@ import {
 } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendInviteEmail } from "@/lib/email";
+import { getAppUrl } from "@/lib/app-url";
 
 /**
  * GET /api/team
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     const serviceClient = createServiceClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3002";
+    const appUrl = getAppUrl();
 
     // generateLink でユーザー作成（メール送信なし）
     const { data: linkData, error: linkError } =
