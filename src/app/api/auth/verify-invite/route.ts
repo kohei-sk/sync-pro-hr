@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getAppUrl } from "@/lib/app-url";
 
 /**
  * POST /api/auth/verify-invite
- * 認証不要。招待トークンを検証し、新鮮な Supabase magic link を返す。
+ * 認証不要。招待トークンを検証し、Supabase の hashed_token を返す。
  *
  * Body: { token: string }
- * Response: { url: string } | { error: string }
+ * Response: { token_hash: string } | { error: string }
  *
  * 【セキュリティ設計】
  *   - token は DB の invite_token と照合し、期限内のもののみ許可
- *   - 使用済みトークンは即座に null にして二重利用を防ぐ
+ *   - magic link 生成が成功した後にトークンを消費（生成失敗時はリトライ可能）
  *   - magic link はこのエンドポイント呼び出し時（ユーザー操作後）に生成するため
  *     メールスキャナーによる pre-fetch で消費されることがない
+ *   - action_link 経由のリダイレクトを使わず hashed_token を返し、クライアント側で
+ *     verifyOtp() を直接呼ぶことで Supabase の Redirect URLs 許可リスト制約を回避
  */
 export async function POST(request: Request) {
   try {
@@ -25,7 +26,6 @@ export async function POST(request: Request) {
     }
 
     const serviceClient = createServiceClient();
-    const appUrl = getAppUrl();
 
     // トークンをDBで検索（期限内のもの）
     const { data: profile, error: profileError } = await serviceClient
@@ -56,29 +56,16 @@ export async function POST(request: Request) {
 
     const email = userData.user.email;
 
-    // invite_token を消費（一度だけ使用可能にする）
-    await serviceClient
-      .from("profiles")
-      .update({ invite_token: null, invite_token_expires_at: null })
-      .eq("id", profile.id);
-
-    // その場で新鮮な magic link を生成
-    // ユーザーがボタンをクリックした後に生成するため、メールスキャナーの影響なし
-    //
-    // ※ generateLink(type:'magiclink') は implicit flow を使う。
-    //   tokens が URL ハッシュ(#) に入って返るため、サーバーサイドの
-    //   /auth/callback/route.ts ではなく、クライアントサイドの
-    //   /auth/magic-link/page.tsx で setSession() する。
+    // その場で新鮮な magic link を生成（トークン消費より先に行い、失敗時はリトライ可能にする）
+    // hashed_token をクライアントに返し、verifyOtp() で直接セッション確立する。
+    // action_link 経由のリダイレクトを使わないため、Supabase の Redirect URLs 設定に依存しない。
     const { data: linkData, error: linkError } =
       await serviceClient.auth.admin.generateLink({
         type: "magiclink",
         email,
-        options: {
-          redirectTo: `${appUrl}/auth/magic-link?next=/auth/accept-invite`,
-        },
       });
 
-    if (linkError || !linkData.properties?.action_link) {
+    if (linkError || !linkData.properties?.hashed_token) {
       console.error("[verify-invite] generateLink error:", linkError);
       return NextResponse.json(
         { error: "認証リンクの生成に失敗しました" },
@@ -86,7 +73,13 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ url: linkData.properties.action_link });
+    // マジックリンク生成成功後にトークンを消費（生成失敗時はトークンが残りリトライ可能）
+    await serviceClient
+      .from("profiles")
+      .update({ invite_token: null, invite_token_expires_at: null })
+      .eq("id", profile.id);
+
+    return NextResponse.json({ token_hash: linkData.properties.hashed_token });
   } catch (err) {
     console.error("[verify-invite] Error:", err);
     return NextResponse.json(
