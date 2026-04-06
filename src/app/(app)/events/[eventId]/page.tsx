@@ -557,19 +557,39 @@ function ReceptionTab({
     exclude_outside_hours: true,
     allowed_days: [...DEFAULT_ALLOWED_DAYS],
     accept_holidays: false,
+    booking_window_start: { value: 3, unit: "days" as const },
+    booking_window_end: { value: 2, unit: "weeks" as const },
   };
   const [settings, setSettings] = useState<ReceptionSettings>({ ...initial });
   const [saving, setSaving] = useState(false);
   const [touchedDays, setTouchedDays] = useState(false);
+  const [touchedWindow, setTouchedWindow] = useState(false);
 
   function getAllowedDaysError(): string | undefined {
     if (settings.allowed_days.every((d) => !d)) return "1日以上選択してください";
     return undefined;
   }
 
+  function toAbsoluteDays(value: number, unit: string): number {
+    if (unit === "weeks") return value * 7;
+    if (unit === "months") return value * 30;
+    return value;
+  }
+
+  function getBookingWindowError(): string | undefined {
+    const start = settings.booking_window_start ?? { value: 3, unit: "days" };
+    const end = settings.booking_window_end ?? { value: 2, unit: "weeks" };
+    const startDays = toAbsoluteDays(start.value, start.unit);
+    const endDays = toAbsoluteDays(end.value, end.unit);
+    if (endDays <= startDays) return "「受付終了」は「受付開始」より後にしてください";
+    return undefined;
+  }
+
   async function handleSave() {
     setTouchedDays(true);
+    setTouchedWindow(true);
     if (getAllowedDaysError()) return;
+    if (getBookingWindowError()) return;
     setSaving(true);
     try {
       await updateEventTypeApi(event.id, { reception_settings: settings });
@@ -640,6 +660,72 @@ function ReceptionTab({
                 <span className={cn("toggle-btn-switch-handle", settings.accept_holidays && "toggle-btn-switch-handle-active")} />
               </span>
             </button>
+          </div>
+        </div>
+        {/* 受付期間設定 */}
+        <div>
+          <label className="label">受付期間</label>
+          <div className="mt-3 space-y-3">
+            <div className="flex gap-4 items-center">
+              <div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    className="input mt-1"
+                    min={0}
+                    value={settings.booking_window_start?.value ?? 3}
+                    onChange={(e) => {
+                      setSettings({ ...settings, booking_window_start: { value: parseInt(e.target.value) || 0, unit: settings.booking_window_start?.unit ?? "days" } });
+                      setTouchedWindow(true);
+                      onDirtyChange(true);
+                    }}
+                  />
+                  <select
+                    className="select mt-1"
+                    value={settings.booking_window_start?.unit ?? "days"}
+                    onChange={(e) => {
+                      setSettings({ ...settings, booking_window_start: { value: settings.booking_window_start?.value ?? 3, unit: e.target.value as "days" | "weeks" | "months" } });
+                      setTouchedWindow(true);
+                      onDirtyChange(true);
+                    }}
+                  >
+                    <option value="days">日後</option>
+                    <option value="weeks">週間後</option>
+                    <option value="months">ヶ月後</option>
+                  </select>
+                </div>
+              </div>
+              <div className="text-gray-500">〜</div>
+              <div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    className="input mt-1"
+                    min={1}
+                    value={settings.booking_window_end?.value ?? 2}
+                    onChange={(e) => {
+                      setSettings({ ...settings, booking_window_end: { value: parseInt(e.target.value) || 1, unit: settings.booking_window_end?.unit ?? "weeks" } });
+                      setTouchedWindow(true);
+                      onDirtyChange(true);
+                    }}
+                  />
+                  <select
+                    className="select mt-1"
+                    value={settings.booking_window_end?.unit ?? "weeks"}
+                    onChange={(e) => {
+                      setSettings({ ...settings, booking_window_end: { value: settings.booking_window_end?.value ?? 2, unit: e.target.value as "days" | "weeks" | "months" } });
+                      setTouchedWindow(true);
+                      onDirtyChange(true);
+                    }}
+                  >
+                    <option value="days">日後</option>
+                    <option value="weeks">週間後</option>
+                    <option value="months">ヶ月後</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            {touchedWindow && <FieldError message={getBookingWindowError()} />}
           </div>
         </div>
       </div>

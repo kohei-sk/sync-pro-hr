@@ -314,6 +314,18 @@ function EventDrawerContent({ event, teamMembers }: { event: EventType; teamMemb
               {WEEKDAY_LABELS.filter((_, i) => event.reception_settings!.allowed_days[i]).join("・") || "なし"}
               <span className="ml-2">（{event.reception_settings.accept_holidays ? "祝日は受け付ける" : "祝日は受け付けない"}）</span>
             </DrawerRow>
+            <DrawerRow label="期間">
+              {(() => {
+                const s = event.reception_settings.booking_window_start ?? { value: 3, unit: "days" };
+                const unitLabel: Record<string, string> = { days: "日後", weeks: "週間後", months: "ヶ月後" };
+                return `${s.value}${unitLabel[s.unit] ?? "日後"}から`;
+              })()}
+              {(() => {
+                const e = event.reception_settings.booking_window_end ?? { value: 2, unit: "weeks" };
+                const unitLabel: Record<string, string> = { days: "日後", weeks: "週間後", months: "ヶ月後" };
+                return `${e.value}${unitLabel[e.unit] ?? "週間後"}まで`;
+              })()}
+            </DrawerRow>
           </dl>
         </DrawerSection>
       )}

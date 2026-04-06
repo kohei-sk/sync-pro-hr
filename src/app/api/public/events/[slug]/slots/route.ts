@@ -46,6 +46,7 @@ export async function GET(
         `
         id, title, duration, buffer_before, buffer_after,
         scheduling_mode, weekday_schedule, company_id,
+        reception_settings,
         event_roles(
           id, name, required_count, priority_order,
           event_members(id, role_id, user_id)
@@ -62,6 +63,26 @@ export async function GET(
 
     if (error || !event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // booking_window_start / booking_window_end に基づいて受付期間をクランプ
+    function toAbsoluteDays(value: number, unit: string): number {
+      if (unit === "weeks") return value * 7;
+      if (unit === "months") return value * 30;
+      return value;
+    }
+    const reception = (event as any).reception_settings as any;
+    const windowStartSetting = reception?.booking_window_start ?? { value: 3, unit: "days" };
+    const windowEndSetting   = reception?.booking_window_end   ?? { value: 2, unit: "weeks" };
+    const todayMs = Date.now();
+    const windowStart = new Date(todayMs + toAbsoluteDays(windowStartSetting.value, windowStartSetting.unit) * 86400000)
+      .toISOString().split("T")[0];
+    const windowEnd = new Date(todayMs + toAbsoluteDays(windowEndSetting.value, windowEndSetting.unit) * 86400000)
+      .toISOString().split("T")[0];
+    const clampedStart = effectiveStart > windowStart ? effectiveStart : windowStart;
+    const clampedEnd   = endDate < windowEnd ? endDate : windowEnd;
+    if (clampedStart > clampedEnd) {
+      return NextResponse.json({ available_slots: [] });
     }
 
     const roles = (event.event_roles as any[]) || [];
@@ -87,8 +108,8 @@ export async function GET(
 
     if (connectedUsers && connectedUsers.length > 0) {
       // Google Calendar API は ISO 8601 完全形式が必要（"YYYY-MM-DD" のみは不可）
-      const syncTimeMin = effectiveStart + "T00:00:00.000Z";
-      const syncTimeMax = endDate        + "T23:59:59.999Z";
+      const syncTimeMin = clampedStart + "T00:00:00.000Z";
+      const syncTimeMax = clampedEnd   + "T23:59:59.999Z";
 
       await Promise.all(
         connectedUsers.map(async (u: { id: string }) => {
@@ -114,8 +135,8 @@ export async function GET(
       .from("calendar_events")
       .select("id, user_id, title, start_time, end_time")
       .in("user_id", userIds)
-      .gte("start_time", effectiveStart)
-      .lte("end_time", endDate + "T23:59:59Z");
+      .gte("start_time", clampedStart)
+      .lte("end_time", clampedEnd + "T23:59:59Z");
 
     const calendarEvents = (calendarEventsDB || []).map((e: any) => ({
       id: e.id,
@@ -151,7 +172,7 @@ export async function GET(
       members: members as any,
       exclusion_rules: (event.exclusion_rules as any[]) || [],
       calendar_events: allBusyEvents,
-      date_range: { start: effectiveStart, end: endDate },
+      date_range: { start: clampedStart, end: clampedEnd },
       working_hours: { start: "09:00", end: "18:00" },
     });
 
