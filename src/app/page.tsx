@@ -583,11 +583,11 @@ function Footer() {
     },
     {
       label: "プライバシーポリシー",
-      target: "",
+      target: "/privacy",
     },
     {
       label: "利用規約",
-      target: "",
+      target: "/terms",
     },
   ];
 
@@ -609,6 +609,7 @@ function Footer() {
               <a
                 key={label.label}
                 href={label.target}
+                {...(label.target.startsWith("/") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 className="text-xs font-bold text-brandGray hover:text-brandNavy sm:text-sm"
               >
                 {label.label}
