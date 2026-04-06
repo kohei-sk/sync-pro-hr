@@ -49,7 +49,7 @@ export interface GoogleCalendarEvent {
 export function buildAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id:     process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`,
+    redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, "")}/api/auth/google/callback`,
     response_type: "code",
     scope:         SCOPES,
     access_type:   "offline",
@@ -71,7 +71,7 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleTokens>
       code,
       client_id:     process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`,
+      redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, "")}/api/auth/google/callback`,
       grant_type:    "authorization_code",
     }),
   });
