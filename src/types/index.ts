@@ -27,10 +27,14 @@ export type LocationType = "online" | "in-person" | "phone";
 export type SchedulingMode = "fixed" | "pool" | "weekday";
 
 // --- Reception Settings ---
+export type BookingWindowUnit = "days" | "weeks" | "months";
+
 export interface ReceptionSettings {
   exclude_outside_hours: boolean; // 営業時間外は受け付けない
   allowed_days: boolean[];        // [月, 火, 水, 木, 金, 土, 日] インデックス順
   accept_holidays: boolean;       // 祝日は受け付ける
+  booking_window_start?: { value: number; unit: BookingWindowUnit }; // 何日以降から受け付けるか
+  booking_window_end?: { value: number; unit: BookingWindowUnit };   // 何日後まで受け付けるか
 }
 
 // --- Weekday Schedule (曜日モード用) ---

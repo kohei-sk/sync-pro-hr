@@ -206,6 +206,8 @@ export default function NewEventPage() {
     allowedDays: [...DEFAULT_ALLOWED_DAYS],
     acceptHolidays: false,
   });
+  const [bookingWindowStart, setBookingWindowStart] = useState<{ value: number; unit: "days" | "weeks" | "months" }>({ value: 3, unit: "days" });
+  const [bookingWindowEnd, setBookingWindowEnd] = useState<{ value: number; unit: "days" | "weeks" | "months" }>({ value: 2, unit: "weeks" });
 
   // 曜日モード
   const [weekdaySchedule, setWeekdaySchedule] = useState<{ dayIndex: number; memberIds: string[]; requiredCount: number }[]>([]);
@@ -269,6 +271,7 @@ export default function NewEventPage() {
         "title",
         "location_detail",
         "allowedDays",
+        "bookingWindow",
         ...enabledDaysList.map((i) => `weekday_${i}`),
         "fixedMembers",
         ...roles.flatMap((r) => [`role_${r.id}_name`, `role_${r.id}_members`]),
@@ -330,6 +333,19 @@ export default function NewEventPage() {
     return undefined;
   }
 
+  function toAbsoluteDays(value: number, unit: string): number {
+    if (unit === "weeks") return value * 7;
+    if (unit === "months") return value * 30;
+    return value;
+  }
+
+  function getBookingWindowError(): string | undefined {
+    const startDays = toAbsoluteDays(bookingWindowStart.value, bookingWindowStart.unit);
+    const endDays = toAbsoluteDays(bookingWindowEnd.value, bookingWindowEnd.unit);
+    if (endDays <= startDays) return "「受付終了」は「受付開始」より後にしてください";
+    return undefined;
+  }
+
   function getWeekdayMemberError(dayIndex: number): string | undefined {
     const entry = weekdaySchedule.find((e) => e.dayIndex === dayIndex);
     const memberIds = entry?.memberIds ?? [];
@@ -386,6 +402,7 @@ export default function NewEventPage() {
     if (getTitleError()) return true;
     if (getLocationDetailError()) return true;
     if (getAllowedDaysError()) return true;
+    if (getBookingWindowError()) return true;
     if (formData.scheduling_mode === "weekday") {
       const enabledDaysList = WEEKDAY_LABELS.map((_, i) => i).filter((i) => receptionSettings.allowedDays[i]);
       if (enabledDaysList.some((i) => getWeekdayMemberError(i))) return true;
@@ -437,6 +454,8 @@ export default function NewEventPage() {
           exclude_outside_hours: receptionSettings.excludeOutsideHours,
           allowed_days: receptionSettings.allowedDays,
           accept_holidays: receptionSettings.acceptHolidays,
+          booking_window_start: bookingWindowStart,
+          booking_window_end: bookingWindowEnd,
         },
         weekday_schedule: formData.scheduling_mode === "weekday"
           ? weekdaySchedule.map((entry) => ({
@@ -1091,6 +1110,68 @@ export default function NewEventPage() {
                         <span className={cn("toggle-btn-switch-handle", receptionSettings.acceptHolidays && "toggle-btn-switch-handle-active")} />
                       </span>
                     </button>
+                  </div>
+                </div>
+                {/* 受付期間設定 */}
+                <div>
+                  <label className="label">受付期間</label>
+                  <div className="mt-1">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="number"
+                            className="input mt-1"
+                            min={0}
+                            value={bookingWindowStart.value}
+                            onChange={(e) => {
+                              setBookingWindowStart({ ...bookingWindowStart, value: parseInt(e.target.value) || 0 });
+                              touch("bookingWindow");
+                            }}
+                          />
+                          <select
+                            className="select mt-1"
+                            value={bookingWindowStart.unit}
+                            onChange={(e) => {
+                              setBookingWindowStart({ ...bookingWindowStart, unit: e.target.value as "days" | "weeks" | "months" });
+                              touch("bookingWindow");
+                            }}
+                          >
+                            <option value="days">日後</option>
+                            <option value="weeks">週間後</option>
+                            <option value="months">ヶ月後</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="text-gray-500">〜</div>
+                      <div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="number"
+                            className="input mt-1"
+                            min={1}
+                            value={bookingWindowEnd.value}
+                            onChange={(e) => {
+                              setBookingWindowEnd({ ...bookingWindowEnd, value: parseInt(e.target.value) || 1 });
+                              touch("bookingWindow");
+                            }}
+                          />
+                          <select
+                            className="select mt-1"
+                            value={bookingWindowEnd.unit}
+                            onChange={(e) => {
+                              setBookingWindowEnd({ ...bookingWindowEnd, unit: e.target.value as "days" | "weeks" | "months" });
+                              touch("bookingWindow");
+                            }}
+                          >
+                            <option value="days">日後</option>
+                            <option value="weeks">週間後</option>
+                            <option value="months">ヶ月後</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    {touched.bookingWindow && <FieldError message={getBookingWindowError()} />}
                   </div>
                 </div>
               </div>
@@ -2324,6 +2405,10 @@ export default function NewEventPage() {
                       {receptionSettings.allowedDays.every((d) => !d) && <span className="text-gray-300">なし</span>}
                       <span className="ml-2">（{receptionSettings.acceptHolidays ? "祝日は受け付ける" : "祝日は受け付けない"}）</span>
                     </dd>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <dt className="min-w-[30px] leading-[1.3rem] text-sm text-gray-400">期間</dt>
+                    <dd>{bookingWindowStart.value}{bookingWindowStart.unit === "days" ? "日後" : bookingWindowStart.unit === "weeks" ? "週間後" : "ヶ月後"}から{bookingWindowEnd.value}{bookingWindowEnd.unit === "days" ? "日後" : bookingWindowEnd.unit === "weeks" ? "週間後" : "ヶ月後"}まで</dd>
                   </div>
                 </div>
               </div>

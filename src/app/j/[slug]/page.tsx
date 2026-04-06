@@ -32,6 +32,10 @@ type PublicEvent = {
   event_roles: any[];
   exclusion_rules: any[];
   custom_fields: CustomField[];
+  reception_settings?: {
+    booking_window_start?: { value: number; unit: string };
+    booking_window_end?: { value: number; unit: string };
+  } | null;
 };
 
 export default function BookingPage() {
@@ -126,6 +130,21 @@ export default function BookingPage() {
   const now = new Date();
   const isPrevMonthDisabled =
     viewMonth.year === now.getFullYear() && viewMonth.month === now.getMonth();
+
+  const windowEnd = useMemo(() => {
+    const bwe = event?.reception_settings?.booking_window_end;
+    if (!bwe) return null;
+    const days = bwe.unit === "weeks" ? bwe.value * 7 : bwe.unit === "months" ? bwe.value * 30 : bwe.value;
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d;
+  }, [event]);
+
+  const isNextMonthDisabled = useMemo(() => {
+    if (!windowEnd) return false;
+    const nextMonthFirst = new Date(viewMonth.year, viewMonth.month + 1, 1);
+    return nextMonthFirst > windowEnd;
+  }, [viewMonth, windowEnd]);
 
   // ── ステップ切替時にスクロールをトップにリセット ──────────
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
@@ -308,7 +327,8 @@ export default function BookingPage() {
                       const d = new Date(prev.year, prev.month + 1);
                       return { year: d.getFullYear(), month: d.getMonth() };
                     })}
-                    className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    disabled={isNextMonthDisabled}
+                    className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
