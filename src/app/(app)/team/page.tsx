@@ -228,28 +228,28 @@ export default function TeamPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-3">
-        <div className="rounded-xl p-6 flex items-center gap-5 bg-green-100/60">
+        <div className="rounded-xl p-5 flex items-center gap-4 bg-green-100/60">
           <CheckCircle2 className="h-5.5 w-5.5 text-green-600" />
           <div>
             <p className="text-2xl font-semibold">{connectedCount}</p>
             <p className="text-xs text-gray-500">カレンダー接続済み</p>
           </div>
         </div>
-        <div className="rounded-xl p-6 flex items-center gap-5 bg-red-100/40">
+        <div className="rounded-xl p-5 flex items-center gap-5 bg-red-100/40">
           <AlertTriangle className="h-5.5 w-5.5 text-red-600" />
           <div>
             <p className="text-2xl font-semibold">{errorCount}</p>
             <p className="text-xs text-gray-500">エラー</p>
           </div>
         </div>
-        <div className="rounded-xl p-6 flex items-center gap-5 bg-purple-100/50">
+        <div className="rounded-xl p-5 flex items-center gap-5 bg-purple-100/50">
           <Clock className="h-5.5 w-5.5 text-purple-600" />
           <div>
             <p className="text-2xl font-semibold">{invitedCount}</p>
             <p className="text-xs text-gray-500">招待中</p>
           </div>
         </div>
-        <div className="rounded-xl p-6 flex items-center gap-5 bg-gray-200/50">
+        <div className="rounded-xl p-5 flex items-center gap-5 bg-gray-200/50">
           <CircleX className="h-5.5 w-5.5 text-gray-600" />
           <div>
             <p className="text-2xl font-semibold">{notConnectedCount}</p>

@@ -18,7 +18,7 @@
 
 @layer components {
   .btn {
-    @apply flex gap-2 items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+    @apply flex gap-2 items-center justify-center rounded-lg px-3 py-2.5 text-sm font-semibold shadow-sm transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
   }
 
   .btn-primary {
@@ -46,7 +46,7 @@
   }
 
   .btn-size-s {
-    @apply gap-2 rounded-md px-3 py-2 text-xs font-medium;
+    @apply gap-2 rounded-md px-2.5 py-2 text-xs font-medium;
   }
 
   .card {
@@ -134,7 +134,7 @@
 
   /* ステップカード内のセクション見出し */
   .step-section-title {
-    @apply text-lg font-semibold text-gray-900 mb-4;
+    @apply text-lg font-semibold text-gray-900;
   }
 
   .header {
@@ -150,7 +150,7 @@
   }
 
   .header-title {
-    @apply text-2xl font-bold;
+    @apply text-xl font-bold;
   }
 
   .header-sub-title {
@@ -158,11 +158,11 @@
   }
 
   .header-back-btn {
-    @apply flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600;
+    @apply flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-600;
   }
 
   .sticky-wrap {
-    @apply sticky -top-8 -mx-8 px-8 backdrop-blur-[18px] z-30;
+    @apply sticky top-0 -mx-8 px-8 z-30 bg-[#f8f9fa];
   }
 
   .tab {
@@ -354,7 +354,7 @@
 
   /* フォーム画面の固定ナビゲーションエリア（SmartHR Float Area） */
   .float-area {
-    @apply sticky bottom-0 z-10 box-content -mx-4 px-4 py-4 bg-white rounded-lg shadow-lg ring-1 ring-gray-200/80;
+    @apply sticky bottom-8 z-10 box-content -mx-4 px-4 py-4 bg-white rounded-lg shadow-lg ring-1 ring-gray-200/80;
   }
 
   /* Dropdown */

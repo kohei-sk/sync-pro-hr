@@ -137,7 +137,7 @@ export default function NewEventPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold">
-            イベント作成
+            新規イベント
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
             イベントタイプを選択して新しい面接・面談を作成します
@@ -184,7 +184,7 @@ export default function NewEventPage() {
       </div>
 
       {/* Step content */}
-      <div className="card max-w-3xl">
+      <div className="card">
         {/* Step 1: Select Event Type */}
         {step === "select" && (
           <div>

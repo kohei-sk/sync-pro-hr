@@ -768,7 +768,7 @@ export default function NewEventPage() {
   return (
     <div>
       {/* Header */}
-      <header className="header mb-8">
+      <header className="header mb-7">
         <Link
           href="/events"
           className="header-back-btn"
@@ -783,13 +783,13 @@ export default function NewEventPage() {
       </header>
 
       {/* Step indicator */}
-      <div className="mb-8">
+      <div className="mb-7">
         <div className="flex items-center gap-3.5">
           {steps.map((s, i) => (
             <div key={s.id} className="flex items-center gap-3.5">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
+                  "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold",
                   i < currentStepIndex
                     ? "bg-primary-600 text-white"
                     : i === currentStepIndex
@@ -821,7 +821,7 @@ export default function NewEventPage() {
       </div>
 
       {/* Step content */}
-      <div className="max-w-3xl pb-8">
+      <div className="mb-[64px]">
         {/* Step 1: Basic Settings + Team */}
         {step === "basic" && (
           <div className="space-y-6">
@@ -1060,7 +1060,7 @@ export default function NewEventPage() {
             <div className="card">
               <h2 className="step-section-title">受付設定</h2>
               <p className="mt-1 text-sm text-gray-500">
-                予約を受け付ける時間・曜日を設定します
+                予約を受け付ける時間・曜日・期間を設定します
               </p>
               <div className="mt-6 space-y-6">
                 {/* 時間設定 */}
@@ -1121,7 +1121,7 @@ export default function NewEventPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <input
                             type="number"
-                            className="input mt-1"
+                            className="input"
                             min={0}
                             value={bookingWindowStart.value}
                             onChange={(e) => {
@@ -1130,7 +1130,7 @@ export default function NewEventPage() {
                             }}
                           />
                           <select
-                            className="select mt-1"
+                            className="select"
                             value={bookingWindowStart.unit}
                             onChange={(e) => {
                               setBookingWindowStart({ ...bookingWindowStart, unit: e.target.value as "days" | "weeks" | "months" });
@@ -1148,7 +1148,7 @@ export default function NewEventPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <input
                             type="number"
-                            className="input mt-1"
+                            className="input"
                             min={1}
                             value={bookingWindowEnd.value}
                             onChange={(e) => {
@@ -1157,7 +1157,7 @@ export default function NewEventPage() {
                             }}
                           />
                           <select
-                            className="select mt-1"
+                            className="select"
                             value={bookingWindowEnd.unit}
                             onChange={(e) => {
                               setBookingWindowEnd({ ...bookingWindowEnd, unit: e.target.value as "days" | "weeks" | "months" });
@@ -1649,7 +1649,7 @@ export default function NewEventPage() {
             <div className="card">
               <h2 className="step-section-title">除外ルール</h2>
               <p className="mt-1 text-sm text-gray-500">
-                特定の日時をスケジュール対象外に設定します（省略可能）
+                特定の日時をスケジュール対象外に設定します（任意）
               </p>
               <div className="mt-6 space-y-4">
                 {/* Existing rules list */}
@@ -1939,7 +1939,7 @@ export default function NewEventPage() {
             <div className="card">
               <h2 className="step-section-title">フォーム設定</h2>
               <p className="mt-1 text-sm text-gray-500">
-                候補者に入力してもらう追加項目を設定します（省略可能）
+                候補者に入力してもらう追加項目を設定します（任意）
               </p>
               <div className="mt-6 space-y-4">
                 {/* Default fields */}
@@ -2614,8 +2614,8 @@ export default function NewEventPage() {
       </div>
 
       {/* Float Area: Navigation buttons */}
-      <div className="float-area max-w-3xl">
-        <div className="max-w-3xl flex items-center justify-between">
+      <div className="float-area max-w-5xl">
+        <div className="max-w-5xl flex items-center justify-between">
           <button
             onClick={handleBack}
             className={cn(

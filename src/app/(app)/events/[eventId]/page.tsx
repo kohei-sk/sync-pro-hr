@@ -200,7 +200,7 @@ export default function EventDetailPage() {
       {/* Settings */}
       <div className="flex-1 min-w-0">
         {/* Header */}
-        <header className="header mb-6">
+        <header className="header mb-3">
           <button
             onClick={() => navigate("/events")}
             className="header-back-btn"
@@ -234,7 +234,7 @@ export default function EventDetailPage() {
                 {event.status === "active" ? "公開中" : "非公開"}
               </span>
             </div>
-            <p className="header-sub-title">{event.description}</p>
+            {event.description && <p className="header-sub-title">{event.description}</p>}
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -277,7 +277,7 @@ export default function EventDetailPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="card max-w-3xl">
+        <div className="card">
           {activeTab === "basic" && (
             <BasicTab event={event} onDirtyChange={setIsDirty} onSaved={setEvent} />
           )}
@@ -505,7 +505,7 @@ function BasicTab({ event, onDirtyChange, onSaved }: { event: EventType; onDirty
         </div>
       </div>
 
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-end">
         <button
           disabled={saving}
           onClick={async () => {
@@ -613,7 +613,7 @@ function ReceptionTab({
   return (
     <div>
       <h3 className="text-lg font-bold">受付設定</h3>
-      <p className="text-sm text-gray-500 mt-1">予約を受け付ける時間・曜日を設定します</p>
+      <p className="text-sm text-gray-500 mt-1">予約を受け付ける時間・曜日・期間を設定します</p>
       <div className="mt-6 space-y-6">
         {/* 時間設定 */}
         <div>
@@ -665,13 +665,13 @@ function ReceptionTab({
         {/* 受付期間設定 */}
         <div>
           <label className="label">受付期間</label>
-          <div className="mt-3 space-y-3">
+          <div className="mt-1 space-y-3">
             <div className="flex gap-4 items-center">
               <div>
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="number"
-                    className="input mt-1"
+                    className="input"
                     min={0}
                     value={settings.booking_window_start?.value ?? 3}
                     onChange={(e) => {
@@ -681,7 +681,7 @@ function ReceptionTab({
                     }}
                   />
                   <select
-                    className="select mt-1"
+                    className="select"
                     value={settings.booking_window_start?.unit ?? "days"}
                     onChange={(e) => {
                       setSettings({ ...settings, booking_window_start: { value: settings.booking_window_start?.value ?? 3, unit: e.target.value as "days" | "weeks" | "months" } });
@@ -700,7 +700,7 @@ function ReceptionTab({
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="number"
-                    className="input mt-1"
+                    className="input"
                     min={1}
                     value={settings.booking_window_end?.value ?? 2}
                     onChange={(e) => {
@@ -710,7 +710,7 @@ function ReceptionTab({
                     }}
                   />
                   <select
-                    className="select mt-1"
+                    className="select"
                     value={settings.booking_window_end?.unit ?? "weeks"}
                     onChange={(e) => {
                       setSettings({ ...settings, booking_window_end: { value: settings.booking_window_end?.value ?? 2, unit: e.target.value as "days" | "weeks" | "months" } });

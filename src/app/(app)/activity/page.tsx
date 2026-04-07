@@ -107,7 +107,7 @@ export default function NotificationsPage() {
   return (
     <div>
       {/* Header */}
-      <header className="header mb-6">
+      <header className="header mb-3">
         <div className="header-col">
           <h1 className="header-title">通知</h1>
         </div>
