@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Drawer } from "@/components/ui/Drawer";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { EventStatusBadge } from "@/components/ui/EventStatusBadge";
-import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/constants";
+import { TAB_SCROLL_OFFSET_WIDE, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/constants";
 import type { EventType } from "@/types";
 
 // ============================================================
@@ -565,7 +565,7 @@ function EventsContent() {
   useEffect(() => {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
-    document.querySelector("main")?.scrollTo({ top: TAB_SCROLL_OFFSET, left: 0 });
+    document.querySelector("main")?.scrollTo({ top: TAB_SCROLL_OFFSET_WIDE, left: 0 });
   }, [activeTab]);
 
   const selectedEventId = searchParams.get("id");

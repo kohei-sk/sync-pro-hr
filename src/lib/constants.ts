@@ -5,7 +5,8 @@ import type { ExclusionRule, CustomField } from "@/types";
 // ============================================================
 
 /** タブ切替時のスクロールリセット位置（sticky ヘッダーの高さに合わせた値） */
-export const TAB_SCROLL_OFFSET = 96;
+export const TAB_SCROLL_OFFSET = 68;
+export const TAB_SCROLL_OFFSET_WIDE = 80;
 
 /** 曜日名（日本語、0=日曜日） */
 export const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"] as const;

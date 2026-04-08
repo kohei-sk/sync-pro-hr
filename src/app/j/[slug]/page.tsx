@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { TimeSlot, CustomField, LocationType } from "@/types";
 import { EventPageHeader } from "@/components/booking/EventPageHeader";
+import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 
 type BookingStep = "select-date" | "select-time" | "form" | "confirm" | "confirmed";
 

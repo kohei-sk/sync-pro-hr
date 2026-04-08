@@ -18,6 +18,7 @@ import { getEventBySlug, getBookingById, mockUsers, mockCalendarEvents } from "@
 import { computeAvailableSlots } from "@/lib/scheduler";
 import type { TimeSlot } from "@/types";
 import { EventPageHeader } from "@/components/booking/EventPageHeader";
+import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 
 type ManageStep =
   | "detail"
