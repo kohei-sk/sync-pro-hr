@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BookingStatus } from "@/types";
+import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 
 type FilterStatus = "all" | BookingStatus;
 

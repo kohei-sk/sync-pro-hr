@@ -45,7 +45,7 @@ import { useToast } from "@/components/ui/Toast";
 import { FieldError } from "@/components/ui/FieldError";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useTeamMembers } from "@/lib/hooks/useTeamMembers";
-import { WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
+import { TAB_SCROLL_OFFSET, WEEKDAY_LABELS, DEFAULT_ALLOWED_DAYS } from "@/lib/constants";
 import type { ExclusionRule, CustomField } from "@/types";
 
 type Step = "basic" | "options" | "confirm";
