@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import type { NotificationType } from "@/types";
+import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 
 type NotificationTab = "unread" | "read";
 
@@ -85,7 +86,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
-    document.querySelector("main")?.scrollTo({ top: 96, left: 0 });
+    document.querySelector("main")?.scrollTo({ top: TAB_SCROLL_OFFSET, left: 0 });
   }, [activeTab]);
 
   function handleNotificationClick(notificationId: string, bookingId: string) {
@@ -107,7 +108,7 @@ export default function NotificationsPage() {
   return (
     <div>
       {/* Header */}
-      <header className="header mb-6">
+      <header className="header mb-3">
         <div className="header-col">
           <h1 className="header-title">通知</h1>
         </div>

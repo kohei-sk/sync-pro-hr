@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Drawer } from "@/components/ui/Drawer";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { EventStatusBadge } from "@/components/ui/EventStatusBadge";
-import { TAB_SCROLL_OFFSET, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/constants";
+import { TAB_SCROLL_OFFSET_WIDE, DAY_NAMES, EXCLUSION_TYPE_LABELS, FIELD_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/constants";
 import type { EventType } from "@/types";
 
 // ============================================================
@@ -186,7 +186,7 @@ function EventCard({
             ) : (
               <>
                 <Copy className="h-3 w-3" />
-                リンクをコピー
+                URLコピー
               </>
             )}
           </button>
@@ -539,7 +539,7 @@ function DrawerFooter({
         ) : (
           <>
             <Copy className="h-4 w-4" />
-            リンクをコピー
+            URLコピー
           </>
         )}
       </button>
@@ -565,7 +565,7 @@ function EventsContent() {
   useEffect(() => {
     if (prevTabRef.current === activeTab) return;
     prevTabRef.current = activeTab;
-    document.querySelector("main")?.scrollTo({ top: TAB_SCROLL_OFFSET, left: 0 });
+    document.querySelector("main")?.scrollTo({ top: TAB_SCROLL_OFFSET_WIDE, left: 0 });
   }, [activeTab]);
 
   const selectedEventId = searchParams.get("id");
@@ -586,7 +586,7 @@ function EventsContent() {
     const ok = await copyToClipboard(url);
     if (ok) {
       setCopiedEventId(id);
-      toast.success("リンクをコピーしました");
+      toast.success("URLをコピーしました");
       setTimeout(() => setCopiedEventId(null), 2000);
     } else {
       toast.error("コピーに失敗しました。URLを手動でコピーしてください");
@@ -620,13 +620,13 @@ function EventsContent() {
 
   return (
     <div>
-      <header className="header mb-6">
+      <header className="header mb-3">
         <div className="header-col">
           <h1 className="header-title">イベント</h1>
         </div>
         <Link href="/events/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
-          新規イベント作成
+          新規イベント
         </Link>
       </header>
 
@@ -694,7 +694,7 @@ function EventsContent() {
             {!searchQuery && activeTab === "all" && (
               <Link href="/events/new" className="btn btn-primary mt-4">
                 <Plus className="h-4 w-4" />
-                新規イベント作成
+                新規イベント
               </Link>
             )}
           </div>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BookingStatus } from "@/types";
+import { TAB_SCROLL_OFFSET } from "@/lib/constants";
 
 type FilterStatus = "all" | BookingStatus;
 
@@ -75,7 +76,7 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
     fetch("/api/bookings")
       .then((r) => r.json())
       .then((data) => setBookings(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // 予約一覧・イベント一覧を並行取得
@@ -146,7 +147,7 @@ export default function BookingsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex h-full flex-col">
-      <header className="header mb-6">
+      <header className="header mb-3">
         <div className="header-col">
           <h1 className="header-title">予約一覧</h1>
         </div>

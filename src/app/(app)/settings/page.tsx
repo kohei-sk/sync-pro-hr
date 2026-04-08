@@ -72,7 +72,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <header className="header mb-6">
+      <header className="header mb-3">
         <div className="header-col">
           <h1 className="header-title">設定</h1>
         </div>
@@ -98,7 +98,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-2xl">
+      <div>
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "notifications" && <NotificationsTab />}
         {activeTab === "calendar" && <CalendarTab />}
